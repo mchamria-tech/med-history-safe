@@ -16,7 +16,7 @@ const Index = () => {
       <main className="flex flex-1 flex-col items-center justify-between px-6 pb-6 pt-12">
         {/* Logo and Tagline */}
         <div className="flex flex-col items-center space-y-8">
-          <div className="flex h-64 w-64 items-center justify-center rounded-full bg-primary p-8 md:h-80 md:w-80">
+          <div className="flex h-64 w-64 items-center justify-center rounded-full border-8 border-[#3DB4E6] bg-white p-8 md:h-80 md:w-80 md:border-[12px]">
             <img
               src={careBagLogo}
               alt="CareBag Logo"
