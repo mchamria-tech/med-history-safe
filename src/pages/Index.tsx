@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import PaginationDots from "@/components/PaginationDots";
-import careBagLogo from "@/assets/carebag-logo.png";
+import careBagLogo from "@/assets/carebag-logo-circle.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -21,16 +20,13 @@ const Index = () => {
             <img
               src={careBagLogo}
               alt="CareBag Logo"
-              className="h-auto w-full drop-shadow-lg"
+              className="h-auto w-full"
             />
           </div>
 
           <p className="max-w-md text-center text-xl font-medium text-foreground">
             CareBag allows you to store all your medical records in one place
           </p>
-
-          {/* Pagination Dots */}
-          <PaginationDots total={4} current={0} className="pt-4" />
         </div>
 
         {/* Action Buttons */}
