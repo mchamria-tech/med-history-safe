@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import careBagLogo from "@/assets/carebag-logo-circle.png";
+import careBagLogo from "@/assets/carebag-logo.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -16,11 +16,11 @@ const Index = () => {
       <main className="flex flex-1 flex-col items-center justify-between px-6 pb-6 pt-12">
         {/* Logo and Tagline */}
         <div className="flex flex-col items-center space-y-8">
-          <div className="w-64 max-w-sm md:w-80">
+          <div className="flex h-64 w-64 items-center justify-center rounded-full bg-primary p-8 md:h-80 md:w-80">
             <img
               src={careBagLogo}
               alt="CareBag Logo"
-              className="h-auto w-full"
+              className="h-full w-full object-contain"
             />
           </div>
 
