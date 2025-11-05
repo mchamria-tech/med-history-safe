@@ -10,6 +10,7 @@ const Register = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Add registration logic
+    navigate("/dashboard");
   };
 
   return (

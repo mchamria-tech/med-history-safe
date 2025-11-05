@@ -10,6 +10,7 @@ const Login = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Add authentication logic
+    navigate("/dashboard");
   };
 
   return (
