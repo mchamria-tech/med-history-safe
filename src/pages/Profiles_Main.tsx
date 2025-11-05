@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import careBagLogo from "@/assets/carebag-logo.png";
 import { Plus, User } from "lucide-react";
 
-const Dashboard = () => {
+const Profiles_Main = () => {
   // Mock profiles - in real app, this would come from backend
   const [profiles, setProfiles] = useState([
     { id: 1, name: "John Doe", type: "Patient" },
@@ -87,5 +87,5 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Profiles_Main;
 
