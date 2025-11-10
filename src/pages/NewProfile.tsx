@@ -347,7 +347,7 @@ const NewProfile = () => {
                 id="relation" 
                 value={relation}
                 onChange={(e) => setRelation(e.target.value)}
-                placeholder="If Primary, leave blank" 
+                placeholder="If Primary, then write Self" 
                 className="flex-1 bg-[hsl(190,50%,85%)] border-border placeholder:text-[hsl(190,30%,60%)]" 
               />
             </div>
