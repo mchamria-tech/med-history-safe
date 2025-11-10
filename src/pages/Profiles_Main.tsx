@@ -1,16 +1,17 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import careBagLogo from "@/assets/carebag-logo.png";
 import { Plus, User } from "lucide-react";
 
 const Profiles_Main = () => {
+  const navigate = useNavigate();
   // Mock profiles - in real app, this would come from backend
   const [profiles, setProfiles] = useState([]);
 
   const handleCreateProfile = () => {
-    // TODO: Navigate to create profile page
-    console.log("Create new profile");
+    navigate("/new-profile");
   };
 
   const handleSelectProfile = (profileId: number) => {
