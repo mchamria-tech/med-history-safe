@@ -1,0 +1,403 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Menu, MoreVertical, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface Profile {
+  id: string;
+  name: string;
+  gender: string | null;
+  date_of_birth: string | null;
+  relation: string | null;
+  email: string | null;
+  phone: string | null;
+  height: string | null;
+  weight: string | null;
+  blood_pressure: string | null;
+  blood_glucose: string | null;
+  allergies: string | null;
+  insurer: string | null;
+  policy_no: string | null;
+  type_of_plan: string | null;
+  expiry_date: string | null;
+  rm_name: string | null;
+  rm_no: string | null;
+  profile_photo_url: string | null;
+}
+
+const ProfileView = () => {
+  const navigate = useNavigate();
+  const { profileId } = useParams();
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentName, setDocumentName] = useState("");
+  const [documentDate, setDocumentDate] = useState<Date>();
+  const [documentType, setDocumentType] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    if (profileId) {
+      fetchProfile();
+    }
+  }, [profileId]);
+
+  const fetchProfile = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', profileId)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error: any) {
+      console.error('Error fetching profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile",
+        variant: "destructive",
+      });
+      navigate("/dashboard");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDocumentUpload = async () => {
+    if (!documentFile || !documentName || !documentDate || !profileId) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Upload file to storage
+      const fileExt = documentFile.name.split('.').pop();
+      const fileName = `${user.id}/${profileId}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('profile-documents')
+        .upload(fileName, documentFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-documents')
+        .getPublicUrl(fileName);
+
+      // Save document metadata to database
+      const { error: dbError } = await supabase
+        .from('documents')
+        .insert({
+          profile_id: profileId,
+          user_id: user.id,
+          document_name: documentName,
+          document_url: publicUrl,
+          document_date: format(documentDate, 'yyyy-MM-dd'),
+          document_type: documentType || null,
+        });
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "Success",
+        description: "Document uploaded successfully",
+      });
+
+      setShowUploadDialog(false);
+      setDocumentFile(null);
+      setDocumentName("");
+      setDocumentDate(undefined);
+      setDocumentType("");
+    } catch (error: any) {
+      console.error('Error uploading document:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload document",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="bg-primary text-primary-foreground p-4 flex items-center justify-between">
+        <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
+          <Menu className="h-6 w-6" />
+        </Button>
+        <h1 className="text-xl font-semibold">Profile View</h1>
+        <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
+          <MoreVertical className="h-6 w-6" />
+        </Button>
+      </header>
+
+      {/* Main Content */}
+      <div className="p-6 space-y-6 max-w-4xl mx-auto">
+        {/* Profile Photo and Basic Info */}
+        <div className="flex flex-col items-center space-y-4">
+          <Avatar className="h-32 w-32">
+            <AvatarImage src={profile.profile_photo_url || undefined} alt={profile.name} />
+            <AvatarFallback className="text-3xl bg-[hsl(190,50%,85%)]">
+              {profile.name.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <h2 className="text-2xl font-semibold text-foreground">{profile.name}</h2>
+          {profile.relation && (
+            <p className="text-muted-foreground">Relation: {profile.relation}</p>
+          )}
+        </div>
+
+        {/* Personal Details */}
+        <div className="bg-card rounded-lg p-6 space-y-4 border">
+          <h3 className="text-xl font-semibold text-foreground mb-4">Personal Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {profile.gender && (
+              <div>
+                <Label className="text-muted-foreground">Gender</Label>
+                <p className="text-foreground">{profile.gender}</p>
+              </div>
+            )}
+            {profile.date_of_birth && (
+              <div>
+                <Label className="text-muted-foreground">Date of Birth</Label>
+                <p className="text-foreground">{format(new Date(profile.date_of_birth), 'PPP')}</p>
+              </div>
+            )}
+            {profile.email && (
+              <div>
+                <Label className="text-muted-foreground">Email</Label>
+                <p className="text-foreground">{profile.email}</p>
+              </div>
+            )}
+            {profile.phone && (
+              <div>
+                <Label className="text-muted-foreground">Phone</Label>
+                <p className="text-foreground">{profile.phone}</p>
+              </div>
+            )}
+            {profile.height && (
+              <div>
+                <Label className="text-muted-foreground">Height</Label>
+                <p className="text-foreground">{profile.height}</p>
+              </div>
+            )}
+            {profile.weight && (
+              <div>
+                <Label className="text-muted-foreground">Weight</Label>
+                <p className="text-foreground">{profile.weight}</p>
+              </div>
+            )}
+            {profile.blood_pressure && (
+              <div>
+                <Label className="text-muted-foreground">Blood Pressure</Label>
+                <p className="text-foreground">{profile.blood_pressure}</p>
+              </div>
+            )}
+            {profile.blood_glucose && (
+              <div>
+                <Label className="text-muted-foreground">Blood Glucose</Label>
+                <p className="text-foreground">{profile.blood_glucose}</p>
+              </div>
+            )}
+            {profile.allergies && (
+              <div className="md:col-span-2">
+                <Label className="text-muted-foreground">Allergies</Label>
+                <p className="text-foreground">{profile.allergies}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Medical Insurance Details */}
+        {(profile.insurer || profile.policy_no || profile.type_of_plan || profile.expiry_date || profile.rm_name || profile.rm_no) && (
+          <div className="bg-card rounded-lg p-6 space-y-4 border">
+            <h3 className="text-xl font-semibold text-foreground mb-4">Medical Insurance</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {profile.insurer && (
+                <div>
+                  <Label className="text-muted-foreground">Insurer</Label>
+                  <p className="text-foreground">{profile.insurer}</p>
+                </div>
+              )}
+              {profile.policy_no && (
+                <div>
+                  <Label className="text-muted-foreground">Policy Number</Label>
+                  <p className="text-foreground">{profile.policy_no}</p>
+                </div>
+              )}
+              {profile.type_of_plan && (
+                <div>
+                  <Label className="text-muted-foreground">Type of Plan</Label>
+                  <p className="text-foreground">{profile.type_of_plan}</p>
+                </div>
+              )}
+              {profile.expiry_date && (
+                <div>
+                  <Label className="text-muted-foreground">Expiry Date</Label>
+                  <p className="text-foreground">{format(new Date(profile.expiry_date), 'PPP')}</p>
+                </div>
+              )}
+              {profile.rm_name && (
+                <div>
+                  <Label className="text-muted-foreground">RM Name</Label>
+                  <p className="text-foreground">{profile.rm_name}</p>
+                </div>
+              )}
+              {profile.rm_no && (
+                <div>
+                  <Label className="text-muted-foreground">RM Number</Label>
+                  <p className="text-foreground">{profile.rm_no}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Upload Document Button */}
+        <div className="flex justify-center">
+          <Button
+            onClick={() => setShowUploadDialog(true)}
+            size="lg"
+            className="rounded-full h-16 w-16 p-0"
+          >
+            <Plus className="h-8 w-8" />
+          </Button>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-4 justify-center pt-4">
+          <Button
+            onClick={() => navigate(`/view-documents/${profileId}`)}
+            variant="default"
+            size="lg"
+            className="min-w-[200px]"
+          >
+            View Documents
+          </Button>
+          <Button
+            onClick={() => navigate("/dashboard")}
+            variant="outline"
+            size="lg"
+            className="min-w-[200px]"
+          >
+            Back
+          </Button>
+        </div>
+      </div>
+
+      {/* Upload Document Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="bg-background">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="doc-file">Select File</Label>
+              <Input
+                id="doc-file"
+                type="file"
+                onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
+                className="bg-[hsl(190,50%,85%)]"
+              />
+            </div>
+            <div>
+              <Label htmlFor="doc-name">Document Name</Label>
+              <Input
+                id="doc-name"
+                value={documentName}
+                onChange={(e) => setDocumentName(e.target.value)}
+                placeholder="e.g., Lab Report, Prescription"
+                className="bg-[hsl(190,50%,85%)]"
+              />
+            </div>
+            <div>
+              <Label>Document Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal bg-[hsl(190,50%,85%)]",
+                      !documentDate && "text-muted-foreground"
+                    )}
+                  >
+                    {documentDate ? format(documentDate, "PPP") : <span>Select date</span>}
+                    <Calendar className="ml-auto h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={documentDate}
+                    onSelect={setDocumentDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <Label htmlFor="doc-type">Document Type (Optional)</Label>
+              <Input
+                id="doc-type"
+                value={documentType}
+                onChange={(e) => setDocumentType(e.target.value)}
+                placeholder="e.g., Medical Report, Insurance"
+                className="bg-[hsl(190,50%,85%)]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleDocumentUpload} disabled={isUploading}>
+              {isUploading ? "Uploading..." : "Upload"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default ProfileView;

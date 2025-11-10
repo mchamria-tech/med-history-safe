@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      documents: {
+        Row: {
+          created_at: string
+          document_date: string
+          document_name: string
+          document_type: string | null
+          document_url: string
+          id: string
+          profile_id: string
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_date: string
+          document_name: string
+          document_type?: string | null
+          document_url: string
+          id?: string
+          profile_id: string
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_date?: string
+          document_name?: string
+          document_type?: string | null
+          document_url?: string
+          id?: string
+          profile_id?: string
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           allergies: string | null

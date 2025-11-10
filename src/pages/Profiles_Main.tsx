@@ -80,8 +80,7 @@ const Profiles_Main = () => {
   };
 
   const handleSelectProfile = (profileId: string) => {
-    // TODO: Load selected profile and navigate to main app
-    console.log("Selected profile:", profileId);
+    navigate(`/profile/${profileId}`);
   };
 
   const handleEditProfile = (e: React.MouseEvent, profileId: string) => {

@@ -9,6 +9,8 @@ import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
 import Profiles_Main from "./pages/Profiles_Main";
 import NewProfile from "./pages/NewProfile";
+import ProfileView from "./pages/ProfileView";
+import ViewDocuments from "./pages/ViewDocuments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +28,8 @@ const App = () => (
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Profiles_Main />} />
           <Route path="/new-profile" element={<NewProfile />} />
+          <Route path="/profile/:profileId" element={<ProfileView />} />
+          <Route path="/view-documents/:profileId" element={<ViewDocuments />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
