@@ -9,13 +9,42 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+// Validation schema
+const profileSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  email: z.string().trim().email("Invalid email").max(255).optional().or(z.literal("")),
+  phone: z.string().trim().max(20).optional().or(z.literal("")),
+});
 
 const NewProfile = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [dateOfBirth, setDateOfBirth] = useState<Date>();
   const [expiryDate, setExpiryDate] = useState<Date>();
   const [height, setHeight] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Form fields
+  const [name, setName] = useState("");
+  const [gender, setGender] = useState("");
+  const [relation, setRelation] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [weight, setWeight] = useState("");
+  const [bloodPressure, setBloodPressure] = useState("");
+  const [bloodGlucose, setBloodGlucose] = useState("");
+  const [allergies, setAllergies] = useState("");
+  const [insurer, setInsurer] = useState("");
+  const [policyNo, setPolicyNo] = useState("");
+  const [typeOfPlan, setTypeOfPlan] = useState("");
+  const [rmName, setRmName] = useState("");
+  const [rmNo, setRmNo] = useState("");
 
   // Generate height options from 4'0" to 7'0" (122 cm to 213 cm)
   const heightOptions = [];
@@ -34,6 +63,7 @@ const NewProfile = () => {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePhoto(reader.result as string);
@@ -43,16 +73,117 @@ const NewProfile = () => {
   };
 
   const handleReset = () => {
-    // Reset all form fields
     setProfilePhoto(null);
+    setPhotoFile(null);
     setDateOfBirth(undefined);
     setExpiryDate(undefined);
     setHeight("");
+    setName("");
+    setGender("");
+    setRelation("");
+    setEmail("");
+    setPhone("");
+    setWeight("");
+    setBloodPressure("");
+    setBloodGlucose("");
+    setAllergies("");
+    setInsurer("");
+    setPolicyNo("");
+    setTypeOfPlan("");
+    setRmName("");
+    setRmNo("");
   };
 
-  const handleSave = () => {
-    // TODO: Save profile data
-    navigate("/dashboard");
+  const handleSave = async () => {
+    try {
+      setIsSubmitting(true);
+
+      // Validate required fields
+      const validation = profileSchema.safeParse({ name, email, phone });
+      if (!validation.success) {
+        toast({
+          title: "Validation Error",
+          description: validation.error.errors[0].message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to create a profile",
+          variant: "destructive",
+        });
+        navigate("/login");
+        return;
+      }
+
+      let profilePhotoUrl = null;
+
+      // Upload profile photo if exists
+      if (photoFile) {
+        const fileExt = photoFile.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('profile-photos')
+          .upload(fileName, photoFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('profile-photos')
+          .getPublicUrl(fileName);
+
+        profilePhotoUrl = publicUrl;
+      }
+
+      // Insert profile data
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: user.id,
+          name: name.trim(),
+          gender: gender || null,
+          date_of_birth: dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : null,
+          relation: relation.trim() || null,
+          email: email.trim() || null,
+          phone: phone.trim() || null,
+          height: height || null,
+          weight: weight.trim() || null,
+          blood_pressure: bloodPressure.trim() || null,
+          blood_glucose: bloodGlucose.trim() || null,
+          allergies: allergies.trim() || null,
+          insurer: insurer.trim() || null,
+          policy_no: policyNo.trim() || null,
+          type_of_plan: typeOfPlan.trim() || null,
+          expiry_date: expiryDate ? format(expiryDate, 'yyyy-MM-dd') : null,
+          rm_name: rmName.trim() || null,
+          rm_no: rmNo.trim() || null,
+          profile_photo_url: profilePhotoUrl,
+        });
+
+      if (insertError) throw insertError;
+
+      toast({
+        title: "Success",
+        description: "Profile created successfully",
+      });
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save profile",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -76,12 +207,23 @@ const NewProfile = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <Label htmlFor="name" className="text-foreground font-normal text-lg w-32">Name :</Label>
-              <Input id="name" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Input 
+                id="name" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                required
+              />
             </div>
 
             <div className="flex items-center gap-4">
               <Label htmlFor="gender" className="text-foreground font-normal text-lg w-32">Gender:</Label>
-              <Input id="gender" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Input 
+                id="gender" 
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+              />
             </div>
 
             <div className="flex items-center gap-4">
@@ -117,6 +259,8 @@ const NewProfile = () => {
               <Label htmlFor="relation" className="text-foreground font-normal text-lg w-32">Relation:</Label>
               <Input 
                 id="relation" 
+                value={relation}
+                onChange={(e) => setRelation(e.target.value)}
                 placeholder="If Primary, leave blank" 
                 className="flex-1 bg-[hsl(190,50%,85%)] border-border placeholder:text-[hsl(190,30%,60%)]" 
               />
@@ -153,12 +297,24 @@ const NewProfile = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-4">
             <div className="flex items-center gap-4">
               <Label htmlFor="email" className="text-foreground font-normal text-lg w-32">Email :</Label>
-              <Input id="email" type="email" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Input 
+                id="email" 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+              />
             </div>
 
             <div className="flex items-center gap-4">
               <Label htmlFor="phone" className="text-foreground font-normal text-lg w-32">Phone :</Label>
-              <Input id="phone" type="tel" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Input 
+                id="phone" 
+                type="tel" 
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+              />
             </div>
 
             <div className="flex items-center gap-4">
@@ -179,22 +335,42 @@ const NewProfile = () => {
 
             <div className="flex items-center gap-4">
               <Label htmlFor="weight" className="text-foreground font-normal text-lg w-32">Weight :</Label>
-              <Input id="weight" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Input 
+                id="weight" 
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+              />
             </div>
 
             <div className="flex items-center gap-4">
               <Label htmlFor="blood-pressure" className="text-foreground font-normal text-lg w-32">B. Pressure :</Label>
-              <Input id="blood-pressure" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Input 
+                id="blood-pressure" 
+                value={bloodPressure}
+                onChange={(e) => setBloodPressure(e.target.value)}
+                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+              />
             </div>
 
             <div className="flex items-center gap-4">
               <Label htmlFor="blood-glucose" className="text-foreground font-normal text-lg w-32">B. Glucose :</Label>
-              <Input id="blood-glucose" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Input 
+                id="blood-glucose" 
+                value={bloodGlucose}
+                onChange={(e) => setBloodGlucose(e.target.value)}
+                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+              />
             </div>
 
             <div className="md:col-span-2 flex items-center gap-4">
               <Label htmlFor="allergies" className="text-foreground font-normal text-lg w-32">Allergies :</Label>
-              <Input id="allergies" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Input 
+                id="allergies" 
+                value={allergies}
+                onChange={(e) => setAllergies(e.target.value)}
+                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+              />
             </div>
           </div>
         </div>
@@ -205,17 +381,32 @@ const NewProfile = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-4">
             <div className="flex items-center gap-4">
               <Label htmlFor="insurer" className="text-foreground font-normal text-lg w-32">Insurer :</Label>
-              <Input id="insurer" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Input 
+                id="insurer" 
+                value={insurer}
+                onChange={(e) => setInsurer(e.target.value)}
+                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+              />
             </div>
 
             <div className="flex items-center gap-4">
               <Label htmlFor="policy-no" className="text-foreground font-normal text-lg w-32">Policy No. :</Label>
-              <Input id="policy-no" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Input 
+                id="policy-no" 
+                value={policyNo}
+                onChange={(e) => setPolicyNo(e.target.value)}
+                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+              />
             </div>
 
             <div className="flex items-center gap-4">
               <Label htmlFor="type-of-plan" className="text-foreground font-normal text-lg w-32">Type of Plan :</Label>
-              <Input id="type-of-plan" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Input 
+                id="type-of-plan" 
+                value={typeOfPlan}
+                onChange={(e) => setTypeOfPlan(e.target.value)}
+                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+              />
             </div>
 
             <div className="flex items-center gap-4">
@@ -247,12 +438,22 @@ const NewProfile = () => {
 
             <div className="flex items-center gap-4">
               <Label htmlFor="rm-name" className="text-foreground font-normal text-lg w-32">R. M Name :</Label>
-              <Input id="rm-name" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Input 
+                id="rm-name" 
+                value={rmName}
+                onChange={(e) => setRmName(e.target.value)}
+                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+              />
             </div>
 
             <div className="flex items-center gap-4">
               <Label htmlFor="rm-no" className="text-foreground font-normal text-lg w-32">R. M. No. :</Label>
-              <Input id="rm-no" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Input 
+                id="rm-no" 
+                value={rmNo}
+                onChange={(e) => setRmNo(e.target.value)}
+                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+              />
             </div>
           </div>
         </div>
@@ -270,9 +471,10 @@ const NewProfile = () => {
           <Button 
             size="lg" 
             onClick={handleSave}
+            disabled={isSubmitting}
             className="w-full bg-accent hover:bg-accent/90 text-accent-foreground uppercase font-bold text-lg py-8 rounded-none"
           >
-            Save
+            {isSubmitting ? "Saving..." : "Save"}
           </Button>
         </div>
       </div>

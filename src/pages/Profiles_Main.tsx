@@ -1,20 +1,58 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import careBagLogo from "@/assets/carebag-logo.png";
 import { Plus, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 const Profiles_Main = () => {
   const navigate = useNavigate();
-  // Mock profiles - in real app, this would come from backend
-  const [profiles, setProfiles] = useState([]);
+  const { toast } = useToast();
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProfiles();
+  }, []);
+
+  const fetchProfiles = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setProfiles(data || []);
+    } catch (error: any) {
+      console.error('Error fetching profiles:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load profiles",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreateProfile = () => {
     navigate("/new-profile");
   };
 
-  const handleSelectProfile = (profileId: number) => {
+  const handleSelectProfile = (profileId: string) => {
     // TODO: Load selected profile and navigate to main app
     console.log("Selected profile:", profileId);
   };
@@ -39,11 +77,11 @@ const Profiles_Main = () => {
 
         <div className="w-full max-w-2xl space-y-6">
           <h2 className="text-center text-2xl font-semibold text-foreground">
-            Select a Profile or Create a New One
+            {loading ? "Loading profiles..." : "Select a Profile or Create a New One"}
           </h2>
 
           {/* Existing Profiles */}
-          {profiles.length > 0 && (
+          {!loading && profiles.length > 0 && (
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-muted-foreground">Your Profiles</h3>
               <div className="grid gap-4 md:grid-cols-2">
@@ -54,12 +92,27 @@ const Profiles_Main = () => {
                     onClick={() => handleSelectProfile(profile.id)}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                        <User className="h-6 w-6 text-primary" />
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-primary bg-background overflow-hidden">
+                        {profile.profile_photo_url ? (
+                          <img 
+                            src={profile.profile_photo_url} 
+                            alt={profile.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-8 w-8 text-primary" />
+                        )}
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-foreground">{profile.name}</h4>
-                        <p className="text-sm text-muted-foreground">{profile.type}</p>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-foreground text-lg">{profile.name}</h4>
+                        {profile.relation && (
+                          <p className="text-sm text-muted-foreground">{profile.relation}</p>
+                        )}
+                        {profile.expiry_date && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Insurance expires: {format(new Date(profile.expiry_date), 'PP')}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </Card>
