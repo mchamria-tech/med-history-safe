@@ -50,13 +50,32 @@ const ProfileView = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [familyMembersCount, setFamilyMembersCount] = useState(0);
 
   useEffect(() => {
     if (profileId) {
       fetchProfile();
       fetchDocuments();
+      fetchFamilyMembersCount();
     }
   }, [profileId]);
+
+  const fetchFamilyMembersCount = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { count, error } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setFamilyMembersCount(count || 0);
+    } catch (error: any) {
+      console.error('Error fetching family members count:', error);
+    }
+  };
 
   const fetchDocuments = async () => {
     try {
@@ -183,6 +202,17 @@ const ProfileView = () => {
     doc.document_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const calculateDaysSinceLastDocument = () => {
+    if (documents.length === 0) return 0;
+    
+    const mostRecentDoc = documents.reduce((latest, current) => {
+      return new Date(current.document_date) > new Date(latest.document_date) ? current : latest;
+    });
+    
+    const daysDiff = Math.floor((new Date().getTime() - new Date(mostRecentDoc.document_date).getTime()) / (1000 * 60 * 60 * 24));
+    return daysDiff;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -210,6 +240,22 @@ const ProfileView = () => {
           {profile.relation && (
             <p className="text-muted-foreground">Relation: {profile.relation}</p>
           )}
+        </div>
+
+        {/* Statistics */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-card rounded-lg p-6 border flex flex-col items-center">
+            <p className="text-4xl font-bold text-primary">{documents.length}</p>
+            <p className="text-sm text-muted-foreground mt-2">Documents</p>
+          </div>
+          <div className="bg-card rounded-lg p-6 border flex flex-col items-center">
+            <p className="text-4xl font-bold text-primary">{familyMembersCount}</p>
+            <p className="text-sm text-muted-foreground mt-2">Family Members</p>
+          </div>
+          <div className="bg-card rounded-lg p-6 border flex flex-col items-center">
+            <p className="text-4xl font-bold text-primary">{calculateDaysSinceLastDocument()}</p>
+            <p className="text-sm text-muted-foreground mt-2">Days Healthy</p>
+          </div>
         </div>
 
         {/* Personal Details */}
