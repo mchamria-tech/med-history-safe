@@ -55,42 +55,42 @@ const NewProfile = () => {
       </header>
 
       {/* Main Content */}
-      <div className="p-6 space-y-8">
+      <div className="p-6 space-y-10 max-w-6xl mx-auto">
         {/* Section 1: Basic Info with Photo */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left side - Form fields */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <Label htmlFor="name" className="text-foreground font-medium">Name:</Label>
-              <Input id="name" className="mt-1 bg-muted/50 border-muted" />
+              <Label htmlFor="name" className="text-foreground font-medium text-base">Name:</Label>
+              <Input id="name" className="mt-2 bg-card border-border" />
             </div>
 
             <div>
-              <Label className="text-foreground font-medium">Gender:</Label>
-              <RadioGroup value={gender} onValueChange={setGender} className="flex gap-4 mt-1">
+              <Label className="text-foreground font-medium text-base">Gender:</Label>
+              <RadioGroup value={gender} onValueChange={setGender} className="flex gap-6 mt-2">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="male" id="male" />
-                  <Label htmlFor="male" className="font-normal cursor-pointer">Male</Label>
+                  <Label htmlFor="male" className="font-normal cursor-pointer text-foreground">Male</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="female" id="female" />
-                  <Label htmlFor="female" className="font-normal cursor-pointer">Female</Label>
+                  <Label htmlFor="female" className="font-normal cursor-pointer text-foreground">Female</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="other" id="other" />
-                  <Label htmlFor="other" className="font-normal cursor-pointer">Other</Label>
+                  <Label htmlFor="other" className="font-normal cursor-pointer text-foreground">Other</Label>
                 </div>
               </RadioGroup>
             </div>
 
             <div>
-              <Label className="text-foreground font-medium">D.O.B:</Label>
+              <Label className="text-foreground font-medium text-base">D.O.B:</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal mt-1 bg-muted/50 border-muted hover:bg-muted/70",
+                      "w-full justify-start text-left font-normal mt-2 bg-card border-border hover:bg-muted",
                       !dateOfBirth && "text-muted-foreground"
                     )}
                   >
@@ -111,11 +111,11 @@ const NewProfile = () => {
             </div>
 
             <div>
-              <Label htmlFor="relation" className="text-foreground font-medium">Relation:</Label>
+              <Label htmlFor="relation" className="text-foreground font-medium text-base">Relation:</Label>
               <Input 
                 id="relation" 
                 placeholder="If Primary, leave blank" 
-                className="mt-1 bg-muted/50 border-muted placeholder:text-muted-foreground/70" 
+                className="mt-2 bg-card border-border placeholder:text-muted-foreground" 
               />
             </div>
           </div>
@@ -132,12 +132,12 @@ const NewProfile = () => {
               />
               <label
                 htmlFor="photo-upload"
-                className="flex items-center justify-center w-48 h-48 rounded-full border-4 border-primary/20 bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors relative overflow-hidden"
+                className="flex items-center justify-center w-52 h-52 rounded-full border-4 border-primary bg-background cursor-pointer hover:bg-muted/30 transition-colors relative overflow-hidden"
               >
                 {profilePhoto ? (
                   <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <Plus className="w-12 h-12 text-foreground" />
+                  <Plus className="w-16 h-16 text-muted-foreground" />
                 )}
               </label>
             </div>
@@ -146,72 +146,72 @@ const NewProfile = () => {
 
         {/* Section 2: Personal Details */}
         <div>
-          <h2 className="text-xl font-semibold text-foreground text-center mb-6">Personal Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h2 className="text-2xl font-semibold text-foreground text-center mb-8">Personal Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             <div>
-              <Label htmlFor="email" className="text-foreground font-medium">Email:</Label>
-              <Input id="email" type="email" className="mt-1 bg-muted/50 border-muted" />
+              <Label htmlFor="email" className="text-foreground font-medium text-base">Email:</Label>
+              <Input id="email" type="email" className="mt-2 bg-card border-border" />
             </div>
 
             <div>
-              <Label htmlFor="phone" className="text-foreground font-medium">Phone:</Label>
-              <Input id="phone" type="tel" className="mt-1 bg-muted/50 border-muted" />
+              <Label htmlFor="phone" className="text-foreground font-medium text-base">Phone:</Label>
+              <Input id="phone" type="tel" className="mt-2 bg-card border-border" />
             </div>
 
             <div>
-              <Label htmlFor="height" className="text-foreground font-medium">Height:</Label>
-              <Input id="height" className="mt-1 bg-muted/50 border-muted" />
+              <Label htmlFor="height" className="text-foreground font-medium text-base">Height:</Label>
+              <Input id="height" className="mt-2 bg-card border-border" />
             </div>
 
             <div>
-              <Label htmlFor="weight" className="text-foreground font-medium">Weight:</Label>
-              <Input id="weight" className="mt-1 bg-muted/50 border-muted" />
+              <Label htmlFor="weight" className="text-foreground font-medium text-base">Weight:</Label>
+              <Input id="weight" className="mt-2 bg-card border-border" />
             </div>
 
             <div>
-              <Label htmlFor="blood-pressure" className="text-foreground font-medium">B. Pressure:</Label>
-              <Input id="blood-pressure" className="mt-1 bg-muted/50 border-muted" />
+              <Label htmlFor="blood-pressure" className="text-foreground font-medium text-base">B. Pressure:</Label>
+              <Input id="blood-pressure" className="mt-2 bg-card border-border" />
             </div>
 
             <div>
-              <Label htmlFor="blood-glucose" className="text-foreground font-medium">B. Glucose:</Label>
-              <Input id="blood-glucose" className="mt-1 bg-muted/50 border-muted" />
+              <Label htmlFor="blood-glucose" className="text-foreground font-medium text-base">B. Glucose:</Label>
+              <Input id="blood-glucose" className="mt-2 bg-card border-border" />
             </div>
 
             <div className="md:col-span-2">
-              <Label htmlFor="allergies" className="text-foreground font-medium">Allergies:</Label>
-              <Input id="allergies" className="mt-1 bg-muted/50 border-muted" />
+              <Label htmlFor="allergies" className="text-foreground font-medium text-base">Allergies:</Label>
+              <Input id="allergies" className="mt-2 bg-card border-border" />
             </div>
           </div>
         </div>
 
         {/* Section 3: Medical Insurance Details */}
         <div>
-          <h2 className="text-xl font-semibold text-foreground text-center mb-6">Medical Insurance Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h2 className="text-2xl font-semibold text-foreground text-center mb-8">Medical Insurance Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             <div>
-              <Label htmlFor="insurer" className="text-foreground font-medium">Insurer:</Label>
-              <Input id="insurer" className="mt-1 bg-muted/50 border-muted" />
+              <Label htmlFor="insurer" className="text-foreground font-medium text-base">Insurer:</Label>
+              <Input id="insurer" className="mt-2 bg-card border-border" />
             </div>
 
             <div>
-              <Label htmlFor="policy-no" className="text-foreground font-medium">Policy No.:</Label>
-              <Input id="policy-no" className="mt-1 bg-muted/50 border-muted" />
+              <Label htmlFor="policy-no" className="text-foreground font-medium text-base">Policy No.:</Label>
+              <Input id="policy-no" className="mt-2 bg-card border-border" />
             </div>
 
             <div>
-              <Label htmlFor="type-of-plan" className="text-foreground font-medium">Type of Plan:</Label>
-              <Input id="type-of-plan" className="mt-1 bg-muted/50 border-muted" />
+              <Label htmlFor="type-of-plan" className="text-foreground font-medium text-base">Type of Plan:</Label>
+              <Input id="type-of-plan" className="mt-2 bg-card border-border" />
             </div>
 
             <div>
-              <Label className="text-foreground font-medium">Expiry:</Label>
+              <Label className="text-foreground font-medium text-base">Expiry:</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal mt-1 bg-muted/50 border-muted hover:bg-muted/70",
+                      "w-full justify-start text-left font-normal mt-2 bg-card border-border hover:bg-muted",
                       !expiryDate && "text-muted-foreground"
                     )}
                   >
@@ -232,31 +232,31 @@ const NewProfile = () => {
             </div>
 
             <div>
-              <Label htmlFor="rm-name" className="text-foreground font-medium">R. M Name:</Label>
-              <Input id="rm-name" className="mt-1 bg-muted/50 border-muted" />
+              <Label htmlFor="rm-name" className="text-foreground font-medium text-base">R. M Name:</Label>
+              <Input id="rm-name" className="mt-2 bg-card border-border" />
             </div>
 
             <div>
-              <Label htmlFor="rm-no" className="text-foreground font-medium">R. M. No.:</Label>
-              <Input id="rm-no" className="mt-1 bg-muted/50 border-muted" />
+              <Label htmlFor="rm-no" className="text-foreground font-medium text-base">R. M. No.:</Label>
+              <Input id="rm-no" className="mt-2 bg-card border-border" />
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-4 pt-4">
+        <div className="grid grid-cols-2 gap-6 pt-6 max-w-2xl mx-auto">
           <Button 
             variant="secondary" 
             size="lg" 
             onClick={handleReset}
-            className="w-full uppercase font-semibold"
+            className="w-full uppercase font-semibold text-base py-6"
           >
             Reset Details
           </Button>
           <Button 
             size="lg" 
             onClick={handleSave}
-            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground uppercase font-semibold"
+            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground uppercase font-semibold text-base py-6"
           >
             Save
           </Button>
