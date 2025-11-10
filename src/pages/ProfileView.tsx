@@ -80,10 +80,10 @@ const ProfileView = () => {
   };
 
   const handleDocumentUpload = async () => {
-    if (!documentFile || !documentName || !documentDate || !profileId) {
+    if (!documentFile || !documentName || !documentDate || !profileId || !documentType.trim()) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields including at least one search keyword",
         variant: "destructive",
       });
       return;
@@ -376,13 +376,14 @@ const ProfileView = () => {
               </Popover>
             </div>
             <div>
-              <Label htmlFor="doc-type">Document Type (Optional)</Label>
+              <Label htmlFor="doc-type">Search Keywords (At least One)</Label>
               <Input
                 id="doc-type"
                 value={documentType}
                 onChange={(e) => setDocumentType(e.target.value)}
-                placeholder="e.g., Medical Report, Insurance"
+                placeholder="E.g. Doc Name, illness, medicine"
                 className="bg-[hsl(190,50%,85%)]"
+                required
               />
             </div>
           </div>
