@@ -6,10 +6,7 @@ import { Plus, User } from "lucide-react";
 
 const Profiles_Main = () => {
   // Mock profiles - in real app, this would come from backend
-  const [profiles, setProfiles] = useState([
-    { id: 1, name: "John Doe", type: "Patient" },
-    { id: 2, name: "Jane Smith", type: "Caregiver" }
-  ]);
+  const [profiles, setProfiles] = useState([]);
 
   const handleCreateProfile = () => {
     // TODO: Navigate to create profile page
