@@ -48,12 +48,30 @@ const ProfileView = () => {
   const [documentDate, setDocumentDate] = useState<Date>();
   const [documentType, setDocumentType] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (profileId) {
       fetchProfile();
+      fetchDocuments();
     }
   }, [profileId]);
+
+  const fetchDocuments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('profile_id', profileId)
+        .order('document_date', { ascending: false });
+
+      if (error) throw error;
+      setDocuments(data || []);
+    } catch (error: any) {
+      console.error('Error fetching documents:', error);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -128,6 +146,9 @@ const ProfileView = () => {
         description: "Document uploaded successfully",
       });
 
+      // Refresh documents list
+      fetchDocuments();
+
       setShowUploadDialog(false);
       setDocumentFile(null);
       setDocumentName("");
@@ -156,6 +177,11 @@ const ProfileView = () => {
   if (!profile) {
     return null;
   }
+
+  const filteredDocuments = documents.filter(doc => 
+    doc.document_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doc.document_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -303,6 +329,44 @@ const ProfileView = () => {
           </Button>
         </div>
 
+        {/* Search Documents Section */}
+        <div className="bg-card rounded-lg p-6 border">
+          <h3 className="text-xl font-semibold text-foreground mb-4">Documents</h3>
+          <div className="mb-4">
+            <Input
+              placeholder="Search documents by keywords or name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bg-[hsl(190,50%,85%)]"
+            />
+          </div>
+          <div className="space-y-2">
+            {filteredDocuments.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">
+                {searchTerm ? "No documents found matching your search" : "No documents uploaded yet"}
+              </p>
+            ) : (
+              filteredDocuments.map((doc) => (
+                <div key={doc.id} className="p-4 bg-background rounded-md border flex justify-between items-center">
+                  <div>
+                    <p className="font-medium text-foreground">{doc.document_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Keywords: {doc.document_type} • Date: {format(new Date(doc.document_date), 'PPP')}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(doc.document_url, '_blank')}
+                  >
+                    View
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex gap-4 justify-center pt-4">
           <Button
@@ -311,7 +375,7 @@ const ProfileView = () => {
             size="lg"
             className="min-w-[200px]"
           >
-            View Documents
+            View All Documents
           </Button>
           <Button
             onClick={() => navigate("/dashboard")}
