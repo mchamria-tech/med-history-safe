@@ -88,7 +88,9 @@ const NewProfile = () => {
                     selected={dateOfBirth}
                     onSelect={setDateOfBirth}
                     initialFocus
-                    className="pointer-events-auto"
+                    captionLayout="dropdown-buttons"
+                    fromYear={1920}
+                    toYear={new Date().getFullYear()}
                   />
                 </PopoverContent>
               </Popover>
