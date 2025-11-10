@@ -53,7 +53,16 @@ const Profiles_Main = () => {
 
       if (error) throw error;
 
-      setProfiles(data || []);
+      // Sort profiles to always show primary account holder first (relation = "Self")
+      const sortedProfiles = (data || []).sort((a, b) => {
+        const aIsPrimary = a.relation?.toLowerCase() === 'self';
+        const bIsPrimary = b.relation?.toLowerCase() === 'self';
+        if (aIsPrimary && !bIsPrimary) return -1;
+        if (!aIsPrimary && bIsPrimary) return 1;
+        return 0;
+      });
+
+      setProfiles(sortedProfiles);
     } catch (error: any) {
       console.error('Error fetching profiles:', error);
       toast({
