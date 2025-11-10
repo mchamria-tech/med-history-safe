@@ -440,7 +440,7 @@ const NewProfile = () => {
             </div>
 
             <div className="flex items-center gap-4">
-              <Label htmlFor="blood-glucose" className="text-foreground font-normal text-lg w-32">B. Glucose :</Label>
+              <Label htmlFor="blood-glucose" className="text-foreground font-normal text-lg w-32">Blood Group :</Label>
               <Input 
                 id="blood-glucose" 
                 value={bloodGlucose}
