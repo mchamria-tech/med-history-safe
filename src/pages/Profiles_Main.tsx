@@ -3,16 +3,34 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import careBagLogo from "@/assets/carebag-logo.png";
-import { Plus, User } from "lucide-react";
+import { Plus, User, Edit, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Profiles_Main = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProfiles();
@@ -55,6 +73,61 @@ const Profiles_Main = () => {
   const handleSelectProfile = (profileId: string) => {
     // TODO: Load selected profile and navigate to main app
     console.log("Selected profile:", profileId);
+  };
+
+  const handleEditProfile = (e: React.MouseEvent, profileId: string) => {
+    e.stopPropagation();
+    navigate(`/new-profile?edit=${profileId}`);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, profileId: string) => {
+    e.stopPropagation();
+    setProfileToDelete(profileId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!profileToDelete) return;
+
+    try {
+      const profile = profiles.find(p => p.id === profileToDelete);
+      
+      // Delete profile photo from storage if it exists
+      if (profile?.profile_photo_url) {
+        const urlParts = profile.profile_photo_url.split('/');
+        const fileName = urlParts.slice(-2).join('/'); // Get user_id/filename
+        
+        await supabase.storage
+          .from('profile-photos')
+          .remove([fileName]);
+      }
+
+      // Delete profile from database
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', profileToDelete);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Profile deleted successfully",
+      });
+
+      // Refresh profiles list
+      fetchProfiles();
+    } catch (error: any) {
+      console.error('Error deleting profile:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete profile",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setProfileToDelete(null);
+    }
   };
 
   return (
@@ -114,6 +187,26 @@ const Profiles_Main = () => {
                           </p>
                         )}
                       </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => handleEditProfile(e, profile.id)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={(e) => handleDeleteClick(e, profile.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Profile
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </Card>
                 ))}
@@ -134,6 +227,24 @@ const Profiles_Main = () => {
           </div>
         </div>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Profile</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this profile? This will remove all saved data except your login credentials. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Menu, MoreVertical, Calendar, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,12 +23,15 @@ const profileSchema = z.object({
 const NewProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const editProfileId = searchParams.get('edit');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [dateOfBirth, setDateOfBirth] = useState<Date>();
   const [expiryDate, setExpiryDate] = useState<Date>();
   const [height, setHeight] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Form fields
   const [name, setName] = useState("");
@@ -45,6 +48,64 @@ const NewProfile = () => {
   const [typeOfPlan, setTypeOfPlan] = useState("");
   const [rmName, setRmName] = useState("");
   const [rmNo, setRmNo] = useState("");
+
+  // Load profile data if editing
+  useEffect(() => {
+    if (editProfileId) {
+      loadProfileData(editProfileId);
+    }
+  }, [editProfileId]);
+
+  const loadProfileData = async (profileId: string) => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', profileId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setName(data.name || "");
+        setGender(data.gender || "");
+        setRelation(data.relation || "");
+        setEmail(data.email || "");
+        setPhone(data.phone || "");
+        setHeight(data.height || "");
+        setWeight(data.weight || "");
+        setBloodPressure(data.blood_pressure || "");
+        setBloodGlucose(data.blood_glucose || "");
+        setAllergies(data.allergies || "");
+        setInsurer(data.insurer || "");
+        setPolicyNo(data.policy_no || "");
+        setTypeOfPlan(data.type_of_plan || "");
+        setRmName(data.rm_name || "");
+        setRmNo(data.rm_no || "");
+        
+        if (data.date_of_birth) {
+          setDateOfBirth(new Date(data.date_of_birth));
+        }
+        if (data.expiry_date) {
+          setExpiryDate(new Date(data.expiry_date));
+        }
+        if (data.profile_photo_url) {
+          setProfilePhoto(data.profile_photo_url);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error loading profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile data",
+        variant: "destructive",
+      });
+      navigate("/dashboard");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Generate height options from 4'0" to 7'0" (122 cm to 213 cm)
   const heightOptions = [];
@@ -121,9 +182,9 @@ const NewProfile = () => {
         return;
       }
 
-      let profilePhotoUrl = null;
+      let profilePhotoUrl = profilePhoto;
 
-      // Upload profile photo if exists
+      // Upload new profile photo if a new file was selected
       if (photoFile) {
         const fileExt = photoFile.name.split('.').pop();
         const fileName = `${user.id}/${Date.now()}.${fileExt}`;
@@ -141,37 +202,54 @@ const NewProfile = () => {
         profilePhotoUrl = publicUrl;
       }
 
-      // Insert profile data
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: user.id,
-          name: name.trim(),
-          gender: gender || null,
-          date_of_birth: dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : null,
-          relation: relation.trim() || null,
-          email: email.trim() || null,
-          phone: phone.trim() || null,
-          height: height || null,
-          weight: weight.trim() || null,
-          blood_pressure: bloodPressure.trim() || null,
-          blood_glucose: bloodGlucose.trim() || null,
-          allergies: allergies.trim() || null,
-          insurer: insurer.trim() || null,
-          policy_no: policyNo.trim() || null,
-          type_of_plan: typeOfPlan.trim() || null,
-          expiry_date: expiryDate ? format(expiryDate, 'yyyy-MM-dd') : null,
-          rm_name: rmName.trim() || null,
-          rm_no: rmNo.trim() || null,
-          profile_photo_url: profilePhotoUrl,
+      const profileData = {
+        user_id: user.id,
+        name: name.trim(),
+        gender: gender || null,
+        date_of_birth: dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : null,
+        relation: relation.trim() || null,
+        email: email.trim() || null,
+        phone: phone.trim() || null,
+        height: height || null,
+        weight: weight.trim() || null,
+        blood_pressure: bloodPressure.trim() || null,
+        blood_glucose: bloodGlucose.trim() || null,
+        allergies: allergies.trim() || null,
+        insurer: insurer.trim() || null,
+        policy_no: policyNo.trim() || null,
+        type_of_plan: typeOfPlan.trim() || null,
+        expiry_date: expiryDate ? format(expiryDate, 'yyyy-MM-dd') : null,
+        rm_name: rmName.trim() || null,
+        rm_no: rmNo.trim() || null,
+        profile_photo_url: profilePhotoUrl,
+      };
+
+      if (editProfileId) {
+        // Update existing profile
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update(profileData)
+          .eq('id', editProfileId);
+
+        if (updateError) throw updateError;
+
+        toast({
+          title: "Success",
+          description: "Profile updated successfully",
         });
+      } else {
+        // Insert new profile
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert(profileData);
 
-      if (insertError) throw insertError;
+        if (insertError) throw insertError;
 
-      toast({
-        title: "Success",
-        description: "Profile created successfully",
-      });
+        toast({
+          title: "Success",
+          description: "Profile created successfully",
+        });
+      }
 
       navigate("/dashboard");
     } catch (error: any) {
@@ -193,7 +271,9 @@ const NewProfile = () => {
         <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
           <Menu className="h-6 w-6" />
         </Button>
-        <h1 className="text-xl font-semibold">Add New Family Member</h1>
+        <h1 className="text-xl font-semibold">
+          {editProfileId ? "Edit Profile" : "Add New Family Member"}
+        </h1>
         <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
           <MoreVertical className="h-6 w-6" />
         </Button>
@@ -201,6 +281,12 @@ const NewProfile = () => {
 
       {/* Main Content */}
       <div className="p-6 space-y-8 max-w-4xl mx-auto">
+        {isLoading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Loading profile data...</p>
+          </div>
+        ) : (
+          <>
         {/* Section 1: Basic Info with Photo */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr,auto] gap-8 items-start">
           {/* Left side - Form fields */}
@@ -477,6 +563,8 @@ const NewProfile = () => {
             {isSubmitting ? "Saving..." : "Save"}
           </Button>
         </div>
+        </>
+        )}
       </div>
     </div>
   );
