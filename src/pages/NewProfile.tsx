@@ -4,6 +4,7 @@ import { Menu, MoreVertical, Calendar, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -14,6 +15,21 @@ const NewProfile = () => {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [dateOfBirth, setDateOfBirth] = useState<Date>();
   const [expiryDate, setExpiryDate] = useState<Date>();
+  const [height, setHeight] = useState<string>("");
+
+  // Generate height options from 4'0" to 7'0" (122 cm to 213 cm)
+  const heightOptions = [];
+  for (let feet = 4; feet <= 7; feet++) {
+    for (let inches = 0; inches < 12; inches++) {
+      if (feet === 7 && inches > 0) break; // Stop at 7'0"
+      const totalInches = feet * 12 + inches;
+      const cm = Math.round(totalInches * 2.54);
+      heightOptions.push({
+        value: `${feet}'${inches}"`,
+        label: `${feet}'${inches}" (${cm} cm)`,
+      });
+    }
+  }
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -31,6 +47,7 @@ const NewProfile = () => {
     setProfilePhoto(null);
     setDateOfBirth(undefined);
     setExpiryDate(undefined);
+    setHeight("");
   };
 
   const handleSave = () => {
@@ -146,7 +163,18 @@ const NewProfile = () => {
 
             <div className="flex items-center gap-4">
               <Label htmlFor="height" className="text-foreground font-normal text-lg w-32">Height :</Label>
-              <Input id="height" className="flex-1 bg-[hsl(190,50%,85%)] border-border" />
+              <Select value={height} onValueChange={setHeight}>
+                <SelectTrigger className="flex-1 bg-[hsl(190,50%,85%)] border-border">
+                  <SelectValue placeholder="Select height" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px] bg-popover z-50">
+                  {heightOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-center gap-4">
