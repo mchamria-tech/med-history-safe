@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Menu, MoreVertical, Download, Trash2 } from "lucide-react";
+import { Menu, MoreVertical, Download, Trash2, ArrowLeft, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,9 +63,42 @@ const ViewDocuments = () => {
     }
   };
 
+  const getSignedUrl = async (documentUrl: string) => {
+    try {
+      // Extract the file path from the URL
+      const urlParts = documentUrl.split('/');
+      const filePath = urlParts.slice(-3).join('/'); // user_id/profile_id/filename
+      
+      const { data, error } = await supabase.storage
+        .from('profile-documents')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (error) throw error;
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Error getting signed URL:', error);
+      throw error;
+    }
+  };
+
+  const handleView = async (documentUrl: string) => {
+    try {
+      const signedUrl = await getSignedUrl(documentUrl);
+      window.open(signedUrl, '_blank');
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      toast({
+        title: "Error",
+        description: "Failed to view document",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDownload = async (documentUrl: string, documentName: string) => {
     try {
-      const response = await fetch(documentUrl);
+      const signedUrl = await getSignedUrl(documentUrl);
+      const response = await fetch(signedUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -130,8 +163,13 @@ const ViewDocuments = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-primary text-primary-foreground p-4 flex items-center justify-between">
-        <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
-          <Menu className="h-6 w-6" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-primary-foreground hover:bg-primary/80"
+          onClick={() => navigate(`/profile/${profileId}`)}
+        >
+          <ArrowLeft className="h-6 w-6" />
         </Button>
         <h1 className="text-xl font-semibold">Documents</h1>
         <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
@@ -165,6 +203,13 @@ const ViewDocuments = () => {
                     </p>
                   </div>
                   <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleView(doc.document_url)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="outline"
                       size="icon"

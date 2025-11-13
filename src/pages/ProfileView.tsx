@@ -142,18 +142,14 @@ const ProfileView = () => {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-documents')
-        .getPublicUrl(fileName);
-
-      // Save document metadata to database
+      // Save document metadata to database with file path
       const { error: dbError } = await supabase
         .from('documents')
         .insert({
           profile_id: profileId,
           user_id: user.id,
           document_name: documentName,
-          document_url: publicUrl,
+          document_url: fileName, // Store the file path instead of public URL
           document_date: format(documentDate, 'yyyy-MM-dd'),
           document_type: documentType || null,
         });
@@ -408,7 +404,18 @@ const ProfileView = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => window.open(doc.document_url, '_blank')}
+                    onClick={async () => {
+                      try {
+                        const { data, error } = await supabase.storage
+                          .from('profile-documents')
+                          .createSignedUrl(doc.document_url, 3600);
+                        
+                        if (error) throw error;
+                        window.open(data.signedUrl, '_blank');
+                      } catch (error) {
+                        console.error('Error viewing document:', error);
+                      }
+                    }}
                   >
                     View
                   </Button>
