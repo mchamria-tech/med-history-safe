@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Menu, MoreVertical, Calendar, Plus } from "lucide-react";
+import { Menu, MoreVertical, Calendar, Plus, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -268,8 +268,13 @@ const NewProfile = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-primary text-primary-foreground p-4 flex items-center justify-between">
-        <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
-          <Menu className="h-6 w-6" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-primary-foreground hover:bg-primary/80"
+          onClick={() => navigate("/dashboard")}
+        >
+          <ArrowLeft className="h-6 w-6" />
         </Button>
         <h1 className="text-xl font-semibold">
           {editProfileId ? "Edit Profile" : "Add New Family Member"}
