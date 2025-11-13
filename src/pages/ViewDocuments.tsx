@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Menu, MoreVertical, Download, Trash2, ArrowLeft, Eye } from "lucide-react";
+import { Menu, MoreVertical, Download, Trash2, ArrowLeft, Eye, Printer, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,13 +65,10 @@ const ViewDocuments = () => {
 
   const getSignedUrl = async (documentUrl: string) => {
     try {
-      // Extract the file path from the URL
-      const urlParts = documentUrl.split('/');
-      const filePath = urlParts.slice(-3).join('/'); // user_id/profile_id/filename
-      
+      // documentUrl is already the file path (user_id/profile_id/filename)
       const { data, error } = await supabase.storage
         .from('profile-documents')
-        .createSignedUrl(filePath, 3600); // 1 hour expiry
+        .createSignedUrl(documentUrl, 3600); // 1 hour expiry
 
       if (error) throw error;
       return data.signedUrl;
@@ -115,6 +112,56 @@ const ViewDocuments = () => {
         description: "Failed to download document",
         variant: "destructive",
       });
+    }
+  };
+
+  const handlePrint = async (documentUrl: string) => {
+    try {
+      const signedUrl = await getSignedUrl(documentUrl);
+      const printWindow = window.open(signedUrl, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+    } catch (error) {
+      console.error('Error printing document:', error);
+      toast({
+        title: "Error",
+        description: "Failed to print document",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleShare = async (documentUrl: string, documentName: string) => {
+    try {
+      const signedUrl = await getSignedUrl(documentUrl);
+      
+      // Check if Web Share API is available
+      if (navigator.share) {
+        await navigator.share({
+          title: documentName,
+          text: `Check out this document: ${documentName}`,
+          url: signedUrl,
+        });
+      } else {
+        // Fallback: Copy link to clipboard
+        await navigator.clipboard.writeText(signedUrl);
+        toast({
+          title: "Link Copied",
+          description: "Document link copied to clipboard. You can now share it via email or WhatsApp.",
+        });
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('Error sharing document:', error);
+        toast({
+          title: "Error",
+          description: "Failed to share document",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -202,11 +249,12 @@ const ViewDocuments = () => {
                       Uploaded: {format(new Date(doc.uploaded_at), 'PPP')}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => handleView(doc.document_url)}
+                      title="View"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -214,13 +262,31 @@ const ViewDocuments = () => {
                       variant="outline"
                       size="icon"
                       onClick={() => handleDownload(doc.document_url, doc.document_name)}
+                      title="Download"
                     >
                       <Download className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="icon"
+                      onClick={() => handlePrint(doc.document_url)}
+                      title="Print"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleShare(doc.document_url, doc.document_name)}
+                      title="Share"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
                       onClick={() => setDeleteDocId(doc.id)}
+                      title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
