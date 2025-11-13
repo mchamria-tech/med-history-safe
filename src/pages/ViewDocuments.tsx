@@ -65,10 +65,19 @@ const ViewDocuments = () => {
 
   const getSignedUrl = async (documentUrl: string) => {
     try {
-      // documentUrl is already the file path (user_id/profile_id/filename)
+      let filePath = documentUrl;
+      
+      // Check if it's a full URL (old format) or just a path (new format)
+      if (documentUrl.includes('supabase.co')) {
+        // Extract the file path from the full URL
+        // URL format: https://.../storage/v1/object/public/profile-documents/user_id/profile_id/filename
+        const urlParts = documentUrl.split('/profile-documents/');
+        filePath = urlParts[1]; // Gets "user_id/profile_id/filename"
+      }
+      
       const { data, error } = await supabase.storage
         .from('profile-documents')
-        .createSignedUrl(documentUrl, 3600); // 1 hour expiry
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
 
       if (error) throw error;
       return data.signedUrl;
