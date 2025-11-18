@@ -22,6 +22,7 @@ interface SearchResult {
   id: string;
   document_name: string;
   document_url: string;
+  document_date: string;
   profile_id: string;
   profile_name: string;
   doctor_name: string | null;
@@ -132,6 +133,7 @@ const DocumentSearch = () => {
             id: doc.id,
             document_name: doc.document_name,
             document_url: doc.document_url,
+            document_date: doc.document_date,
             profile_id: doc.profile_id,
             profile_name: doc.profiles.name,
             doctor_name: doc.doctor_name,
@@ -305,23 +307,19 @@ const DocumentSearch = () => {
                   {groupedResults.fourMatches.map((result) => (
                     <Card key={result.id} className="p-4">
                       <div className="flex justify-between items-start">
-                        <div className="flex-1">
+                        <div className="flex-1 space-y-1">
                           <p className="font-semibold text-foreground">
                             {result.profile_name}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {result.document_name}
+                            Document Type: {result.document_name}
                           </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {result.matchedTags.map((tag, idx) => (
-                              <span
-                                key={idx}
-                                className="text-xs bg-primary/10 text-primary px-2 py-1 rounded"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Date: {new Date(result.document_date).toLocaleDateString()}
+                          </p>
+                          <p className="text-sm text-foreground mt-2">
+                            <span className="font-medium">Keywords:</span> {result.matchedTags.join(', ')}
+                          </p>
                         </div>
                         <div className="flex gap-2 ml-4">
                           <Button
@@ -355,23 +353,19 @@ const DocumentSearch = () => {
                   {groupedResults.threeMatches.map((result) => (
                     <Card key={result.id} className="p-4">
                       <div className="flex justify-between items-start">
-                        <div className="flex-1">
+                        <div className="flex-1 space-y-1">
                           <p className="font-semibold text-foreground">
                             {result.profile_name}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {result.document_name}
+                            Document Type: {result.document_name}
                           </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {result.matchedTags.map((tag, idx) => (
-                              <span
-                                key={idx}
-                                className="text-xs bg-primary/10 text-primary px-2 py-1 rounded"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Date: {new Date(result.document_date).toLocaleDateString()}
+                          </p>
+                          <p className="text-sm text-foreground mt-2">
+                            <span className="font-medium">Keywords:</span> {result.matchedTags.join(', ')}
+                          </p>
                         </div>
                         <div className="flex gap-2 ml-4">
                           <Button
@@ -405,23 +399,19 @@ const DocumentSearch = () => {
                   {groupedResults.twoMatches.map((result) => (
                     <Card key={result.id} className="p-4">
                       <div className="flex justify-between items-start">
-                        <div className="flex-1">
+                        <div className="flex-1 space-y-1">
                           <p className="font-semibold text-foreground">
                             {result.profile_name}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {result.document_name}
+                            Document Type: {result.document_name}
                           </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {result.matchedTags.map((tag, idx) => (
-                              <span
-                                key={idx}
-                                className="text-xs bg-primary/10 text-primary px-2 py-1 rounded"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Date: {new Date(result.document_date).toLocaleDateString()}
+                          </p>
+                          <p className="text-sm text-foreground mt-2">
+                            <span className="font-medium">Keywords:</span> {result.matchedTags.join(', ')}
+                          </p>
                         </div>
                         <div className="flex gap-2 ml-4">
                           <Button
@@ -455,23 +445,19 @@ const DocumentSearch = () => {
                   {groupedResults.oneMatch.map((result) => (
                     <Card key={result.id} className="p-4">
                       <div className="flex justify-between items-start">
-                        <div className="flex-1">
+                        <div className="flex-1 space-y-1">
                           <p className="font-semibold text-foreground">
                             {result.profile_name}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {result.document_name}
+                            Document Type: {result.document_name}
                           </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {result.matchedTags.map((tag, idx) => (
-                              <span
-                                key={idx}
-                                className="text-xs bg-primary/10 text-primary px-2 py-1 rounded"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Date: {new Date(result.document_date).toLocaleDateString()}
+                          </p>
+                          <p className="text-sm text-foreground mt-2">
+                            <span className="font-medium">Keywords:</span> {result.matchedTags.join(', ')}
+                          </p>
                         </div>
                         <div className="flex gap-2 ml-4">
                           <Button
