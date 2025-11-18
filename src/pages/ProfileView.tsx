@@ -70,6 +70,14 @@ const ProfileView = () => {
     getUser();
   }, []);
 
+  // Helper function to generate proper Supabase Storage URLs
+  const getDocumentUrl = (documentPath: string) => {
+    const { data } = supabase.storage
+      .from('profile-documents')
+      .getPublicUrl(documentPath);
+    return data.publicUrl;
+  };
+
   useEffect(() => {
     if (profileId) {
       fetchProfile();
@@ -533,7 +541,7 @@ const ProfileView = () => {
                       
                       if (popupPermission === 'granted') {
                         // Open directly if permission already granted
-                        window.open(doc.document_url, '_blank');
+                        window.open(getDocumentUrl(doc.document_url), '_blank');
                       } else if (!popupPermission) {
                         // Show permission dialog first time
                         setShowPopupPermission(true);
@@ -541,7 +549,7 @@ const ProfileView = () => {
                         sessionStorage.setItem('pending-document-url', doc.document_url);
                       } else {
                         // Permission denied, just open anyway
-                        window.open(doc.document_url, '_blank');
+                        window.open(getDocumentUrl(doc.document_url), '_blank');
                       }
                     }}
                   >
@@ -728,7 +736,7 @@ const ProfileView = () => {
                 localStorage.setItem('popup-permission', 'granted');
                 const pendingUrl = sessionStorage.getItem('pending-document-url');
                 if (pendingUrl) {
-                  window.open(pendingUrl, '_blank');
+                  window.open(getDocumentUrl(pendingUrl), '_blank');
                   sessionStorage.removeItem('pending-document-url');
                 }
               }}
