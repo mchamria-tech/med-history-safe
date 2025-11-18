@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import careBagLogo from "@/assets/carebag-logo.png";
-import { Plus, User, Edit, Trash2, Search } from "lucide-react";
+import { Plus, User, Edit, Trash2, Search, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -98,6 +98,27 @@ const Profiles_Main = () => {
     setDeleteDialogOpen(true);
   };
 
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+      
+      navigate("/login");
+    } catch (error: any) {
+      console.error('Error logging out:', error);
+      toast({
+        title: "Error",
+        description: "Failed to log out",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     if (!profileToDelete) return;
 
@@ -145,8 +166,17 @@ const Profiles_Main = () => {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
-      <header className="w-full bg-primary py-8 text-center">
+      <header className="w-full bg-primary py-8 text-center relative">
         <h1 className="text-4xl font-bold text-primary-foreground">Welcome to CareBag</h1>
+        <Button
+          onClick={handleLogout}
+          variant="ghost"
+          className="absolute top-4 right-4 text-primary-foreground hover:bg-primary-foreground/10"
+          size="sm"
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Logout
+        </Button>
       </header>
 
       {/* Main Content */}
