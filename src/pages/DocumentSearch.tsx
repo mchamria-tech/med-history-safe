@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, Trash2, Eye } from "lucide-react";
+import { ArrowLeft, FileText, Trash2, Eye, X } from "lucide-react";
+import { format } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -200,6 +201,17 @@ const DocumentSearch = () => {
     }
   };
 
+  const handleClearSearch = () => {
+    setResults([]);
+    setHasSearched(false);
+    setSearchParams({
+      doctorName: "",
+      ailment: "",
+      medicine: "",
+      other: "",
+    });
+  };
+
   const groupedResults = {
     fourMatches: results.filter((r) => r.matchCount === 4),
     threeMatches: results.filter((r) => r.matchCount === 3),
@@ -298,6 +310,17 @@ const DocumentSearch = () => {
 
         {hasSearched && results.length > 0 && (
           <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Search Results</h2>
+              <Button
+                variant="outline"
+                onClick={handleClearSearch}
+                className="flex items-center gap-2"
+              >
+                <X className="h-4 w-4" />
+                Clear Search
+              </Button>
+            </div>
             {groupedResults.fourMatches.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-3">
@@ -315,7 +338,7 @@ const DocumentSearch = () => {
                             Document Type: {result.document_name}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Date: {new Date(result.document_date).toLocaleDateString()}
+                            Date: {format(new Date(result.document_date), 'dd MMMM, yyyy')}
                           </p>
                           <p className="text-sm text-foreground mt-2">
                             <span className="font-medium">Keywords:</span> {result.matchedTags.join(', ')}
@@ -361,7 +384,7 @@ const DocumentSearch = () => {
                             Document Type: {result.document_name}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Date: {new Date(result.document_date).toLocaleDateString()}
+                            Date: {format(new Date(result.document_date), 'dd MMMM, yyyy')}
                           </p>
                           <p className="text-sm text-foreground mt-2">
                             <span className="font-medium">Keywords:</span> {result.matchedTags.join(', ')}
@@ -407,7 +430,7 @@ const DocumentSearch = () => {
                             Document Type: {result.document_name}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Date: {new Date(result.document_date).toLocaleDateString()}
+                            Date: {format(new Date(result.document_date), 'dd MMMM, yyyy')}
                           </p>
                           <p className="text-sm text-foreground mt-2">
                             <span className="font-medium">Keywords:</span> {result.matchedTags.join(', ')}
@@ -453,7 +476,7 @@ const DocumentSearch = () => {
                             Document Type: {result.document_name}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Date: {new Date(result.document_date).toLocaleDateString()}
+                            Date: {format(new Date(result.document_date), 'dd MMMM, yyyy')}
                           </p>
                           <p className="text-sm text-foreground mt-2">
                             <span className="font-medium">Keywords:</span> {result.matchedTags.join(', ')}
