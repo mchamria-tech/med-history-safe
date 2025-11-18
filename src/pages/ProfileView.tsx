@@ -49,6 +49,10 @@ const ProfileView = () => {
   const [documentName, setDocumentName] = useState("");
   const [documentDate, setDocumentDate] = useState<Date>();
   const [documentType, setDocumentType] = useState("");
+  const [doctorName, setDoctorName] = useState("");
+  const [ailment, setAilment] = useState("");
+  const [medicine, setMedicine] = useState("");
+  const [otherTags, setOtherTags] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -189,10 +193,10 @@ const ProfileView = () => {
   };
 
   const handleDocumentUpload = async () => {
-    if (!documentFile || !documentName || !documentDate || !profileId || !documentType.trim()) {
+    if (!documentFile || !documentName || !documentDate || !profileId) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields including at least one search keyword",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
@@ -224,6 +228,10 @@ const ProfileView = () => {
           document_url: fileName, // Store the file path instead of public URL
           document_date: format(documentDate, 'yyyy-MM-dd'),
           document_type: documentType || null,
+          doctor_name: doctorName || null,
+          ailment: ailment || null,
+          medicine: medicine || null,
+          other_tags: otherTags || null,
         });
 
       if (dbError) throw dbError;
@@ -241,6 +249,10 @@ const ProfileView = () => {
       setDocumentName("");
       setDocumentDate(undefined);
       setDocumentType("");
+      setDoctorName("");
+      setAilment("");
+      setMedicine("");
+      setOtherTags("");
     } catch (error: any) {
       console.error('Error uploading document:', error);
       toast({
@@ -592,14 +604,53 @@ const ProfileView = () => {
               </Popover>
             </div>
             <div>
-              <Label htmlFor="doc-type">Search Keywords (At least One)</Label>
+              <Label htmlFor="doc-type">Document Type (Optional)</Label>
               <Input
                 id="doc-type"
                 value={documentType}
                 onChange={(e) => setDocumentType(e.target.value)}
-                placeholder="E.g. Doc Name, illness, medicine"
+                placeholder="E.g. Lab Report, X-Ray"
                 className="bg-[hsl(190,50%,85%)]"
-                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="doctor-name">Doctor Name (Optional)</Label>
+              <Input
+                id="doctor-name"
+                value={doctorName}
+                onChange={(e) => setDoctorName(e.target.value)}
+                placeholder="E.g. Dr. Smith"
+                className="bg-[hsl(190,50%,85%)]"
+              />
+            </div>
+            <div>
+              <Label htmlFor="ailment">Ailment (Optional)</Label>
+              <Input
+                id="ailment"
+                value={ailment}
+                onChange={(e) => setAilment(e.target.value)}
+                placeholder="E.g. Migraine, Diabetes"
+                className="bg-[hsl(190,50%,85%)]"
+              />
+            </div>
+            <div>
+              <Label htmlFor="medicine">Medicine (Optional)</Label>
+              <Input
+                id="medicine"
+                value={medicine}
+                onChange={(e) => setMedicine(e.target.value)}
+                placeholder="E.g. Aspirin, Metformin"
+                className="bg-[hsl(190,50%,85%)]"
+              />
+            </div>
+            <div>
+              <Label htmlFor="other-tags">Other Tags (Optional)</Label>
+              <Input
+                id="other-tags"
+                value={otherTags}
+                onChange={(e) => setOtherTags(e.target.value)}
+                placeholder="E.g. Emergency, Follow-up"
+                className="bg-[hsl(190,50%,85%)]"
               />
             </div>
           </div>
