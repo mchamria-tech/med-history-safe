@@ -494,14 +494,27 @@ const ProfileView = () => {
                     size="sm"
                     onClick={async () => {
                       try {
+                        let filePath = doc.document_url;
+                        
+                        // Extract the file path if it's a full URL
+                        if (doc.document_url.includes('supabase.co')) {
+                          const urlParts = doc.document_url.split('/profile-documents/');
+                          filePath = urlParts[1];
+                        }
+                        
                         const { data, error } = await supabase.storage
                           .from('profile-documents')
-                          .createSignedUrl(doc.document_url, 3600);
+                          .createSignedUrl(filePath, 3600);
                         
                         if (error) throw error;
                         window.open(data.signedUrl, '_blank');
                       } catch (error) {
                         console.error('Error viewing document:', error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to view document",
+                          variant: "destructive",
+                        });
                       }
                     }}
                   >
