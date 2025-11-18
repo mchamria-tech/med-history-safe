@@ -691,11 +691,11 @@ const ProfileView = () => {
 
       {/* Upload Document Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="bg-background">
+        <DialogContent className="bg-background max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Upload Document</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">{/* Added overflow and flex */}
             <div>
               <Label htmlFor="doc-file">Select File</Label>
               <Input
