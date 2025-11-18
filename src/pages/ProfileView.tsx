@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Menu, MoreVertical, Plus, ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { Menu, MoreVertical, Plus, ArrowLeft, Edit, Trash2, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ import { Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface Profile {
   id: string;
@@ -61,6 +62,9 @@ const ProfileView = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showPopupPermission, setShowPopupPermission] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractedMetadata, setExtractedMetadata] = useState<any>(null);
+  const [showMetadataReview, setShowMetadataReview] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
@@ -216,6 +220,97 @@ const ProfileView = () => {
     }
   };
 
+  // Helper function to convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // AI metadata extraction function
+  const extractMetadataWithAI = async () => {
+    if (!documentFile) {
+      toast({
+        title: "Error",
+        description: "Please select a document first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsExtracting(true);
+
+      // Convert file to base64
+      const base64Image = await fileToBase64(documentFile);
+
+      console.log('Calling extract-document-metadata function...');
+
+      // Call edge function
+      const { data, error } = await supabase.functions.invoke('extract-document-metadata', {
+        body: { image: base64Image }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      console.log('Extraction result:', data);
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      const metadata = data.metadata;
+
+      // Pre-fill form fields with extracted data
+      if (metadata.doctor_name) setDoctorName(metadata.doctor_name);
+      if (metadata.document_date) {
+        try {
+          setDocumentDate(new Date(metadata.document_date));
+        } catch (e) {
+          console.error('Error parsing date:', e);
+        }
+      }
+      if (metadata.ailment) setAilment(metadata.ailment);
+      if (metadata.medicine) setMedicine(metadata.medicine);
+      if (metadata.document_type) setDocumentType(metadata.document_type);
+
+      setExtractedMetadata(metadata);
+      setShowMetadataReview(true);
+
+      toast({
+        title: "Success",
+        description: "Metadata extracted successfully. Please review and edit if needed.",
+      });
+
+    } catch (error: any) {
+      console.error('Error extracting metadata:', error);
+      
+      let errorMessage = "Failed to extract metadata from document";
+      
+      if (error.message?.includes("Rate limit")) {
+        errorMessage = "Rate limit exceeded. Please try again in a moment.";
+      } else if (error.message?.includes("credits")) {
+        errorMessage = "AI credits exhausted. Please contact support.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: "Extraction Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
   const handleDocumentUpload = async () => {
     if (!documentFile || !documentName || !documentDate || !profileId) {
       toast({
@@ -283,6 +378,8 @@ const ProfileView = () => {
       setAilment("");
       setMedicine("");
       setOtherTags("");
+      setShowMetadataReview(false);
+      setExtractedMetadata(null);
     } catch (error: any) {
       console.error('Error uploading document:', error);
       toast({
@@ -594,91 +691,153 @@ const ProfileView = () => {
               <Input
                 id="doc-file"
                 type="file"
+                accept="image/*,.pdf"
                 onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
                 className="bg-[hsl(190,50%,85%)]"
               />
             </div>
-            <div>
-              <Label htmlFor="doc-name">Document Name/Type</Label>
-              <Input
-                id="doc-name"
-                value={documentName}
-                onChange={(e) => setDocumentName(e.target.value)}
-                placeholder="e.g., Lab Report, Prescription"
-                className="bg-[hsl(190,50%,85%)]"
-              />
-            </div>
-            <div>
-              <Label>Document Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal bg-[hsl(190,50%,85%)]",
-                      !documentDate && "text-muted-foreground"
-                    )}
-                  >
-                    {documentDate ? format(documentDate, "PPP") : <span>Select date</span>}
-                    <Calendar className="ml-auto h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={documentDate}
-                    onSelect={setDocumentDate}
-                    initialFocus
+
+            {/* AI Extraction Buttons */}
+            {documentFile && !showMetadataReview && (
+              <div className="flex gap-2">
+                <Button
+                  onClick={extractMetadataWithAI}
+                  disabled={isExtracting}
+                  className="flex-1"
+                  variant="default"
+                >
+                  {isExtracting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Extracting...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      AI Extract Metadata
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => setShowMetadataReview(true)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Fill Manually
+                </Button>
+              </div>
+            )}
+
+            {/* Metadata Review Alert */}
+            {showMetadataReview && (
+              <Alert className="bg-primary/10 border-primary/20">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Review Extracted Data</AlertTitle>
+                <AlertDescription>
+                  Please review and edit the extracted information before saving.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {showMetadataReview && (
+              <>
+                <div>
+                  <Label htmlFor="doc-name">Document Name/Type</Label>
+                  <Input
+                    id="doc-name"
+                    value={documentName}
+                    onChange={(e) => setDocumentName(e.target.value)}
+                    placeholder="e.g., Lab Report, Prescription"
+                    className="bg-[hsl(190,50%,85%)]"
                   />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div>
-              <Label htmlFor="doctor-name">Doctor Name (Optional)</Label>
-              <Input
-                id="doctor-name"
-                value={doctorName}
-                onChange={(e) => setDoctorName(e.target.value)}
-                placeholder="E.g. Dr. Smith"
-                className="bg-[hsl(190,50%,85%)]"
-              />
-            </div>
-            <div>
-              <Label htmlFor="ailment">Ailment (Optional)</Label>
-              <Input
-                id="ailment"
-                value={ailment}
-                onChange={(e) => setAilment(e.target.value)}
-                placeholder="E.g. Migraine, Diabetes"
-                className="bg-[hsl(190,50%,85%)]"
-              />
-            </div>
-            <div>
-              <Label htmlFor="medicine">Medicine (Optional)</Label>
-              <Input
-                id="medicine"
-                value={medicine}
-                onChange={(e) => setMedicine(e.target.value)}
-                placeholder="E.g. Aspirin, Metformin"
-                className="bg-[hsl(190,50%,85%)]"
-              />
-            </div>
-            <div>
-              <Label htmlFor="other-tags">Other Tags (Optional)</Label>
-              <Input
-                id="other-tags"
-                value={otherTags}
-                onChange={(e) => setOtherTags(e.target.value)}
-                placeholder="E.g. Emergency, Follow-up"
-                className="bg-[hsl(190,50%,85%)]"
-              />
-            </div>
+                </div>
+                <div>
+                  <Label>Document Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal bg-[hsl(190,50%,85%)]",
+                          !documentDate && "text-muted-foreground"
+                        )}
+                      >
+                        {documentDate ? format(documentDate, "PPP") : <span>Select date</span>}
+                        <Calendar className="ml-auto h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={documentDate}
+                        onSelect={setDocumentDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <Label htmlFor="doc-type">Document Type (Optional)</Label>
+                  <Input
+                    id="doc-type"
+                    value={documentType}
+                    onChange={(e) => setDocumentType(e.target.value)}
+                    placeholder="E.g. prescription, lab report"
+                    className="bg-[hsl(190,50%,85%)]"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="doctor-name">Doctor Name (Optional)</Label>
+                  <Input
+                    id="doctor-name"
+                    value={doctorName}
+                    onChange={(e) => setDoctorName(e.target.value)}
+                    placeholder="E.g. Dr. Smith"
+                    className="bg-[hsl(190,50%,85%)]"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ailment">Ailment (Optional)</Label>
+                  <Input
+                    id="ailment"
+                    value={ailment}
+                    onChange={(e) => setAilment(e.target.value)}
+                    placeholder="E.g. Migraine, Diabetes"
+                    className="bg-[hsl(190,50%,85%)]"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="medicine">Medicine (Optional)</Label>
+                  <Input
+                    id="medicine"
+                    value={medicine}
+                    onChange={(e) => setMedicine(e.target.value)}
+                    placeholder="E.g. Aspirin, Metformin"
+                    className="bg-[hsl(190,50%,85%)]"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="other-tags">Other Tags (Optional)</Label>
+                  <Input
+                    id="other-tags"
+                    value={otherTags}
+                    onChange={(e) => setOtherTags(e.target.value)}
+                    placeholder="E.g. Emergency, Follow-up"
+                    className="bg-[hsl(190,50%,85%)]"
+                  />
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
+            <Button variant="outline" onClick={() => {
+              setShowUploadDialog(false);
+              setShowMetadataReview(false);
+              setExtractedMetadata(null);
+            }}>
               Cancel
             </Button>
-            <Button onClick={handleDocumentUpload} disabled={isUploading}>
+            <Button onClick={handleDocumentUpload} disabled={isUploading || !showMetadataReview}>
               {isUploading ? "Uploading..." : "Upload"}
             </Button>
           </DialogFooter>
