@@ -569,7 +569,7 @@ const ProfileView = () => {
               />
             </div>
             <div>
-              <Label htmlFor="doc-name">Document Name</Label>
+              <Label htmlFor="doc-name">Document Name/Type</Label>
               <Input
                 id="doc-name"
                 value={documentName}
@@ -602,16 +602,6 @@ const ProfileView = () => {
                   />
                 </PopoverContent>
               </Popover>
-            </div>
-            <div>
-              <Label htmlFor="doc-type">Document Type (Optional)</Label>
-              <Input
-                id="doc-type"
-                value={documentType}
-                onChange={(e) => setDocumentType(e.target.value)}
-                placeholder="E.g. Lab Report, X-Ray"
-                className="bg-[hsl(190,50%,85%)]"
-              />
             </div>
             <div>
               <Label htmlFor="doctor-name">Doctor Name (Optional)</Label>
