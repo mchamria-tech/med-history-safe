@@ -22,6 +22,15 @@ serve(async (req) => {
       );
     }
 
+    // Validate that the file is an image (not PDF or other formats)
+    if (!image.startsWith('data:image/')) {
+      console.error('Invalid file type. Only images are supported. Received:', image.substring(0, 30));
+      return new Response(
+        JSON.stringify({ error: "Only image files (JPG, PNG, WEBP) are supported for AI extraction. PDFs are not supported." }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       console.error('LOVABLE_API_KEY is not configured');

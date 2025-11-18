@@ -241,6 +241,16 @@ const ProfileView = () => {
       return;
     }
 
+    // Check if file is an image
+    if (!documentFile.type.startsWith('image/')) {
+      toast({
+        title: "Unsupported File Type",
+        description: "AI extraction only works with image files (JPG, PNG, WEBP). Please upload an image or fill the form manually.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsExtracting(true);
 
@@ -692,9 +702,16 @@ const ProfileView = () => {
                 id="doc-file"
                 type="file"
                 accept="image/*,.pdf"
-                onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
+                onChange={(e) => {
+                  setDocumentFile(e.target.files?.[0] || null);
+                  setShowMetadataReview(false);
+                  setExtractedMetadata(null);
+                }}
                 className="bg-[hsl(190,50%,85%)]"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                AI extraction works with images only (JPG, PNG, WEBP). PDFs must be filled manually.
+              </p>
             </div>
 
             {/* AI Extraction Buttons */}
@@ -702,7 +719,7 @@ const ProfileView = () => {
               <div className="flex gap-2">
                 <Button
                   onClick={extractMetadataWithAI}
-                  disabled={isExtracting}
+                  disabled={isExtracting || !documentFile.type.startsWith('image/')}
                   className="flex-1"
                   variant="default"
                 >
@@ -715,6 +732,7 @@ const ProfileView = () => {
                     <>
                       <Sparkles className="mr-2 h-4 w-4" />
                       AI Extract Metadata
+                      {!documentFile.type.startsWith('image/') && ' (Images Only)'}
                     </>
                   )}
                 </Button>
