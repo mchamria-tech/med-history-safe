@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Menu, MoreVertical, Plus, ArrowLeft } from "lucide-react";
+import { Menu, MoreVertical, Plus, ArrowLeft, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,8 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Profile {
   id: string;
@@ -51,6 +53,8 @@ const ProfileView = () => {
   const [documents, setDocuments] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [familyMembersCount, setFamilyMembersCount] = useState(0);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (profileId) {
@@ -113,6 +117,73 @@ const ProfileView = () => {
       navigate("/dashboard");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleEditProfile = () => {
+    navigate(`/new-profile?id=${profileId}`);
+  };
+
+  const handleDeleteProfile = async () => {
+    try {
+      setIsDeleting(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Delete all documents from storage
+      for (const doc of documents) {
+        if (doc.document_url) {
+          const filePath = doc.document_url.split('/').pop();
+          if (filePath) {
+            await supabase.storage
+              .from('profile-documents')
+              .remove([`${user.id}/${profileId}/${filePath}`]);
+          }
+        }
+      }
+
+      // Delete all document records
+      const { error: docsError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('profile_id', profileId);
+
+      if (docsError) throw docsError;
+
+      // Delete profile photo from storage if exists
+      if (profile?.profile_photo_url) {
+        const photoPath = profile.profile_photo_url.split('/').pop();
+        if (photoPath) {
+          await supabase.storage
+            .from('profile-photos')
+            .remove([`${user.id}/${photoPath}`]);
+        }
+      }
+
+      // Delete the profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', profileId);
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: "Success",
+        description: "Profile and all associated data deleted successfully",
+      });
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error('Error deleting profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete profile",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -222,9 +293,26 @@ const ProfileView = () => {
           <ArrowLeft className="h-6 w-6" />
         </Button>
         <h1 className="text-xl font-semibold">Profile View</h1>
-        <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
-          <MoreVertical className="h-6 w-6" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
+              <MoreVertical className="h-6 w-6" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleEditProfile}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setShowDeleteDialog(true)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Profile
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       {/* Main Content */}
@@ -519,6 +607,34 @@ const ProfileView = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Profile Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Profile</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this profile? This will permanently delete:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>All profile information</li>
+                <li>All uploaded documents ({documents.length} documents)</li>
+                <li>All document files from storage</li>
+              </ul>
+              <p className="mt-2 font-semibold">This action cannot be undone.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteProfile}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete Profile"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
