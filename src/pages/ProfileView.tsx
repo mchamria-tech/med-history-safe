@@ -121,7 +121,7 @@ const ProfileView = () => {
   };
 
   const handleEditProfile = () => {
-    navigate(`/new-profile?id=${profileId}`);
+    navigate(`/new-profile?edit=${profileId}`);
   };
 
   const handleDeleteProfile = async () => {
