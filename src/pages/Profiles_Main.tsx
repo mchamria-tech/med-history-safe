@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import careBagLogo from "@/assets/carebag-logo.png";
-import { Plus, User, Edit, Trash2 } from "lucide-react";
+import { Plus, User, Edit, Trash2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -77,6 +77,10 @@ const Profiles_Main = () => {
 
   const handleCreateProfile = () => {
     navigate("/new-profile");
+  };
+
+  const handleDocumentSearch = () => {
+    navigate("/document-search");
   };
 
   const handleSelectProfile = (profileId: string) => {
@@ -223,7 +227,7 @@ const Profiles_Main = () => {
           )}
 
           {/* Create New Profile Button */}
-          <div className="pt-4">
+          <div className="pt-4 space-y-3">
             <Button
               onClick={handleCreateProfile}
               className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
@@ -231,6 +235,15 @@ const Profiles_Main = () => {
             >
               <Plus className="mr-2 h-5 w-5" />
               Create New Profile
+            </Button>
+            
+            <Button
+              onClick={handleDocumentSearch}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              size="lg"
+            >
+              <Search className="mr-2 h-5 w-5" />
+              Document Search
             </Button>
           </div>
         </div>
