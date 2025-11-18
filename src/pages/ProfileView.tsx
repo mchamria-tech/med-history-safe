@@ -507,7 +507,10 @@ const ProfileView = () => {
                           .createSignedUrl(filePath, 3600);
                         
                         if (error) throw error;
-                        window.open(data.signedUrl, '_blank');
+                        
+                        // Construct full URL from relative signedUrl
+                        const fullUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1${data.signedUrl}`;
+                        window.open(fullUrl, '_blank');
                       } catch (error) {
                         console.error('Error viewing document:', error);
                         toast({
