@@ -55,6 +55,7 @@ const ProfileView = () => {
   const [familyMembersCount, setFamilyMembersCount] = useState(0);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showPopupPermission, setShowPopupPermission] = useState(false);
 
   useEffect(() => {
     if (profileId) {
@@ -492,32 +493,21 @@ const ProfileView = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={async () => {
-                      try {
-                        let filePath = doc.document_url;
-                        
-                        // Extract the file path if it's a full URL
-                        if (doc.document_url.includes('supabase.co')) {
-                          const urlParts = doc.document_url.split('/profile-documents/');
-                          filePath = urlParts[1];
-                        }
-                        
-                        const { data, error } = await supabase.storage
-                          .from('profile-documents')
-                          .createSignedUrl(filePath, 3600);
-                        
-                        if (error) throw error;
-                        
-                        // Construct full URL from relative signedUrl
-                        const fullUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1${data.signedUrl}`;
-                        window.open(fullUrl, '_blank');
-                      } catch (error) {
-                        console.error('Error viewing document:', error);
-                        toast({
-                          title: "Error",
-                          description: "Failed to view document",
-                          variant: "destructive",
-                        });
+                    onClick={() => {
+                      // Check if popup permission was already granted
+                      const popupPermission = localStorage.getItem('popup-permission');
+                      
+                      if (popupPermission === 'granted') {
+                        // Open directly if permission already granted
+                        window.open(doc.document_url, '_blank');
+                      } else if (!popupPermission) {
+                        // Show permission dialog first time
+                        setShowPopupPermission(true);
+                        // Store the URL temporarily to open after permission
+                        sessionStorage.setItem('pending-document-url', doc.document_url);
+                      } else {
+                        // Permission denied, just open anyway
+                        window.open(doc.document_url, '_blank');
                       }
                     }}
                   >
@@ -647,6 +637,40 @@ const ProfileView = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? "Deleting..." : "Delete Profile"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Popup Permission Dialog */}
+      <AlertDialog open={showPopupPermission} onOpenChange={setShowPopupPermission}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Allow Document Popups</AlertDialogTitle>
+            <AlertDialogDescription>
+              This app needs to open documents in new windows. Do you want to allow this? You will only be asked once.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                localStorage.setItem('popup-permission', 'denied');
+                sessionStorage.removeItem('pending-document-url');
+              }}
+            >
+              No, Don't Allow
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                localStorage.setItem('popup-permission', 'granted');
+                const pendingUrl = sessionStorage.getItem('pending-document-url');
+                if (pendingUrl) {
+                  window.open(pendingUrl, '_blank');
+                  sessionStorage.removeItem('pending-document-url');
+                }
+              }}
+            >
+              Yes, Allow
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
