@@ -11,6 +11,7 @@ import Profiles_Main from "./pages/Profiles_Main";
 import NewProfile from "./pages/NewProfile";
 import ProfileView from "./pages/ProfileView";
 import ViewDocuments from "./pages/ViewDocuments";
+import DocumentSearch from "./pages/DocumentSearch";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/new-profile" element={<NewProfile />} />
           <Route path="/profile/:profileId" element={<ProfileView />} />
           <Route path="/view-documents/:profileId" element={<ViewDocuments />} />
+          <Route path="/document-search" element={<DocumentSearch />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

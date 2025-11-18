@@ -16,34 +16,46 @@ export type Database = {
     Tables: {
       documents: {
         Row: {
+          ailment: string | null
           created_at: string
+          doctor_name: string | null
           document_date: string
           document_name: string
           document_type: string | null
           document_url: string
           id: string
+          medicine: string | null
+          other_tags: string | null
           profile_id: string
           uploaded_at: string
           user_id: string
         }
         Insert: {
+          ailment?: string | null
           created_at?: string
+          doctor_name?: string | null
           document_date: string
           document_name: string
           document_type?: string | null
           document_url: string
           id?: string
+          medicine?: string | null
+          other_tags?: string | null
           profile_id: string
           uploaded_at?: string
           user_id: string
         }
         Update: {
+          ailment?: string | null
           created_at?: string
+          doctor_name?: string | null
           document_date?: string
           document_name?: string
           document_type?: string | null
           document_url?: string
           id?: string
+          medicine?: string | null
+          other_tags?: string | null
           profile_id?: string
           uploaded_at?: string
           user_id?: string
