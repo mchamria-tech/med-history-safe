@@ -60,6 +60,15 @@ const ProfileView = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showPopupPermission, setShowPopupPermission] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    };
+    getUser();
+  }, []);
 
   useEffect(() => {
     if (profileId) {
@@ -130,10 +139,17 @@ const ProfileView = () => {
   };
 
   const handleDeleteProfile = async () => {
+    if (!currentUser) {
+      toast({
+        title: "Authentication Error",
+        description: "Please log in again",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsDeleting(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
 
       // Delete all documents from storage
       for (const doc of documents) {
@@ -142,7 +158,7 @@ const ProfileView = () => {
           if (filePath) {
             await supabase.storage
               .from('profile-documents')
-              .remove([`${user.id}/${profileId}/${filePath}`]);
+              .remove([`${currentUser.id}/${profileId}/${filePath}`]);
           }
         }
       }
@@ -161,7 +177,7 @@ const ProfileView = () => {
         if (photoPath) {
           await supabase.storage
             .from('profile-photos')
-            .remove([`${user.id}/${photoPath}`]);
+            .remove([`${currentUser.id}/${photoPath}`]);
         }
       }
 
@@ -202,15 +218,21 @@ const ProfileView = () => {
       return;
     }
 
+    if (!currentUser) {
+      toast({
+        title: "Authentication Error",
+        description: "Please log in again to upload documents",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsUploading(true);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
       // Upload file to storage
       const fileExt = documentFile.name.split('.').pop();
-      const fileName = `${user.id}/${profileId}/${Date.now()}.${fileExt}`;
+      const fileName = `${currentUser.id}/${profileId}/${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('profile-documents')
@@ -223,7 +245,7 @@ const ProfileView = () => {
         .from('documents')
         .insert({
           profile_id: profileId,
-          user_id: user.id,
+          user_id: currentUser.id,
           document_name: documentName,
           document_url: fileName, // Store the file path instead of public URL
           document_date: format(documentDate, 'yyyy-MM-dd'),
