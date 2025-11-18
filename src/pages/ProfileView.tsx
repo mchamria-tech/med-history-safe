@@ -395,7 +395,7 @@ const ProfileView = () => {
             )}
             {profile.blood_glucose && (
               <div>
-                <Label className="text-muted-foreground">Blood Glucose</Label>
+                <Label className="text-muted-foreground">Blood Group</Label>
                 <p className="text-foreground">{profile.blood_glucose}</p>
               </div>
             )}
