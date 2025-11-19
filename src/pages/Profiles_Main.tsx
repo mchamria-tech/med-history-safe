@@ -174,8 +174,8 @@ const Profiles_Main = () => {
       <div className="w-full flex justify-end px-6 py-4">
         <Button
           onClick={handleLogout}
-          variant="outline"
-          className="bg-black text-white hover:bg-black/90 border-black"
+          variant="ghost"
+          className="text-black hover:bg-transparent hover:text-black/80"
           size="sm"
         >
           <LogOut className="mr-2 h-4 w-4" />
