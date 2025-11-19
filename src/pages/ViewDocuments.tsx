@@ -63,34 +63,28 @@ const ViewDocuments = () => {
     }
   };
 
-  const getSignedUrl = async (documentUrl: string) => {
-    try {
-      let filePath = documentUrl;
-      
-      // Check if it's a full URL (old format) or just a path (new format)
-      if (documentUrl.includes('supabase.co')) {
-        // Extract the file path from the full URL
-        // URL format: https://.../storage/v1/object/public/profile-documents/user_id/profile_id/filename
-        const urlParts = documentUrl.split('/profile-documents/');
-        filePath = urlParts[1]; // Gets "user_id/profile_id/filename"
-      }
-      
-      const { data, error } = await supabase.storage
-        .from('profile-documents')
-        .createSignedUrl(filePath, 3600); // 1 hour expiry
-
-      if (error) throw error;
-      return data.signedUrl;
-    } catch (error) {
-      console.error('Error getting signed URL:', error);
-      throw error;
+  const getDocumentUrl = (documentUrl: string) => {
+    let filePath = documentUrl;
+    
+    // Check if it's a full URL (old format) or just a path (new format)
+    if (documentUrl.includes('supabase.co')) {
+      // Extract the file path from the full URL
+      // URL format: https://.../storage/v1/object/public/profile-documents/user_id/profile_id/filename
+      const urlParts = documentUrl.split('/profile-documents/');
+      filePath = urlParts[1]; // Gets "user_id/profile_id/filename"
     }
+    
+    const { data } = supabase.storage
+      .from('profile-documents')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
   };
 
-  const handleView = async (documentUrl: string) => {
+  const handleView = (documentUrl: string) => {
     try {
-      const signedUrl = await getSignedUrl(documentUrl);
-      window.open(signedUrl, '_blank');
+      const publicUrl = getDocumentUrl(documentUrl);
+      window.open(publicUrl, '_blank');
     } catch (error) {
       console.error('Error viewing document:', error);
       toast({
@@ -103,8 +97,8 @@ const ViewDocuments = () => {
 
   const handleDownload = async (documentUrl: string, documentName: string) => {
     try {
-      const signedUrl = await getSignedUrl(documentUrl);
-      const response = await fetch(signedUrl);
+      const publicUrl = getDocumentUrl(documentUrl);
+      const response = await fetch(publicUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -124,10 +118,10 @@ const ViewDocuments = () => {
     }
   };
 
-  const handlePrint = async (documentUrl: string) => {
+  const handlePrint = (documentUrl: string) => {
     try {
-      const signedUrl = await getSignedUrl(documentUrl);
-      const printWindow = window.open(signedUrl, '_blank');
+      const publicUrl = getDocumentUrl(documentUrl);
+      const printWindow = window.open(publicUrl, '_blank');
       if (printWindow) {
         printWindow.onload = () => {
           printWindow.print();
@@ -145,18 +139,18 @@ const ViewDocuments = () => {
 
   const handleShare = async (documentUrl: string, documentName: string) => {
     try {
-      const signedUrl = await getSignedUrl(documentUrl);
+      const publicUrl = getDocumentUrl(documentUrl);
       
       // Check if Web Share API is available
       if (navigator.share) {
         await navigator.share({
           title: documentName,
           text: `Check out this document: ${documentName}`,
-          url: signedUrl,
+          url: publicUrl,
         });
       } else {
         // Fallback: Copy link to clipboard
-        await navigator.clipboard.writeText(signedUrl);
+        await navigator.clipboard.writeText(publicUrl);
         toast({
           title: "Link Copied",
           description: "Document link copied to clipboard. You can now share it via email or WhatsApp.",
