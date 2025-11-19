@@ -166,18 +166,22 @@ const Profiles_Main = () => {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
-      <header className="w-full bg-primary py-8 text-center relative">
+      <header className="w-full bg-primary py-8 text-center">
         <h1 className="text-4xl font-bold text-primary-foreground">Welcome to CareBag</h1>
+      </header>
+
+      {/* Logout Button */}
+      <div className="w-full flex justify-end px-6 py-4">
         <Button
           onClick={handleLogout}
-          variant="ghost"
-          className="absolute top-4 right-4 text-primary-foreground hover:bg-primary-foreground/10"
+          variant="outline"
+          className="bg-black text-white hover:bg-black/90 border-black"
           size="sm"
         >
           <LogOut className="mr-2 h-4 w-4" />
           Logout
         </Button>
-      </header>
+      </div>
 
       {/* Main Content */}
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-12">
