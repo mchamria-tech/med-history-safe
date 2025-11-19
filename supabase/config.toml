@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.extract-document-metadata]
 verify_jwt = false
+
+[functions.send-changelog-email]
+verify_jwt = false
