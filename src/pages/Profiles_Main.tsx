@@ -190,7 +190,7 @@ const Profiles_Main = () => {
       {/* Main Content */}
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-12">
         {/* Logo */}
-        <div className="mb-8 flex h-64 w-64 items-center justify-center rounded-full border-6 border-[#3DB4E6] bg-white p-12">
+        <div className="mb-8 flex h-128 w-128 items-center justify-center rounded-full border-6 border-[#3DB4E6] bg-white p-24">
           <img
             src={careBagLogo}
             alt="CareBag Logo"
