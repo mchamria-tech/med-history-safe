@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ThemeSelector } from "@/components/ThemeSelector";
 import careBagLogo from "@/assets/carebag-logo.png";
 
 const Index = () => {
@@ -8,8 +9,11 @@ const Index = () => {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
-      <header className="w-full bg-primary py-8 text-center">
+      <header className="relative w-full bg-primary py-8 text-center">
         <h1 className="text-4xl font-bold text-primary-foreground">Welcome!</h1>
+        <div className="absolute right-6 top-1/2 -translate-y-1/2">
+          <ThemeSelector />
+        </div>
       </header>
 
       {/* Main Content */}

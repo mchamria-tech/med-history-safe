@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ThemeSelector } from "@/components/ThemeSelector";
 import careBagLogo from "@/assets/carebag-logo.png";
 import { Plus, User, Edit, Trash2, Search, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -166,8 +167,11 @@ const Profiles_Main = () => {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
-      <header className="w-full bg-primary py-8 text-center">
+      <header className="relative w-full bg-primary py-8 text-center">
         <h1 className="text-4xl font-bold text-primary-foreground">Welcome to CareBag</h1>
+        <div className="absolute right-6 top-1/2 -translate-y-1/2">
+          <ThemeSelector />
+        </div>
       </header>
 
       {/* Logout Button */}
@@ -175,7 +179,7 @@ const Profiles_Main = () => {
         <Button
           onClick={handleLogout}
           variant="ghost"
-          className="text-black hover:bg-transparent hover:text-black/80"
+          className="text-foreground hover:bg-transparent hover:text-foreground/80"
           size="sm"
         >
           <LogOut className="mr-2 h-4 w-4" />
