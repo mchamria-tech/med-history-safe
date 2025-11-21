@@ -7,84 +7,272 @@ All colors MUST be HSL.
 */
 
 @layer base {
-  /* THEME: Original - Blue & Green */
-  /* Theme 1: purple/yellow (270 30% 96% / 280 85% 62%) */
-  /* Theme 2: sunset/coral (25 35% 96% / 15 85% 58%) */
-  /* Theme 4: calm/clinical (40 15% 97% / 172 83% 31%) */
-  :root {
+  /* THEME 0: Original - Blue & Green (Default) */
+  :root, [data-theme="theme-0"] {
     --background: 0 0% 98%;
     --foreground: 215 25% 20%;
-
     --card: 0 0% 100%;
     --card-foreground: 215 25% 20%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 20%;
-
     --primary: 199 85% 58%;
     --primary-foreground: 0 0% 100%;
-
     --secondary: 220 15% 50%;
     --secondary-foreground: 0 0% 100%;
-
     --muted: 210 20% 90%;
     --muted-foreground: 215 15% 45%;
-
     --accent: 115 55% 55%;
     --accent-foreground: 0 0% 100%;
-
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 215 20% 85%;
     --input: 215 20% 85%;
     --ring: 199 85% 58%;
-
     --radius: 0.75rem;
-
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  /* Original - Dark Mode */
+  /* THEME 1: Purple & Yellow - Modern Wellness */
+  [data-theme="theme-1"] {
+    --background: 270 30% 96%;
+    --foreground: 270 20% 15%;
+    --card: 270 25% 98%;
+    --card-foreground: 270 20% 15%;
+    --popover: 270 25% 98%;
+    --popover-foreground: 270 20% 15%;
+    --primary: 280 85% 62%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 270 15% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 270 20% 88%;
+    --muted-foreground: 270 15% 40%;
+    --accent: 45 95% 60%;
+    --accent-foreground: 270 20% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 270 20% 82%;
+    --input: 270 20% 82%;
+    --ring: 280 85% 62%;
+    --radius: 0.75rem;
+  }
+
+  /* THEME 2: Sunset & Coral - Warm & Approachable */
+  [data-theme="theme-2"] {
+    --background: 25 35% 96%;
+    --foreground: 20 25% 15%;
+    --card: 25 30% 98%;
+    --card-foreground: 20 25% 15%;
+    --popover: 25 30% 98%;
+    --popover-foreground: 20 25% 15%;
+    --primary: 15 85% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 20 20% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 25 25% 88%;
+    --muted-foreground: 20 15% 40%;
+    --accent: 340 75% 65%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 25 20% 82%;
+    --input: 25 20% 82%;
+    --ring: 15 85% 58%;
+    --radius: 0.75rem;
+  }
+
+  /* THEME 4: Calm & Clinical - Spa-like Medical */
+  [data-theme="theme-4"] {
+    --background: 40 15% 97%;
+    --foreground: 180 15% 20%;
+    --card: 40 20% 99%;
+    --card-foreground: 180 15% 20%;
+    --popover: 40 20% 99%;
+    --popover-foreground: 180 15% 20%;
+    --primary: 172 83% 31%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 10% 88%;
+    --secondary-foreground: 180 15% 20%;
+    --muted: 40 12% 92%;
+    --muted-foreground: 180 10% 40%;
+    --accent: 78 80% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 15% 88%;
+    --input: 40 15% 88%;
+    --ring: 172 83% 31%;
+    --radius: 0.75rem;
+  }
+
+  /* THEME 5: Professional Healthcare - Deep Navy & Medical Red */
+  [data-theme="theme-5"] {
+    --background: 210 20% 98%;
+    --foreground: 215 30% 15%;
+    --card: 210 25% 99%;
+    --card-foreground: 215 30% 15%;
+    --popover: 210 25% 99%;
+    --popover-foreground: 215 30% 15%;
+    --primary: 215 60% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 15% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 20% 90%;
+    --muted-foreground: 215 15% 40%;
+    --accent: 355 75% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 20% 85%;
+    --input: 210 20% 85%;
+    --ring: 215 60% 35%;
+    --radius: 0.75rem;
+  }
+
+  /* THEME 6: Wellness & Vitality - Vibrant Teal & Orange */
+  [data-theme="theme-6"] {
+    --background: 180 25% 97%;
+    --foreground: 180 20% 15%;
+    --card: 180 20% 99%;
+    --card-foreground: 180 20% 15%;
+    --popover: 180 20% 99%;
+    --popover-foreground: 180 20% 15%;
+    --primary: 180 70% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 180 15% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 180 20% 90%;
+    --muted-foreground: 180 15% 40%;
+    --accent: 25 90% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 180 20% 85%;
+    --input: 180 20% 85%;
+    --ring: 180 70% 40%;
+    --radius: 0.75rem;
+  }
+
+  /* THEME 7: Pediatric Care - Soft Sky Blue & Cheerful Yellow */
+  [data-theme="theme-7"] {
+    --background: 200 40% 98%;
+    --foreground: 200 25% 15%;
+    --card: 200 35% 99%;
+    --card-foreground: 200 25% 15%;
+    --popover: 200 35% 99%;
+    --popover-foreground: 200 25% 15%;
+    --primary: 200 75% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 200 15% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 200 25% 90%;
+    --muted-foreground: 200 15% 40%;
+    --accent: 48 95% 60%;
+    --accent-foreground: 200 25% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 200 20% 85%;
+    --input: 200 20% 85%;
+    --ring: 200 75% 65%;
+    --radius: 0.75rem;
+  }
+
+  /* THEME 8: Dark Medical - Electric Cyan & Mint */
+  [data-theme="theme-8"] {
+    --background: 200 25% 12%;
+    --foreground: 180 15% 95%;
+    --card: 200 22% 15%;
+    --card-foreground: 180 15% 95%;
+    --popover: 200 22% 15%;
+    --popover-foreground: 180 15% 95%;
+    --primary: 185 90% 55%;
+    --primary-foreground: 200 25% 12%;
+    --secondary: 200 15% 30%;
+    --secondary-foreground: 180 15% 95%;
+    --muted: 200 20% 20%;
+    --muted-foreground: 180 15% 70%;
+    --accent: 150 60% 65%;
+    --accent-foreground: 200 25% 12%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 200 20% 25%;
+    --input: 200 20% 25%;
+    --ring: 185 90% 55%;
+    --radius: 0.75rem;
+  }
+
+  /* THEME 9: Minimalist Monochrome - Black & Bright Blue */
+  [data-theme="theme-9"] {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 210 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 210 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 210 100% 50%;
+    --radius: 0.75rem;
+  }
+
+  /* THEME 10: Nature & Healing - Forest Green & Warm Amber */
+  [data-theme="theme-10"] {
+    --background: 120 15% 97%;
+    --foreground: 145 25% 15%;
+    --card: 120 20% 99%;
+    --card-foreground: 145 25% 15%;
+    --popover: 120 20% 99%;
+    --popover-foreground: 145 25% 15%;
+    --primary: 145 60% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 120 15% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 120 20% 90%;
+    --muted-foreground: 145 15% 40%;
+    --accent: 35 80% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 120 20% 85%;
+    --input: 120 20% 85%;
+    --ring: 145 60% 35%;
+    --radius: 0.75rem;
+  }
+
+  /* Dark mode for Theme 0 */
   .dark {
     --background: 215 30% 12%;
     --foreground: 0 0% 98%;
-
     --card: 215 28% 15%;
     --card-foreground: 0 0% 98%;
-
     --popover: 215 28% 15%;
     --popover-foreground: 0 0% 98%;
-
     --primary: 199 85% 58%;
     --primary-foreground: 0 0% 100%;
-
     --secondary: 220 15% 35%;
     --secondary-foreground: 0 0% 100%;
-
     --muted: 215 25% 20%;
     --muted-foreground: 215 15% 65%;
-
     --accent: 115 55% 55%;
     --accent-foreground: 0 0% 100%;
-
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 215 25% 25%;
     --input: 215 25% 25%;
     --ring: 199 85% 58%;
