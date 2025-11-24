@@ -81,33 +81,13 @@ export const themes: Theme[] = [
     },
   },
   {
-    id: "theme-13",
-    name: "Lavender & Peach",
-    description: "Soft calming atmosphere",
-    colors: {
-      primary: "hsl(270, 55%, 60%)",
-      accent: "hsl(20, 80%, 70%)",
-      background: "hsl(280, 25%, 97%)",
-    },
-  },
-  {
-    id: "theme-14",
-    name: "Deep Purple Dark",
-    description: "Modern energetic dark mode",
-    colors: {
-      primary: "hsl(270, 75%, 55%)",
-      accent: "hsl(120, 85%, 60%)",
-      background: "hsl(260, 30%, 10%)",
-    },
-  },
-  {
     id: "theme-15",
     name: "Charcoal & Amber",
-    description: "Warm sophisticated dark mode",
+    description: "Warm sophisticated light mode",
     colors: {
       primary: "hsl(210, 20%, 30%)",
       accent: "hsl(30, 85%, 60%)",
-      background: "hsl(0, 0%, 12%)",
+      background: "hsl(0, 0%, 100%)",
     },
   },
 ];
