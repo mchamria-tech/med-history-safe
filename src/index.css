@@ -254,6 +254,125 @@ All colors MUST be HSL.
     --ring: 145 60% 35%;
     --radius: 0.75rem;
   }
+  /* THEME 11: Burgundy & Gold - Rich Professional Elegance */
+  [data-theme="theme-11"] {
+    --background: 30 20% 97%;
+    --foreground: 345 25% 15%;
+    --card: 30 25% 99%;
+    --card-foreground: 345 25% 15%;
+    --popover: 30 25% 99%;
+    --popover-foreground: 345 25% 15%;
+    --primary: 345 65% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 15% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 30 20% 90%;
+    --muted-foreground: 345 15% 40%;
+    --accent: 45 85% 55%;
+    --accent-foreground: 345 25% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 20% 85%;
+    --input: 30 20% 85%;
+    --ring: 345 65% 40%;
+    --radius: 0.75rem;
+  }
+
+  /* THEME 12: Slate & Mint - Modern Clean Aesthetic */
+  [data-theme="theme-12"] {
+    --background: 210 15% 98%;
+    --foreground: 210 25% 15%;
+    --card: 210 20% 99%;
+    --card-foreground: 210 25% 15%;
+    --popover: 210 20% 99%;
+    --popover-foreground: 210 25% 15%;
+    --primary: 210 40% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 15% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 20% 90%;
+    --muted-foreground: 210 15% 40%;
+    --accent: 165 70% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 20% 85%;
+    --input: 210 20% 85%;
+    --ring: 210 40% 45%;
+    --radius: 0.75rem;
+  }
+
+  /* THEME 13: Lavender & Peach - Soft Calming Atmosphere */
+  [data-theme="theme-13"] {
+    --background: 280 25% 97%;
+    --foreground: 270 25% 15%;
+    --card: 280 30% 99%;
+    --card-foreground: 270 25% 15%;
+    --popover: 280 30% 99%;
+    --popover-foreground: 270 25% 15%;
+    --primary: 270 55% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 280 15% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 280 20% 90%;
+    --muted-foreground: 270 15% 40%;
+    --accent: 20 80% 70%;
+    --accent-foreground: 270 25% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 280 20% 85%;
+    --input: 280 20% 85%;
+    --ring: 270 55% 60%;
+    --radius: 0.75rem;
+  }
+
+  /* THEME 14: Deep Purple Dark - Modern Energetic Dark Mode */
+  [data-theme="theme-14"] {
+    --background: 260 30% 10%;
+    --foreground: 270 15% 95%;
+    --card: 260 28% 13%;
+    --card-foreground: 270 15% 95%;
+    --popover: 260 28% 13%;
+    --popover-foreground: 270 15% 95%;
+    --primary: 270 75% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 260 15% 30%;
+    --secondary-foreground: 270 15% 95%;
+    --muted: 260 20% 20%;
+    --muted-foreground: 270 15% 70%;
+    --accent: 120 85% 60%;
+    --accent-foreground: 260 30% 10%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 260 20% 25%;
+    --input: 260 20% 25%;
+    --ring: 270 75% 55%;
+    --radius: 0.75rem;
+  }
+
+  /* THEME 15: Charcoal & Amber - Warm Sophisticated Dark Mode */
+  [data-theme="theme-15"] {
+    --background: 0 0% 12%;
+    --foreground: 30 10% 95%;
+    --card: 0 0% 15%;
+    --card-foreground: 30 10% 95%;
+    --popover: 0 0% 15%;
+    --popover-foreground: 30 10% 95%;
+    --primary: 210 20% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 25%;
+    --secondary-foreground: 30 10% 95%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 30 10% 70%;
+    --accent: 30 85% 60%;
+    --accent-foreground: 0 0% 12%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 30 85% 60%;
+    --radius: 0.75rem;
+  }
 
   /* Dark mode for Theme 0 */
   .dark {
