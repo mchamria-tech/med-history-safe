@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import careBagLogo from "@/assets/carebag-logo.png";
-import { Plus, User, Edit, Trash2, Search, LogOut, MessageSquare } from "lucide-react";
+import { Plus, User, Edit, Trash2, Search, LogOut, MessageSquare, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +33,7 @@ const Profiles_Main = () => {
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
+  const { isAdmin } = useAdminCheck();
 
   useEffect(() => {
     fetchProfiles();
@@ -176,6 +178,17 @@ const Profiles_Main = () => {
 
       {/* Feedback and Logout Buttons */}
       <div className="w-full flex justify-end gap-2 px-6 py-4">
+        {isAdmin && (
+          <Button
+            onClick={() => navigate("/admin/feedback")}
+            variant="ghost"
+            className="text-foreground hover:bg-transparent hover:text-foreground/80"
+            size="sm"
+          >
+            <Shield className="mr-2 h-4 w-4" />
+            Admin
+          </Button>
+        )}
         <Button
           onClick={() => navigate("/feedback")}
           variant="ghost"
