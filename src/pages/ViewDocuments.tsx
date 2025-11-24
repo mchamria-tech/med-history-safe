@@ -70,14 +70,13 @@ const ViewDocuments = () => {
   };
 
   const getDocumentUrl = (documentUrl: string) => {
+    // Standardized URL handling - always use file path format
     let filePath = documentUrl;
     
-    // Check if it's a full URL (old format) or just a path (new format)
+    // If it's a full URL (old format), extract the path
     if (documentUrl.includes('supabase.co')) {
-      // Extract the file path from the full URL
-      // URL format: https://.../storage/v1/object/public/profile-documents/user_id/profile_id/filename
       const urlParts = documentUrl.split('/profile-documents/');
-      filePath = urlParts[1]; // Gets "user_id/profile_id/filename"
+      filePath = urlParts[1] || documentUrl;
     }
     
     const { data } = supabase.storage
@@ -182,13 +181,19 @@ const ViewDocuments = () => {
       const doc = documents.find(d => d.id === deleteDocId);
       if (!doc) return;
 
-      // Delete from storage
-      const urlParts = doc.document_url.split('/');
-      const fileName = urlParts.slice(-3).join('/'); // user_id/profile_id/filename
+      // Standardized path extraction for storage deletion
+      let filePath = doc.document_url;
       
+      // If it's a full URL, extract the path
+      if (doc.document_url.includes('supabase.co')) {
+        const urlParts = doc.document_url.split('/profile-documents/');
+        filePath = urlParts[1] || doc.document_url;
+      }
+      
+      // Delete from storage
       await supabase.storage
         .from('profile-documents')
-        .remove([fileName]);
+        .remove([filePath]);
 
       // Delete from database
       const { error } = await supabase
