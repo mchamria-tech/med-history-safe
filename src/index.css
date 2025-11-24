@@ -350,26 +350,26 @@ All colors MUST be HSL.
     --radius: 0.75rem;
   }
 
-  /* THEME 15: Charcoal & Amber - Warm Sophisticated Dark Mode */
+  /* THEME 15: Charcoal & Amber - Warm Sophisticated Light Mode */
   [data-theme="theme-15"] {
-    --background: 0 0% 12%;
-    --foreground: 30 10% 95%;
-    --card: 0 0% 15%;
-    --card-foreground: 30 10% 95%;
-    --popover: 0 0% 15%;
-    --popover-foreground: 30 10% 95%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 15%;
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 15%;
+    --popover: 0 0% 98%;
+    --popover-foreground: 0 0% 15%;
     --primary: 210 20% 30%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 25%;
-    --secondary-foreground: 30 10% 95%;
-    --muted: 0 0% 20%;
-    --muted-foreground: 30 10% 70%;
+    --secondary: 0 0% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 92%;
+    --muted-foreground: 0 0% 40%;
     --accent: 30 85% 60%;
-    --accent-foreground: 0 0% 12%;
-    --destructive: 0 75% 55%;
+    --accent-foreground: 0 0% 15%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 25%;
-    --input: 0 0% 25%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
     --ring: 30 85% 60%;
     --radius: 0.75rem;
   }
