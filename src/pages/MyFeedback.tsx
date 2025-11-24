@@ -15,6 +15,8 @@ interface Feedback {
   rating: number | null;
   status: string;
   created_at: string;
+  admin_response: string | null;
+  admin_responded_at: string | null;
 }
 
 const MyFeedback = () => {
@@ -150,10 +152,31 @@ const MyFeedback = () => {
                     )}
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">
-                    {feedback.message}
-                  </p>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Your Feedback:</p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">
+                      {feedback.message}
+                    </p>
+                  </div>
+                  
+                  {feedback.admin_response && (
+                    <div className="border-t pt-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium text-primary">Admin Response:</p>
+                        {feedback.admin_responded_at && (
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(feedback.admin_responded_at).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-sm text-foreground whitespace-pre-wrap">
+                          {feedback.admin_response}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

@@ -72,6 +72,9 @@ export type Database = {
       }
       feedback: {
         Row: {
+          admin_responded_at: string | null
+          admin_responder_id: string | null
+          admin_response: string | null
           category: string
           created_at: string
           id: string
@@ -85,6 +88,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admin_responded_at?: string | null
+          admin_responder_id?: string | null
+          admin_response?: string | null
           category: string
           created_at?: string
           id?: string
@@ -98,6 +104,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admin_responded_at?: string | null
+          admin_responder_id?: string | null
+          admin_response?: string | null
           category?: string
           created_at?: string
           id?: string
