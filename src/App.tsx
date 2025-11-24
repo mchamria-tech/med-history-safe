@@ -16,6 +16,7 @@ import ViewDocuments from "./pages/ViewDocuments";
 import DocumentSearch from "./pages/DocumentSearch";
 import Feedback from "./pages/Feedback";
 import MyFeedback from "./pages/MyFeedback";
+import FeedbackHub from "./pages/FeedbackHub";
 import AdminFeedback from "./pages/AdminFeedback";
 import NotFound from "./pages/NotFound";
 
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="/profile/:profileId" element={<ProfileView />} />
               <Route path="/view-documents/:profileId" element={<ViewDocuments />} />
               <Route path="/document-search" element={<DocumentSearch />} />
+              <Route path="/feedback-hub" element={<FeedbackHub />} />
               <Route path="/feedback" element={<Feedback />} />
               <Route path="/my-feedback" element={<MyFeedback />} />
               <Route path="/admin/feedback" element={<AdminFeedback />} />

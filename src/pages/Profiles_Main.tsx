@@ -190,7 +190,7 @@ const Profiles_Main = () => {
           </Button>
         )}
         <Button
-          onClick={() => navigate("/feedback")}
+          onClick={() => navigate("/feedback-hub")}
           variant="ghost"
           className="text-foreground hover:bg-transparent hover:text-foreground/80"
           size="sm"
