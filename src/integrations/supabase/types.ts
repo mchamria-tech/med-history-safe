@@ -70,6 +70,48 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          message: string
+          page_url: string | null
+          rating: number | null
+          status: string
+          subject: string
+          updated_at: string
+          user_email: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          message: string
+          page_url?: string | null
+          rating?: number | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_email: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          message?: string
+          page_url?: string | null
+          rating?: number | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_email?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           allergies: string | null
