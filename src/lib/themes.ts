@@ -60,4 +60,54 @@ export const themes: Theme[] = [
       background: "hsl(120, 15%, 97%)",
     },
   },
+  {
+    id: "theme-11",
+    name: "Burgundy & Gold",
+    description: "Rich and professional elegance",
+    colors: {
+      primary: "hsl(345, 65%, 40%)",
+      accent: "hsl(45, 85%, 55%)",
+      background: "hsl(30, 20%, 97%)",
+    },
+  },
+  {
+    id: "theme-12",
+    name: "Slate & Mint",
+    description: "Modern clean aesthetic",
+    colors: {
+      primary: "hsl(210, 40%, 45%)",
+      accent: "hsl(165, 70%, 55%)",
+      background: "hsl(210, 15%, 98%)",
+    },
+  },
+  {
+    id: "theme-13",
+    name: "Lavender & Peach",
+    description: "Soft calming atmosphere",
+    colors: {
+      primary: "hsl(270, 55%, 60%)",
+      accent: "hsl(20, 80%, 70%)",
+      background: "hsl(280, 25%, 97%)",
+    },
+  },
+  {
+    id: "theme-14",
+    name: "Deep Purple Dark",
+    description: "Modern energetic dark mode",
+    colors: {
+      primary: "hsl(270, 75%, 55%)",
+      accent: "hsl(120, 85%, 60%)",
+      background: "hsl(260, 30%, 10%)",
+    },
+  },
+  {
+    id: "theme-15",
+    name: "Charcoal & Amber",
+    description: "Warm sophisticated dark mode",
+    colors: {
+      primary: "hsl(210, 20%, 30%)",
+      accent: "hsl(30, 85%, 60%)",
+      background: "hsl(0, 0%, 12%)",
+    },
+  },
 ];
