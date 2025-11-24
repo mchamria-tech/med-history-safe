@@ -16,6 +16,7 @@ import ViewDocuments from "./pages/ViewDocuments";
 import DocumentSearch from "./pages/DocumentSearch";
 import Feedback from "./pages/Feedback";
 import MyFeedback from "./pages/MyFeedback";
+import AdminFeedback from "./pages/AdminFeedback";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/document-search" element={<DocumentSearch />} />
               <Route path="/feedback" element={<Feedback />} />
               <Route path="/my-feedback" element={<MyFeedback />} />
+              <Route path="/admin/feedback" element={<AdminFeedback />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
