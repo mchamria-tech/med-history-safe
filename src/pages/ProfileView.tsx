@@ -163,15 +163,20 @@ const ProfileView = () => {
     try {
       setIsDeleting(true);
 
-      // Delete all documents from storage
+      // Delete all documents from storage - using standardized path handling
       for (const doc of documents) {
         if (doc.document_url) {
-          const filePath = doc.document_url.split('/').pop();
-          if (filePath) {
-            await supabase.storage
-              .from('profile-documents')
-              .remove([`${currentUser.id}/${profileId}/${filePath}`]);
+          let filePath = doc.document_url;
+          
+          // Handle both old URL format and new path format
+          if (doc.document_url.includes('supabase.co')) {
+            const urlParts = doc.document_url.split('/profile-documents/');
+            filePath = urlParts[1] || doc.document_url;
           }
+          
+          await supabase.storage
+            .from('profile-documents')
+            .remove([filePath]);
         }
       }
 
@@ -185,12 +190,17 @@ const ProfileView = () => {
 
       // Delete profile photo from storage if exists
       if (profile?.profile_photo_url) {
-        const photoPath = profile.profile_photo_url.split('/').pop();
-        if (photoPath) {
-          await supabase.storage
-            .from('profile-photos')
-            .remove([`${currentUser.id}/${photoPath}`]);
+        let photoPath = profile.profile_photo_url;
+        
+        // Handle both old URL format and new path format
+        if (profile.profile_photo_url.includes('supabase.co')) {
+          const urlParts = profile.profile_photo_url.split('/profile-photos/');
+          photoPath = urlParts[1] || profile.profile_photo_url;
         }
+        
+        await supabase.storage
+          .from('profile-photos')
+          .remove([photoPath]);
       }
 
       // Delete the profile
