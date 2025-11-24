@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import careBagLogo from "@/assets/carebag-logo.png";
-import { Plus, User, Edit, Trash2, Search, LogOut } from "lucide-react";
+import { Plus, User, Edit, Trash2, Search, LogOut, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -174,8 +174,17 @@ const Profiles_Main = () => {
         </div>
       </header>
 
-      {/* Logout Button */}
-      <div className="w-full flex justify-end px-6 py-4">
+      {/* Feedback and Logout Buttons */}
+      <div className="w-full flex justify-end gap-2 px-6 py-4">
+        <Button
+          onClick={() => navigate("/feedback")}
+          variant="ghost"
+          className="text-foreground hover:bg-transparent hover:text-foreground/80"
+          size="sm"
+        >
+          <MessageSquare className="mr-2 h-4 w-4" />
+          Feedback
+        </Button>
         <Button
           onClick={handleLogout}
           variant="ghost"

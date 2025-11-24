@@ -14,6 +14,8 @@ import NewProfile from "./pages/NewProfile";
 import ProfileView from "./pages/ProfileView";
 import ViewDocuments from "./pages/ViewDocuments";
 import DocumentSearch from "./pages/DocumentSearch";
+import Feedback from "./pages/Feedback";
+import MyFeedback from "./pages/MyFeedback";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,8 @@ const App = () => (
               <Route path="/profile/:profileId" element={<ProfileView />} />
               <Route path="/view-documents/:profileId" element={<ViewDocuments />} />
               <Route path="/document-search" element={<DocumentSearch />} />
+              <Route path="/feedback" element={<Feedback />} />
+              <Route path="/my-feedback" element={<MyFeedback />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
