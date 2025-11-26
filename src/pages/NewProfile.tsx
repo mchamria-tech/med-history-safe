@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { getSignedUrl } from "@/hooks/useSignedUrl";
 
 // Validation schema
 const profileSchema = z.object({
@@ -26,6 +27,7 @@ const NewProfile = () => {
   const [searchParams] = useSearchParams();
   const editProfileId = searchParams.get('edit');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [profilePhotoPath, setProfilePhotoPath] = useState<string | null>(null); // Store original path
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [dateOfBirth, setDateOfBirth] = useState<Date>();
   const [expiryDate, setExpiryDate] = useState<Date>();
@@ -91,7 +93,10 @@ const NewProfile = () => {
           setExpiryDate(new Date(data.expiry_date));
         }
         if (data.profile_photo_url) {
-          setProfilePhoto(data.profile_photo_url);
+          setProfilePhotoPath(data.profile_photo_url); // Store original path
+          // Load signed URL for display
+          const { url } = await getSignedUrl('profile-photos', data.profile_photo_url);
+          if (url) setProfilePhoto(url);
         }
       }
     } catch (error: any) {
@@ -135,6 +140,7 @@ const NewProfile = () => {
 
   const handleReset = () => {
     setProfilePhoto(null);
+    setProfilePhotoPath(null);
     setPhotoFile(null);
     setDateOfBirth(undefined);
     setExpiryDate(undefined);
@@ -182,7 +188,7 @@ const NewProfile = () => {
         return;
       }
 
-      let profilePhotoUrl = profilePhoto;
+      let photoUrlToSave = profilePhotoPath; // Keep existing path if not changed
 
       // Upload new profile photo if a new file was selected
       if (photoFile) {
@@ -195,11 +201,8 @@ const NewProfile = () => {
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('profile-photos')
-          .getPublicUrl(fileName);
-
-        profilePhotoUrl = publicUrl;
+        // Store the file path instead of public URL
+        photoUrlToSave = fileName;
       }
 
       const profileData = {
@@ -221,7 +224,7 @@ const NewProfile = () => {
         expiry_date: expiryDate ? format(expiryDate, 'yyyy-MM-dd') : null,
         rm_name: rmName.trim() || null,
         rm_no: rmNo.trim() || null,
-        profile_photo_url: profilePhotoUrl,
+        profile_photo_url: photoUrlToSave,
       };
 
       if (editProfileId) {
