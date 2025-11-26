@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, FileText, Trash2, Eye, X } from "lucide-react";
 import { format } from "date-fns";
+import { getSignedUrl } from "@/hooks/useSignedUrl";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -161,26 +162,19 @@ const DocumentSearch = () => {
     }
   };
 
-  const getDocumentUrl = (documentUrl: string) => {
-    let filePath = documentUrl;
-    
-    // Check if it's a full URL (old format) or just a path (new format)
-    if (documentUrl.includes('supabase.co')) {
-      // Extract the file path from the full URL
-      const urlParts = documentUrl.split('/profile-documents/');
-      filePath = urlParts[1]; // Gets "user_id/profile_id/filename"
+  const handleViewDocument = async (documentUrl: string) => {
+    try {
+      const { url, error } = await getSignedUrl('profile-documents', documentUrl);
+      if (error || !url) throw new Error(error || 'Failed to get URL');
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      toast({
+        title: "Error",
+        description: "Failed to view document",
+        variant: "destructive",
+      });
     }
-    
-    const { data } = supabase.storage
-      .from('profile-documents')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
-  };
-
-  const handleViewDocument = (documentUrl: string) => {
-    const publicUrl = getDocumentUrl(documentUrl);
-    window.open(publicUrl, "_blank");
   };
 
   const handleDeleteClick = (documentId: string) => {

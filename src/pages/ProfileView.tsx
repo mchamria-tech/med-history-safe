@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { getSignedUrl, extractFilePath } from "@/hooks/useSignedUrl";
 
 interface Profile {
   id: string;
@@ -65,6 +66,8 @@ const ProfileView = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractedMetadata, setExtractedMetadata] = useState<any>(null);
   const [showMetadataReview, setShowMetadataReview] = useState(false);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+  const [pendingDocUrl, setPendingDocUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const getUser = async () => {
@@ -74,14 +77,6 @@ const ProfileView = () => {
     getUser();
   }, []);
 
-  // Helper function to generate proper Supabase Storage URLs
-  const getDocumentUrl = (documentPath: string) => {
-    const { data } = supabase.storage
-      .from('profile-documents')
-      .getPublicUrl(documentPath);
-    return data.publicUrl;
-  };
-
   useEffect(() => {
     if (profileId) {
       fetchProfile();
@@ -89,6 +84,17 @@ const ProfileView = () => {
       fetchFamilyMembersCount();
     }
   }, [profileId]);
+
+  // Load signed URL for profile photo
+  useEffect(() => {
+    const loadProfilePhoto = async () => {
+      if (profile?.profile_photo_url) {
+        const { url } = await getSignedUrl('profile-photos', profile.profile_photo_url);
+        setProfilePhotoUrl(url);
+      }
+    };
+    loadProfilePhoto();
+  }, [profile?.profile_photo_url]);
 
   const fetchFamilyMembersCount = async () => {
     try {
@@ -480,7 +486,7 @@ const ProfileView = () => {
         {/* Profile Photo and Basic Info */}
         <div className="flex flex-col items-center space-y-4">
           <Avatar className="h-32 w-32">
-            <AvatarImage src={profile.profile_photo_url || undefined} alt={profile.name} />
+            <AvatarImage src={profilePhotoUrl || undefined} alt={profile.name} />
             <AvatarFallback className="text-3xl bg-[hsl(190,50%,85%)]">
               {profile.name.charAt(0).toUpperCase()}
             </AvatarFallback>
@@ -652,21 +658,29 @@ const ProfileView = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      // Check if popup permission was already granted
+                    onClick={async () => {
                       const popupPermission = localStorage.getItem('popup-permission');
                       
+                      const openDocument = async (docUrl: string) => {
+                        const { url, error } = await getSignedUrl('profile-documents', docUrl);
+                        if (url && !error) {
+                          window.open(url, '_blank');
+                        } else {
+                          toast({
+                            title: "Error",
+                            description: "Failed to open document",
+                            variant: "destructive",
+                          });
+                        }
+                      };
+                      
                       if (popupPermission === 'granted') {
-                        // Open directly if permission already granted
-                        window.open(getDocumentUrl(doc.document_url), '_blank');
+                        await openDocument(doc.document_url);
                       } else if (!popupPermission) {
-                        // Show permission dialog first time
+                        setPendingDocUrl(doc.document_url);
                         setShowPopupPermission(true);
-                        // Store the URL temporarily to open after permission
-                        sessionStorage.setItem('pending-document-url', doc.document_url);
                       } else {
-                        // Permission denied, just open anyway
-                        window.open(getDocumentUrl(doc.document_url), '_blank');
+                        await openDocument(doc.document_url);
                       }
                     }}
                   >
@@ -913,18 +927,20 @@ const ProfileView = () => {
             <AlertDialogCancel
               onClick={() => {
                 localStorage.setItem('popup-permission', 'denied');
-                sessionStorage.removeItem('pending-document-url');
+                setPendingDocUrl(null);
               }}
             >
               No, Don't Allow
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
+              onClick={async () => {
                 localStorage.setItem('popup-permission', 'granted');
-                const pendingUrl = sessionStorage.getItem('pending-document-url');
-                if (pendingUrl) {
-                  window.open(getDocumentUrl(pendingUrl), '_blank');
-                  sessionStorage.removeItem('pending-document-url');
+                if (pendingDocUrl) {
+                  const { url, error } = await getSignedUrl('profile-documents', pendingDocUrl);
+                  if (url && !error) {
+                    window.open(url, '_blank');
+                  }
+                  setPendingDocUrl(null);
                 }
               }}
             >

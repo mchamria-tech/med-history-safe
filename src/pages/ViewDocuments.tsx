@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { getSignedUrl, extractFilePath } from "@/hooks/useSignedUrl";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,27 +70,11 @@ const ViewDocuments = () => {
     }
   };
 
-  const getDocumentUrl = (documentUrl: string) => {
-    // Standardized URL handling - always use file path format
-    let filePath = documentUrl;
-    
-    // If it's a full URL (old format), extract the path
-    if (documentUrl.includes('supabase.co')) {
-      const urlParts = documentUrl.split('/profile-documents/');
-      filePath = urlParts[1] || documentUrl;
-    }
-    
-    const { data } = supabase.storage
-      .from('profile-documents')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
-  };
-
-  const handleView = (documentUrl: string) => {
+  const handleView = async (documentUrl: string) => {
     try {
-      const publicUrl = getDocumentUrl(documentUrl);
-      window.open(publicUrl, '_blank');
+      const { url, error } = await getSignedUrl('profile-documents', documentUrl);
+      if (error || !url) throw new Error(error || 'Failed to get URL');
+      window.open(url, '_blank');
     } catch (error) {
       console.error('Error viewing document:', error);
       toast({
@@ -102,16 +87,18 @@ const ViewDocuments = () => {
 
   const handleDownload = async (documentUrl: string, documentName: string) => {
     try {
-      const publicUrl = getDocumentUrl(documentUrl);
-      const response = await fetch(publicUrl);
+      const { url, error } = await getSignedUrl('profile-documents', documentUrl);
+      if (error || !url) throw new Error(error || 'Failed to get URL');
+      
+      const response = await fetch(url);
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = blobUrl;
       a.download = documentName;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(blobUrl);
       document.body.removeChild(a);
     } catch (error) {
       console.error('Error downloading document:', error);
@@ -123,10 +110,12 @@ const ViewDocuments = () => {
     }
   };
 
-  const handlePrint = (documentUrl: string) => {
+  const handlePrint = async (documentUrl: string) => {
     try {
-      const publicUrl = getDocumentUrl(documentUrl);
-      const printWindow = window.open(publicUrl, '_blank');
+      const { url, error } = await getSignedUrl('profile-documents', documentUrl);
+      if (error || !url) throw new Error(error || 'Failed to get URL');
+      
+      const printWindow = window.open(url, '_blank');
       if (printWindow) {
         printWindow.onload = () => {
           printWindow.print();
@@ -144,21 +133,22 @@ const ViewDocuments = () => {
 
   const handleShare = async (documentUrl: string, documentName: string) => {
     try {
-      const publicUrl = getDocumentUrl(documentUrl);
+      const { url, error } = await getSignedUrl('profile-documents', documentUrl, 86400); // 24h for sharing
+      if (error || !url) throw new Error(error || 'Failed to get URL');
       
       // Check if Web Share API is available
       if (navigator.share) {
         await navigator.share({
           title: documentName,
           text: `Check out this document: ${documentName}`,
-          url: publicUrl,
+          url: url,
         });
       } else {
         // Fallback: Copy link to clipboard
-        await navigator.clipboard.writeText(publicUrl);
+        await navigator.clipboard.writeText(url);
         toast({
           title: "Link Copied",
-          description: "Document link copied to clipboard. You can now share it via email or WhatsApp.",
+          description: "Document link copied to clipboard (valid for 24 hours).",
         });
       }
     } catch (error: any) {
@@ -181,14 +171,8 @@ const ViewDocuments = () => {
       const doc = documents.find(d => d.id === deleteDocId);
       if (!doc) return;
 
-      // Standardized path extraction for storage deletion
-      let filePath = doc.document_url;
-      
-      // If it's a full URL, extract the path
-      if (doc.document_url.includes('supabase.co')) {
-        const urlParts = doc.document_url.split('/profile-documents/');
-        filePath = urlParts[1] || doc.document_url;
-      }
+      // Extract file path using utility
+      const filePath = extractFilePath(doc.document_url, 'profile-documents');
       
       // Delete from storage
       await supabase.storage
