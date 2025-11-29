@@ -4,7 +4,7 @@ project_id = "nmmfquboslxhidghudrm"
 verify_jwt = false
 
 [functions.extract-document-metadata]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-changelog-email]
 verify_jwt = false
