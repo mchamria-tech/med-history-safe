@@ -784,12 +784,12 @@ const ProfileView = () => {
             {showMetadataReview && (
               <>
                 <div>
-                  <Label htmlFor="doc-name">Document Name/Type</Label>
+                  <Label htmlFor="doc-name">Document Name</Label>
                   <Input
                     id="doc-name"
                     value={documentName}
                     onChange={(e) => setDocumentName(e.target.value)}
-                    placeholder="e.g., Lab Report, Prescription"
+                    placeholder="e.g., Blood Test Report, Dr. Visit Notes"
                     className="bg-[hsl(190,50%,85%)]"
                   />
                 </div>
@@ -819,12 +819,12 @@ const ProfileView = () => {
                   </Popover>
                 </div>
                 <div>
-                  <Label htmlFor="doc-type">Document Type (Optional)</Label>
+                  <Label htmlFor="doc-type">Keywords/Category (Optional)</Label>
                   <Input
                     id="doc-type"
                     value={documentType}
                     onChange={(e) => setDocumentType(e.target.value)}
-                    placeholder="E.g. prescription, lab report"
+                    placeholder="e.g., prescription, lab report, x-ray"
                     className="bg-[hsl(190,50%,85%)]"
                   />
                 </div>
