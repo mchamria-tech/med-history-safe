@@ -253,9 +253,14 @@ const Profiles_Main = () => {
                         {profile.relation && (
                           <p className="text-sm text-muted-foreground">{profile.relation}</p>
                         )}
+                        {profile.insurer && (
+                          <p className="text-sm text-muted-foreground mt-1 font-medium">
+                            {profile.insurer}
+                          </p>
+                        )}
                         {profile.expiry_date && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Insurance expires: {format(new Date(profile.expiry_date), 'PP')}
+                          <p className="text-xs text-muted-foreground">
+                            Expires: {format(new Date(profile.expiry_date), 'PP')}
                           </p>
                         )}
                       </div>
