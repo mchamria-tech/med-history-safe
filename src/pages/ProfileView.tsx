@@ -337,6 +337,8 @@ const ProfileView = () => {
     }
   };
 
+  const BETA_DOCUMENT_LIMIT = 5;
+
   const handleDocumentUpload = async () => {
     if (!documentFile || !documentName || !documentDate || !profileId) {
       toast({
@@ -351,6 +353,16 @@ const ProfileView = () => {
       toast({
         title: "Authentication Error",
         description: "Please log in again to upload documents",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Beta limit: 5 documents per profile
+    if (documents.length >= BETA_DOCUMENT_LIMIT) {
+      toast({
+        title: "Beta Limit Reached",
+        description: `During the beta test, each profile is limited to ${BETA_DOCUMENT_LIMIT} documents.`,
         variant: "destructive",
       });
       return;
@@ -620,14 +632,18 @@ const ProfileView = () => {
         )}
 
         {/* Upload Document Button */}
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center gap-2">
           <Button
             onClick={() => setShowUploadDialog(true)}
             size="lg"
             className="rounded-full h-16 w-16 p-0"
+            disabled={documents.length >= BETA_DOCUMENT_LIMIT}
           >
             <Plus className="h-8 w-8" />
           </Button>
+          <p className="text-sm text-muted-foreground">
+            {documents.length}/{BETA_DOCUMENT_LIMIT} documents (Beta limit)
+          </p>
         </div>
 
         {/* Search Documents Section */}
