@@ -771,7 +771,7 @@ const ProfileView = () => {
                   ) : (
                     <>
                       <Sparkles className="mr-2 h-4 w-4" />
-                      AI Extract Metadata
+                      AI Auto Extraction
                       {!documentFile.type.startsWith('image/') && ' (Images Only)'}
                     </>
                   )}
