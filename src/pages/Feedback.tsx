@@ -1,29 +1,54 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, Star, Palette } from "lucide-react";
+import { MessageSquare, Star, Palette, Bug, Lightbulb, MessageCircle, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { z } from "zod";
 import { themes } from "@/lib/themes";
 
-const feedbackSchema = z.object({
-  category: z.enum(["Bug Report", "Feature Request", "General Feedback", "User Experience", "Theme Preference"], {
-    required_error: "Please select a category",
-  }),
-  subject: z.string().trim().min(5, "Subject must be at least 5 characters").max(100, "Subject must be less than 100 characters"),
-  message: z.string().trim().min(10, "Message must be at least 10 characters").max(1000, "Message must be less than 1000 characters"),
-  rating: z.number().min(1).max(5).optional(),
-  preferredTheme: z.string().optional(),
-});
+interface FeedbackCategory {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  placeholder: string;
+}
 
-type FeedbackForm = z.infer<typeof feedbackSchema>;
+const categories: FeedbackCategory[] = [
+  {
+    id: "Bug Report",
+    label: "Bug Report",
+    icon: <Bug className="w-4 h-4" />,
+    placeholder: "Describe any bugs or issues you've encountered...",
+  },
+  {
+    id: "Feature Request",
+    label: "Feature Request",
+    icon: <Lightbulb className="w-4 h-4" />,
+    placeholder: "What new features would you like to see?",
+  },
+  {
+    id: "General Feedback",
+    label: "General Feedback",
+    icon: <MessageCircle className="w-4 h-4" />,
+    placeholder: "Share any general thoughts or comments...",
+  },
+  {
+    id: "User Experience",
+    label: "User Experience",
+    icon: <UserCheck className="w-4 h-4" />,
+    placeholder: "How can we improve the app experience?",
+  },
+  {
+    id: "Theme Preference",
+    label: "Theme Preference",
+    icon: <Palette className="w-4 h-4" />,
+    placeholder: "Tell us why you prefer this theme...",
+  },
+];
 
 const Feedback = () => {
   const navigate = useNavigate();
@@ -31,33 +56,23 @@ const Feedback = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rating, setRating] = useState<number | null>(null);
   const [preferredTheme, setPreferredTheme] = useState<string>("");
-  const [formData, setFormData] = useState({
-    category: "",
-    subject: "",
-    message: "",
+  const [feedbackEntries, setFeedbackEntries] = useState<Record<string, string>>({
+    "Bug Report": "",
+    "Feature Request": "",
+    "General Feedback": "",
+    "User Experience": "",
+    "Theme Preference": "",
   });
+
+  const handleFeedbackChange = (categoryId: string, value: string) => {
+    setFeedbackEntries((prev) => ({ ...prev, [categoryId]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // Build message with theme preference if selected
-      let finalMessage = formData.message;
-      if (preferredTheme) {
-        const selectedTheme = themes.find(t => t.id === preferredTheme);
-        if (selectedTheme) {
-          finalMessage = `[Preferred Theme: ${selectedTheme.name}]\n\n${formData.message}`;
-        }
-      }
-
-      const validatedData = feedbackSchema.parse({
-        ...formData,
-        message: finalMessage,
-        rating: rating ?? undefined,
-        preferredTheme: preferredTheme || undefined,
-      });
-
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -70,50 +85,77 @@ const Feedback = () => {
         return;
       }
 
-      const { error } = await supabase.from("feedback").insert({
-        user_id: user.id,
-        user_email: user.email || "",
-        category: validatedData.category,
-        subject: validatedData.subject,
-        message: validatedData.message,
-        rating: validatedData.rating,
-        page_url: window.location.href,
-        status: "New",
-      });
+      // Collect non-empty feedback entries
+      const filledEntries = Object.entries(feedbackEntries).filter(
+        ([_, value]) => value.trim().length >= 10
+      );
 
-      if (error) throw error;
+      if (filledEntries.length === 0) {
+        toast({
+          title: "No feedback provided",
+          description: "Please fill in at least one feedback section (minimum 10 characters)",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Submit each non-empty feedback as a separate entry
+      for (const [category, message] of filledEntries) {
+        let finalMessage = message;
+        
+        // Add theme preference to Theme Preference category
+        if (category === "Theme Preference" && preferredTheme) {
+          const selectedTheme = themes.find(t => t.id === preferredTheme);
+          if (selectedTheme) {
+            finalMessage = `[Preferred Theme: ${selectedTheme.name}]\n\n${message}`;
+          }
+        }
+
+        const { error } = await supabase.from("feedback").insert({
+          user_id: user.id,
+          user_email: user.email || "",
+          category: category,
+          subject: `${category} Feedback`,
+          message: finalMessage,
+          rating: rating,
+          page_url: window.location.href,
+          status: "New",
+        });
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Feedback submitted!",
-        description: "Thank you for your feedback. We'll review it soon.",
+        description: `Thank you! ${filledEntries.length} feedback item(s) submitted.`,
       });
 
-      setFormData({ category: "", subject: "", message: "" });
+      // Reset form
+      setFeedbackEntries({
+        "Bug Report": "",
+        "Feature Request": "",
+        "General Feedback": "",
+        "User Experience": "",
+        "Theme Preference": "",
+      });
       setRating(null);
       setPreferredTheme("");
       
       setTimeout(() => navigate("/dashboard"), 1500);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast({
-          title: "Validation Error",
-          description: error.errors[0].message,
-          variant: "destructive",
-        });
-      } else {
-        console.error("Error submitting feedback:", error);
-        toast({
-          title: "Error",
-          description: "Failed to submit feedback. Please try again.",
-          variant: "destructive",
-        });
-      }
+      console.error("Error submitting feedback:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit feedback. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isThemeCategory = formData.category === "Theme Preference";
+  const hasThemeFeedback = feedbackEntries["Theme Preference"].trim().length > 0;
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -133,146 +175,93 @@ const Feedback = () => {
               <CardTitle>Send Feedback</CardTitle>
             </div>
             <CardDescription>
-              Help us improve CareBag by sharing your thoughts, reporting issues, or suggesting new features.
+              Help us improve CareBag by sharing your thoughts. Fill in any sections relevant to your feedback.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value) => {
-                    setFormData({ ...formData, category: value });
-                    if (value === "Theme Preference" && !formData.subject) {
-                      setFormData(prev => ({ ...prev, category: value, subject: "My preferred app theme" }));
-                    }
-                  }}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Bug Report">Bug Report</SelectItem>
-                    <SelectItem value="Feature Request">Feature Request</SelectItem>
-                    <SelectItem value="General Feedback">General Feedback</SelectItem>
-                    <SelectItem value="User Experience">User Experience</SelectItem>
-                    <SelectItem value="Theme Preference">
-                      <span className="flex items-center gap-2">
-                        <Palette className="w-4 h-4" />
-                        Theme Preference
-                      </span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {categories.map((category) => (
+                <div key={category.id} className="space-y-2">
+                  <Label htmlFor={category.id} className="flex items-center gap-2 text-base">
+                    {category.icon}
+                    {category.label}
+                  </Label>
+                  <Textarea
+                    id={category.id}
+                    value={feedbackEntries[category.id]}
+                    onChange={(e) => handleFeedbackChange(category.id, e.target.value)}
+                    placeholder={category.placeholder}
+                    className="min-h-[100px]"
+                    maxLength={1000}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {feedbackEntries[category.id].length}/1000 characters
+                  </p>
 
-              {/* Theme Preference Section - Prominently displayed when category is selected */}
-              {isThemeCategory && (
-                <Card className="border-2 border-primary/20 bg-primary/5">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-2">
-                      <Palette className="w-5 h-5 text-primary" />
-                      <CardTitle className="text-lg">Choose Your Preferred Theme</CardTitle>
-                    </div>
-                    <CardDescription>
-                      Your vote helps us decide the final look of CareBag!
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <RadioGroup
-                      value={preferredTheme}
-                      onValueChange={setPreferredTheme}
-                      className="grid gap-3"
-                    >
-                      {themes.map((theme) => (
-                        <div key={theme.id} className="relative">
-                          <RadioGroupItem
-                            value={theme.id}
-                            id={theme.id}
-                            className="peer sr-only"
-                          />
-                          <Label
-                            htmlFor={theme.id}
-                            className="flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all hover:bg-accent/10 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10"
-                          >
-                            {/* Color Preview */}
-                            <div className="flex gap-1 shrink-0">
-                              <div
-                                className="w-6 h-6 rounded-full border border-border"
-                                style={{ backgroundColor: theme.colors.primary }}
-                                title="Primary"
-                              />
-                              <div
-                                className="w-6 h-6 rounded-full border border-border"
-                                style={{ backgroundColor: theme.colors.accent }}
-                                title="Accent"
-                              />
-                              <div
-                                className="w-6 h-6 rounded-full border border-border"
-                                style={{ backgroundColor: theme.colors.background }}
-                                title="Background"
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium">{theme.name}</p>
-                              <p className="text-sm text-muted-foreground truncate">
-                                {theme.description}
-                              </p>
-                            </div>
-                          </Label>
+                  {/* Theme selector appears when Theme Preference has content */}
+                  {category.id === "Theme Preference" && hasThemeFeedback && (
+                    <Card className="border-2 border-primary/20 bg-primary/5 mt-3">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-2">
+                          <Palette className="w-5 h-5 text-primary" />
+                          <CardTitle className="text-lg">Choose Your Preferred Theme</CardTitle>
                         </div>
-                      ))}
-                    </RadioGroup>
-                    {!preferredTheme && (
-                      <p className="text-sm text-destructive mt-3">
-                        Please select a theme to continue
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+                        <CardDescription>
+                          Your vote helps us decide the final look of CareBag!
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <RadioGroup
+                          value={preferredTheme}
+                          onValueChange={setPreferredTheme}
+                          className="grid gap-3"
+                        >
+                          {themes.map((theme) => (
+                            <div key={theme.id} className="relative">
+                              <RadioGroupItem
+                                value={theme.id}
+                                id={theme.id}
+                                className="peer sr-only"
+                              />
+                              <Label
+                                htmlFor={theme.id}
+                                className="flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all hover:bg-accent/10 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10"
+                              >
+                                <div className="flex gap-1 shrink-0">
+                                  <div
+                                    className="w-6 h-6 rounded-full border border-border"
+                                    style={{ backgroundColor: theme.colors.primary }}
+                                    title="Primary"
+                                  />
+                                  <div
+                                    className="w-6 h-6 rounded-full border border-border"
+                                    style={{ backgroundColor: theme.colors.accent }}
+                                    title="Accent"
+                                  />
+                                  <div
+                                    className="w-6 h-6 rounded-full border border-border"
+                                    style={{ backgroundColor: theme.colors.background }}
+                                    title="Background"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium">{theme.name}</p>
+                                  <p className="text-sm text-muted-foreground truncate">
+                                    {theme.description}
+                                  </p>
+                                </div>
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              ))}
 
-              <div className="space-y-2">
-                <Label htmlFor="subject">Subject *</Label>
-                <Input
-                  id="subject"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  placeholder={isThemeCategory ? "E.g., My preferred app theme" : "Brief summary of your feedback"}
-                  maxLength={100}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  {formData.subject.length}/100 characters
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="message">
-                  {isThemeCategory ? "Why do you prefer this theme? *" : "Message *"}
-                </Label>
-                <Textarea
-                  id="message"
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  placeholder={
-                    isThemeCategory 
-                      ? "Tell us why you like this theme and any other design suggestions..."
-                      : "Please provide detailed information about your feedback..."
-                  }
-                  className="min-h-[150px]"
-                  maxLength={1000}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  {formData.message.length}/1000 characters
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Rating (Optional)</Label>
+              <div className="space-y-2 pt-4 border-t">
+                <Label>Overall Rating (Optional)</Label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -299,7 +288,7 @@ const Feedback = () => {
               <div className="flex gap-3 pt-4">
                 <Button
                   type="submit"
-                  disabled={isSubmitting || (isThemeCategory && !preferredTheme)}
+                  disabled={isSubmitting}
                   className="flex-1"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Feedback"}
