@@ -206,24 +206,26 @@ const ViewDocuments = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-primary text-primary-foreground p-4 flex items-center justify-between">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="text-primary-foreground hover:bg-primary/80"
-          onClick={() => navigate(`/profile/${profileId}`)}
-        >
-          <ArrowLeft className="h-6 w-6" />
-        </Button>
-        <h1 className="text-xl font-semibold">Documents</h1>
+      {/* Compact Header */}
+      <header className="flex w-full items-center justify-between bg-primary px-4 py-3">
+        <div className="flex items-center">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-primary-foreground hover:bg-primary/80 mr-2"
+            onClick={() => navigate(`/profile/${profileId}`)}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-xl font-bold text-primary-foreground">Documents</h1>
+        </div>
         <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
-          <MoreVertical className="h-6 w-6" />
+          <MoreVertical className="h-5 w-5" />
         </Button>
       </header>
 
       {/* Main Content */}
-      <div className="p-6 space-y-4 max-w-4xl mx-auto">
+      <div className="p-4 space-y-3 max-w-4xl mx-auto pb-24">
         {isLoading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Loading documents...</p>
@@ -235,25 +237,25 @@ const ViewDocuments = () => {
         ) : (
           documents.map((doc) => (
             <Card key={doc.id} className="border">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">{doc.document_name}</h3>
-                    <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                      <span>Date: {format(new Date(doc.document_date), 'PPP')}</span>
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground text-sm truncate">{doc.document_name}</h3>
+                    <div className="flex flex-wrap gap-x-3 mt-1 text-xs text-muted-foreground">
+                      <span>Date: {format(new Date(doc.document_date), 'PP')}</span>
                       {doc.document_type && <span>Type: {doc.document_type}</span>}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Uploaded: {format(new Date(doc.uploaded_at), 'PPP')}
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Uploaded: {format(new Date(doc.uploaded_at), 'PP')}
                     </p>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-5 w-5" />
+                      <Button variant="ghost" size="icon" className="flex-shrink-0">
+                        <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48 bg-background z-50">
+                    <DropdownMenuContent align="end" className="w-44 bg-background z-50">
                       <DropdownMenuItem onClick={() => handleView(doc.document_url)}>
                         <Eye className="mr-2 h-4 w-4" />
                         View
@@ -284,18 +286,17 @@ const ViewDocuments = () => {
             </Card>
           ))
         )}
+      </div>
 
-        {/* Back Button */}
-        <div className="flex justify-center pt-4">
-          <Button
-            onClick={() => navigate(`/profile/${profileId}`)}
-            variant="outline"
-            size="lg"
-            className="min-w-[200px]"
-          >
-            Back to Profile
-          </Button>
-        </div>
+      {/* Sticky Back Button */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 pb-6">
+        <Button
+          onClick={() => navigate(`/profile/${profileId}`)}
+          variant="outline"
+          className="w-full h-12"
+        >
+          Back to Profile
+        </Button>
       </div>
 
       {/* Delete Confirmation Dialog */}

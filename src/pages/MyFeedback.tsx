@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, Star } from "lucide-react";
+import { MessageSquare, Star, ArrowLeft, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -74,26 +74,36 @@ const MyFeedback = () => {
     }
   };
 
-  const getCategoryIcon = (category: string) => {
-    return <MessageSquare className="w-5 h-5" />;
-  };
-
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-            ← Back to Dashboard
+    <div className="min-h-screen bg-background">
+      {/* Compact Header */}
+      <header className="flex w-full items-center justify-between bg-primary px-4 py-3">
+        <div className="flex items-center">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-primary-foreground hover:bg-primary/80 mr-2"
+            onClick={() => navigate("/dashboard")}
+          >
+            <ArrowLeft className="h-5 w-5" />
           </Button>
-          <Button onClick={() => navigate("/feedback")}>
-            Submit New Feedback
-          </Button>
+          <h1 className="text-xl font-bold text-primary-foreground">My Feedback</h1>
         </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-primary-foreground hover:bg-primary/80"
+          onClick={() => navigate("/feedback")}
+        >
+          <Plus className="h-5 w-5" />
+        </Button>
+      </header>
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>My Feedback History</CardTitle>
-            <CardDescription>
+      <div className="p-4 max-w-4xl mx-auto">
+        <Card className="mb-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">My Feedback History</CardTitle>
+            <CardDescription className="text-sm">
               View all your submitted feedback and their current status
             </CardDescription>
           </CardHeader>
@@ -106,8 +116,8 @@ const MyFeedback = () => {
         ) : feedbacks.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground mb-4">
+              <MessageSquare className="w-10 h-10 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground mb-4 text-sm">
                 You haven't submitted any feedback yet
               </p>
               <Button onClick={() => navigate("/feedback")}>
@@ -116,32 +126,32 @@ const MyFeedback = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {feedbacks.map((feedback) => (
               <Card key={feedback.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        {getCategoryIcon(feedback.category)}
-                        <span className="text-sm text-muted-foreground">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <MessageSquare className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-xs text-muted-foreground">
                           {feedback.category}
                         </span>
-                        <Badge className={getStatusColor(feedback.status)}>
+                        <Badge className={`${getStatusColor(feedback.status)} text-xs`}>
                           {feedback.status}
                         </Badge>
                       </div>
-                      <CardTitle className="text-lg">{feedback.subject}</CardTitle>
-                      <CardDescription>
+                      <CardTitle className="text-base truncate">{feedback.subject}</CardTitle>
+                      <CardDescription className="text-xs">
                         Submitted on {new Date(feedback.created_at).toLocaleDateString()}
                       </CardDescription>
                     </div>
                     {feedback.rating && (
-                      <div className="flex gap-1">
+                      <div className="flex gap-0.5 flex-shrink-0">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`w-4 h-4 ${
+                            className={`w-3 h-3 ${
                               i < feedback.rating!
                                 ? "fill-primary text-primary"
                                 : "text-muted-foreground"
@@ -152,25 +162,25 @@ const MyFeedback = () => {
                     )}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 pt-0">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Your Feedback:</p>
-                    <p className="text-sm text-foreground whitespace-pre-wrap">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Your Feedback:</p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap line-clamp-3">
                       {feedback.message}
                     </p>
                   </div>
                   
                   {feedback.admin_response && (
-                    <div className="border-t pt-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-primary">Admin Response:</p>
+                    <div className="border-t pt-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-medium text-primary">Admin Response:</p>
                         {feedback.admin_responded_at && (
                           <p className="text-xs text-muted-foreground">
-                            {new Date(feedback.admin_responded_at).toLocaleString()}
+                            {new Date(feedback.admin_responded_at).toLocaleDateString()}
                           </p>
                         )}
                       </div>
-                      <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="bg-muted/50 rounded-lg p-2">
                         <p className="text-sm text-foreground whitespace-pre-wrap">
                           {feedback.admin_response}
                         </p>

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import careBagLogo from "@/assets/carebag-logo.png";
+import { ArrowLeft } from "lucide-react";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -55,15 +56,23 @@ const Register = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="w-full bg-primary py-8 text-center">
-        <h1 className="text-4xl font-bold text-primary-foreground">Join CareBag!</h1>
+      {/* Compact Header */}
+      <header className="flex w-full items-center bg-primary px-4 py-3">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-primary-foreground hover:bg-primary/80 mr-2"
+          onClick={() => navigate("/")}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl font-bold text-primary-foreground">Join CareBag!</h1>
       </header>
 
       {/* Main Content */}
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-12">
-        {/* Logo */}
-        <div className="mb-8 flex h-32 w-32 items-center justify-center rounded-full border-6 border-[#3DB4E6] bg-white p-6">
+      <main className="flex flex-1 flex-col items-center px-4 py-6">
+        {/* Logo - Compact */}
+        <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full border-4 border-primary bg-white p-3">
           <img
             src={careBagLogo}
             alt="CareBag Logo"
@@ -72,9 +81,9 @@ const Register = () => {
         </div>
 
         {/* Registration Form */}
-        <div className="w-full max-w-md space-y-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+        <div className="w-full max-w-md space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="space-y-1">
               <Label htmlFor="fullName">Full Name</Label>
               <Input
                 id="fullName"
@@ -83,10 +92,11 @@ const Register = () => {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
+                className="h-12"
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -95,10 +105,11 @@ const Register = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="h-12"
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
@@ -107,10 +118,11 @@ const Register = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="h-12"
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <Input
                 id="confirmPassword"
@@ -119,13 +131,13 @@ const Register = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                className="h-12"
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-              size="lg"
+              className="w-full h-14 text-lg font-semibold bg-accent text-accent-foreground hover:bg-accent/90"
               disabled={loading}
             >
               {loading ? "CREATING ACCOUNT..." : "REGISTER"}
@@ -133,7 +145,7 @@ const Register = () => {
           </form>
 
           {/* Login Link */}
-          <div className="text-center">
+          <div className="text-center pt-2">
             <p className="text-sm text-muted-foreground">
               Already have an account?{" "}
               <button
