@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import careBagLogo from "@/assets/carebag-logo.png";
+import { ArrowLeft } from "lucide-react";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -56,15 +57,23 @@ const ResetPassword = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="w-full bg-primary py-8 text-center">
-        <h1 className="text-4xl font-bold text-primary-foreground">Reset Password</h1>
+      {/* Compact Header */}
+      <header className="flex w-full items-center bg-primary px-4 py-3">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-primary-foreground hover:bg-primary/80 mr-2"
+          onClick={() => navigate("/login")}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl font-bold text-primary-foreground">Reset Password</h1>
       </header>
 
       {/* Main Content */}
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-12">
-        {/* Logo */}
-        <div className="mb-8 flex h-32 w-32 items-center justify-center rounded-full border-6 border-[#3DB4E6] bg-white p-6">
+      <main className="flex flex-1 flex-col items-center px-4 py-8">
+        {/* Logo - Compact */}
+        <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full border-4 border-primary bg-white p-3">
           <img
             src={careBagLogo}
             alt="CareBag Logo"
@@ -73,7 +82,7 @@ const ResetPassword = () => {
         </div>
 
         {/* Reset Password Form */}
-        <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-md space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">New Password</Label>
@@ -84,6 +93,7 @@ const ResetPassword = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="h-12"
               />
             </div>
 
@@ -96,13 +106,13 @@ const ResetPassword = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                className="h-12"
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-              size="lg"
+              className="w-full h-14 text-lg font-semibold"
               disabled={loading}
             >
               {loading ? "UPDATING..." : "UPDATE PASSWORD"}
@@ -110,7 +120,7 @@ const ResetPassword = () => {
           </form>
 
           {/* Back to Login */}
-          <div className="text-center">
+          <div className="text-center pt-4">
             <p className="text-sm text-muted-foreground">
               Remember your password?{" "}
               <button

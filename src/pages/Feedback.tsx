@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, Star, Palette, Bug, Lightbulb, MessageCircle, UserCheck } from "lucide-react";
+import { MessageSquare, Star, Palette, Bug, Lightbulb, MessageCircle, UserCheck, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -158,31 +158,36 @@ const Feedback = () => {
   const hasThemeFeedback = feedbackEntries["Theme Preference"].trim().length > 0;
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-2xl mx-auto">
-        <Button
-          variant="ghost"
+    <div className="min-h-screen bg-background">
+      {/* Compact Header */}
+      <header className="flex w-full items-center bg-primary px-4 py-3">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-primary-foreground hover:bg-primary/80 mr-2"
           onClick={() => navigate("/dashboard")}
-          className="mb-6"
         >
-          ← Back to Dashboard
+          <ArrowLeft className="h-5 w-5" />
         </Button>
+        <h1 className="text-xl font-bold text-primary-foreground">Send Feedback</h1>
+      </header>
 
+      <div className="p-4 pb-8 max-w-2xl mx-auto">
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <MessageSquare className="w-6 h-6 text-primary" />
-              <CardTitle>Send Feedback</CardTitle>
+              <MessageSquare className="w-5 h-5 text-primary" />
+              <CardTitle className="text-lg">Your Feedback</CardTitle>
             </div>
-            <CardDescription>
-              Help us improve CareBag by sharing your thoughts. Fill in any sections relevant to your feedback.
+            <CardDescription className="text-sm">
+              Help us improve CareBag by sharing your thoughts.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {categories.map((category) => (
                 <div key={category.id} className="space-y-2">
-                  <Label htmlFor={category.id} className="flex items-center gap-2 text-base">
+                  <Label htmlFor={category.id} className="flex items-center gap-2 text-sm">
                     {category.icon}
                     {category.label}
                   </Label>
@@ -191,30 +196,27 @@ const Feedback = () => {
                     value={feedbackEntries[category.id]}
                     onChange={(e) => handleFeedbackChange(category.id, e.target.value)}
                     placeholder={category.placeholder}
-                    className="min-h-[100px]"
+                    className="min-h-[80px] text-sm"
                     maxLength={1000}
                   />
                   <p className="text-xs text-muted-foreground">
-                    {feedbackEntries[category.id].length}/1000 characters
+                    {feedbackEntries[category.id].length}/1000
                   </p>
 
                   {/* Theme selector appears when Theme Preference has content */}
                   {category.id === "Theme Preference" && hasThemeFeedback && (
-                    <Card className="border-2 border-primary/20 bg-primary/5 mt-3">
-                      <CardHeader className="pb-3">
+                    <Card className="border-2 border-primary/20 bg-primary/5 mt-2">
+                      <CardHeader className="pb-2 pt-3">
                         <div className="flex items-center gap-2">
-                          <Palette className="w-5 h-5 text-primary" />
-                          <CardTitle className="text-lg">Choose Your Preferred Theme</CardTitle>
+                          <Palette className="w-4 h-4 text-primary" />
+                          <CardTitle className="text-base">Choose Your Preferred Theme</CardTitle>
                         </div>
-                        <CardDescription>
-                          Your vote helps us decide the final look of CareBag!
-                        </CardDescription>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="pt-0">
                         <RadioGroup
                           value={preferredTheme}
                           onValueChange={setPreferredTheme}
-                          className="grid gap-3"
+                          className="grid gap-2"
                         >
                           {themes.map((theme) => (
                             <div key={theme.id} className="relative">
@@ -225,28 +227,25 @@ const Feedback = () => {
                               />
                               <Label
                                 htmlFor={theme.id}
-                                className="flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all hover:bg-accent/10 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10"
+                                className="flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all hover:bg-accent/10 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10"
                               >
                                 <div className="flex gap-1 shrink-0">
                                   <div
-                                    className="w-6 h-6 rounded-full border border-border"
+                                    className="w-5 h-5 rounded-full border border-border"
                                     style={{ backgroundColor: theme.colors.primary }}
-                                    title="Primary"
                                   />
                                   <div
-                                    className="w-6 h-6 rounded-full border border-border"
+                                    className="w-5 h-5 rounded-full border border-border"
                                     style={{ backgroundColor: theme.colors.accent }}
-                                    title="Accent"
                                   />
                                   <div
-                                    className="w-6 h-6 rounded-full border border-border"
+                                    className="w-5 h-5 rounded-full border border-border"
                                     style={{ backgroundColor: theme.colors.background }}
-                                    title="Background"
                                   />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium">{theme.name}</p>
-                                  <p className="text-sm text-muted-foreground truncate">
+                                  <p className="font-medium text-sm">{theme.name}</p>
+                                  <p className="text-xs text-muted-foreground truncate">
                                     {theme.description}
                                   </p>
                                 </div>
@@ -260,8 +259,8 @@ const Feedback = () => {
                 </div>
               ))}
 
-              <div className="space-y-2 pt-4 border-t">
-                <Label>Overall Rating (Optional)</Label>
+              <div className="space-y-2 pt-3 border-t">
+                <Label className="text-sm">Overall Rating (Optional)</Label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -271,7 +270,7 @@ const Feedback = () => {
                       className="transition-colors"
                     >
                       <Star
-                        className={`w-8 h-8 ${
+                        className={`w-7 h-7 ${
                           rating && star <= rating
                             ? "fill-primary text-primary"
                             : "text-muted-foreground"
@@ -280,16 +279,13 @@ const Feedback = () => {
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  How satisfied are you with CareBag overall?
-                </p>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-3">
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1"
+                  className="flex-1 h-12"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Feedback"}
                 </Button>
@@ -298,6 +294,7 @@ const Feedback = () => {
                   variant="outline"
                   onClick={() => navigate("/dashboard")}
                   disabled={isSubmitting}
+                  className="h-12"
                 >
                   Cancel
                 </Button>

@@ -168,51 +168,49 @@ const Profiles_Main = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="relative w-full bg-primary py-8 text-center">
-        <h1 className="text-4xl font-bold text-primary-foreground">Welcome to CareBag</h1>
-        <div className="absolute right-6 top-1/2 -translate-y-1/2">
-          <ThemeSelector />
-        </div>
+      {/* Compact Header */}
+      <header className="flex w-full items-center justify-between bg-primary px-4 py-3">
+        <h1 className="text-xl font-bold text-primary-foreground">CareBag</h1>
+        <ThemeSelector />
       </header>
 
-      {/* Feedback and Logout Buttons */}
-      <div className="w-full flex justify-end gap-2 px-6 py-4">
+      {/* Action Bar */}
+      <div className="w-full flex justify-end gap-1 px-4 py-2 border-b border-border">
         {isAdmin && (
           <Button
             onClick={() => navigate("/admin/feedback")}
             variant="ghost"
-            className="text-foreground hover:bg-transparent hover:text-foreground/80"
             size="sm"
+            className="text-foreground"
           >
-            <Shield className="mr-2 h-4 w-4" />
-            Admin
+            <Shield className="h-4 w-4 mr-1" />
+            <span className="text-xs">Admin</span>
           </Button>
         )}
         <Button
           onClick={() => navigate("/feedback-hub")}
           variant="ghost"
-          className="text-foreground hover:bg-transparent hover:text-foreground/80"
           size="sm"
+          className="text-foreground"
         >
-          <MessageSquare className="mr-2 h-4 w-4" />
-          Feedback
+          <MessageSquare className="h-4 w-4 mr-1" />
+          <span className="text-xs">Feedback</span>
         </Button>
         <Button
           onClick={handleLogout}
           variant="ghost"
-          className="text-foreground hover:bg-transparent hover:text-foreground/80"
           size="sm"
+          className="text-foreground"
         >
-          <LogOut className="mr-2 h-4 w-4" />
-          Logout
+          <LogOut className="h-4 w-4 mr-1" />
+          <span className="text-xs">Logout</span>
         </Button>
       </div>
 
       {/* Main Content */}
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-12">
-        {/* Logo */}
-        <div className="mb-8 flex h-64 w-64 items-center justify-center rounded-full border-6 border-[#3DB4E6] bg-white p-12">
+      <main className="flex flex-1 flex-col items-center px-4 pb-32 pt-6">
+        {/* Logo - Compact */}
+        <div className="mb-4 flex h-32 w-32 items-center justify-center rounded-full border-4 border-primary bg-white p-4">
           <img
             src={careBagLogo}
             alt="CareBag Logo"
@@ -220,24 +218,24 @@ const Profiles_Main = () => {
           />
         </div>
 
-        <div className="w-full max-w-2xl space-y-6">
-          <h2 className="text-center text-2xl font-semibold text-foreground">
-            {loading ? "Loading profiles..." : "Select a Profile or Create a New One"}
+        <div className="w-full max-w-2xl space-y-4">
+          <h2 className="text-center text-lg font-semibold text-foreground">
+            {loading ? "Loading profiles..." : "Select a Profile or Create New"}
           </h2>
 
           {/* Existing Profiles */}
           {!loading && profiles.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-muted-foreground">Your Profiles</h3>
-              <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground">Your Profiles</h3>
+              <div className="grid gap-3">
                 {profiles.map((profile) => (
                   <Card
                     key={profile.id}
-                    className="cursor-pointer p-6 transition-all hover:shadow-lg hover:border-primary"
+                    className="cursor-pointer p-4 transition-all hover:shadow-lg hover:border-primary"
                     onClick={() => handleSelectProfile(profile.id)}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-primary bg-background overflow-hidden">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary bg-background overflow-hidden flex-shrink-0">
                         {profile.profile_photo_url ? (
                           <img 
                             src={profile.profile_photo_url} 
@@ -245,16 +243,16 @@ const Profiles_Main = () => {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User className="h-8 w-8 text-primary" />
+                          <User className="h-6 w-6 text-primary" />
                         )}
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-foreground text-lg">{profile.name}</h4>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-foreground truncate">{profile.name}</h4>
                         {profile.relation && (
-                          <p className="text-sm text-muted-foreground">{profile.relation}</p>
+                          <p className="text-xs text-muted-foreground">{profile.relation}</p>
                         )}
                         {profile.insurer && (
-                          <p className="text-sm text-muted-foreground mt-1 font-medium">
+                          <p className="text-xs text-muted-foreground truncate">
                             {profile.insurer}
                           </p>
                         )}
@@ -266,11 +264,11 @@ const Profiles_Main = () => {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" className="flex-shrink-0">
                             <Edit className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="bg-background z-50">
                           <DropdownMenuItem onClick={(e) => handleEditProfile(e, profile.id)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Profile
@@ -290,29 +288,27 @@ const Profiles_Main = () => {
               </div>
             </div>
           )}
-
-          {/* Create New Profile Button */}
-          <div className="pt-4 space-y-3">
-            <Button
-              onClick={handleCreateProfile}
-              className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-              size="lg"
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              Create New Profile
-            </Button>
-            
-            <Button
-              onClick={handleDocumentSearch}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-              size="lg"
-            >
-              <Search className="mr-2 h-5 w-5" />
-              Document Search
-            </Button>
-          </div>
         </div>
       </main>
+
+      {/* Sticky Bottom CTA */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 pb-6 space-y-2">
+        <Button
+          onClick={handleCreateProfile}
+          className="w-full h-12 text-base font-semibold bg-accent text-accent-foreground hover:bg-accent/90"
+        >
+          <Plus className="mr-2 h-5 w-5" />
+          Create New Profile
+        </Button>
+        <Button
+          onClick={handleDocumentSearch}
+          variant="outline"
+          className="w-full h-12 text-base font-semibold"
+        >
+          <Search className="mr-2 h-5 w-5" />
+          Document Search
+        </Button>
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -336,4 +332,3 @@ const Profiles_Main = () => {
 };
 
 export default Profiles_Main;
-

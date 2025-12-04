@@ -231,30 +231,69 @@ const DocumentSearch = () => {
     oneMatch: results.filter((r) => r.matchCount === 1),
   };
 
+  const ResultCard = ({ result }: { result: SearchResult }) => (
+    <Card className="p-3">
+      <div className="flex justify-between items-start gap-2">
+        <div className="flex-1 min-w-0 space-y-1">
+          <p className="font-semibold text-foreground text-sm truncate">
+            {result.profile_name}
+          </p>
+          <p className="text-xs text-muted-foreground truncate">
+            Doc: {result.document_name}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Date: {format(new Date(result.document_date), 'dd MMM yyyy')}
+          </p>
+          <p className="text-xs text-foreground">
+            <span className="font-medium">Keywords:</span> {result.matchedTags.join(', ')}
+          </p>
+        </div>
+        <div className="flex gap-1 flex-shrink-0">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0"
+            onClick={() => handleViewDocument(result.document_url)}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            className="h-8 w-8 p-0"
+            onClick={() => handleDeleteClick(result.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
-        <Button
-          variant="ghost"
+    <div className="min-h-screen bg-background">
+      {/* Compact Header */}
+      <header className="flex w-full items-center bg-primary px-4 py-3">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-primary-foreground hover:bg-primary/80 mr-2"
           onClick={() => navigate("/dashboard")}
-          className="mb-6"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
+          <ArrowLeft className="h-5 w-5" />
         </Button>
+        <h1 className="text-xl font-bold text-primary-foreground">Document Search</h1>
+      </header>
 
-        <h1 className="text-3xl font-bold text-foreground mb-8 text-center">
-          Document Search
-        </h1>
-
-        <Card className="p-6 mb-8">
-          <h2 className="text-xl font-semibold text-foreground mb-6 text-center">
+      <div className="p-4 max-w-4xl mx-auto">
+        <Card className="p-4 mb-4">
+          <h2 className="text-lg font-semibold text-foreground mb-4 text-center">
             Search By:
           </h2>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div>
-              <Label htmlFor="doctorName">Doctor Name:</Label>
+              <Label htmlFor="doctorName" className="text-sm">Doctor Name:</Label>
               <Input
                 id="doctorName"
                 value={searchParams.doctorName}
@@ -262,11 +301,12 @@ const DocumentSearch = () => {
                   setSearchParams({ ...searchParams, doctorName: e.target.value })
                 }
                 placeholder="Enter doctor name"
+                className="h-10"
               />
             </div>
 
             <div>
-              <Label htmlFor="ailment">Ailment:</Label>
+              <Label htmlFor="ailment" className="text-sm">Ailment:</Label>
               <Input
                 id="ailment"
                 value={searchParams.ailment}
@@ -274,11 +314,12 @@ const DocumentSearch = () => {
                   setSearchParams({ ...searchParams, ailment: e.target.value })
                 }
                 placeholder="Enter ailment"
+                className="h-10"
               />
             </div>
 
             <div>
-              <Label htmlFor="medicine">Medicine:</Label>
+              <Label htmlFor="medicine" className="text-sm">Medicine:</Label>
               <Input
                 id="medicine"
                 value={searchParams.medicine}
@@ -286,11 +327,12 @@ const DocumentSearch = () => {
                   setSearchParams({ ...searchParams, medicine: e.target.value })
                 }
                 placeholder="Enter medicine"
+                className="h-10"
               />
             </div>
 
             <div>
-              <Label htmlFor="other">Other:</Label>
+              <Label htmlFor="other" className="text-sm">Other:</Label>
               <Input
                 id="other"
                 value={searchParams.other}
@@ -298,6 +340,7 @@ const DocumentSearch = () => {
                   setSearchParams({ ...searchParams, other: e.target.value })
                 }
                 placeholder="Enter other tags"
+                className="h-10"
               />
             </div>
           </div>
@@ -305,75 +348,44 @@ const DocumentSearch = () => {
           <Button
             onClick={handleSearch}
             disabled={searching}
-            className="w-full mt-6 bg-primary hover:bg-primary/90"
+            className="w-full mt-4 h-12"
           >
             {searching ? "Searching..." : "Search Documents"}
           </Button>
         </Card>
 
         {hasSearched && results.length === 0 && (
-          <Card className="p-8 text-center">
-            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-lg text-muted-foreground">
+          <Card className="p-6 text-center">
+            <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
               No documents found with those search parameters
             </p>
           </Card>
         )}
 
         {hasSearched && results.length > 0 && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-foreground">Search Results</h2>
+              <h2 className="text-lg font-bold text-foreground">Results</h2>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={handleClearSearch}
-                className="flex items-center gap-2"
+                className="flex items-center gap-1"
               >
                 <X className="h-4 w-4" />
-                Clear Search
+                Clear
               </Button>
             </div>
+            
             {groupedResults.fourMatches.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  All 4 Search Terms Matched ({groupedResults.fourMatches.length})
+                <h3 className="text-sm font-semibold text-foreground mb-2">
+                  All 4 Terms Matched ({groupedResults.fourMatches.length})
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {groupedResults.fourMatches.map((result) => (
-                    <Card key={result.id} className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 space-y-1">
-                          <p className="font-semibold text-foreground">
-                            {result.profile_name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Document Type: {result.document_name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Date: {format(new Date(result.document_date), 'dd MMMM, yyyy')}
-                          </p>
-                          <p className="text-sm text-foreground mt-2">
-                            <span className="font-medium">Keywords:</span> {result.matchedTags.join(', ')}
-                          </p>
-                        </div>
-                        <div className="flex gap-2 ml-4">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewDocument(result.document_url)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteClick(result.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
+                    <ResultCard key={result.id} result={result} />
                   ))}
                 </div>
               </div>
@@ -381,45 +393,12 @@ const DocumentSearch = () => {
 
             {groupedResults.threeMatches.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  3 Search Terms Matched ({groupedResults.threeMatches.length})
+                <h3 className="text-sm font-semibold text-foreground mb-2">
+                  3 Terms Matched ({groupedResults.threeMatches.length})
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {groupedResults.threeMatches.map((result) => (
-                    <Card key={result.id} className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 space-y-1">
-                          <p className="font-semibold text-foreground">
-                            {result.profile_name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Document Type: {result.document_name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Date: {format(new Date(result.document_date), 'dd MMMM, yyyy')}
-                          </p>
-                          <p className="text-sm text-foreground mt-2">
-                            <span className="font-medium">Keywords:</span> {result.matchedTags.join(', ')}
-                          </p>
-                        </div>
-                        <div className="flex gap-2 ml-4">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewDocument(result.document_url)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteClick(result.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
+                    <ResultCard key={result.id} result={result} />
                   ))}
                 </div>
               </div>
@@ -427,45 +406,12 @@ const DocumentSearch = () => {
 
             {groupedResults.twoMatches.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  2 Search Terms Matched ({groupedResults.twoMatches.length})
+                <h3 className="text-sm font-semibold text-foreground mb-2">
+                  2 Terms Matched ({groupedResults.twoMatches.length})
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {groupedResults.twoMatches.map((result) => (
-                    <Card key={result.id} className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 space-y-1">
-                          <p className="font-semibold text-foreground">
-                            {result.profile_name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Document Type: {result.document_name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Date: {format(new Date(result.document_date), 'dd MMMM, yyyy')}
-                          </p>
-                          <p className="text-sm text-foreground mt-2">
-                            <span className="font-medium">Keywords:</span> {result.matchedTags.join(', ')}
-                          </p>
-                        </div>
-                        <div className="flex gap-2 ml-4">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewDocument(result.document_url)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteClick(result.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
+                    <ResultCard key={result.id} result={result} />
                   ))}
                 </div>
               </div>
@@ -473,45 +419,12 @@ const DocumentSearch = () => {
 
             {groupedResults.oneMatch.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  1 Search Term Matched ({groupedResults.oneMatch.length})
+                <h3 className="text-sm font-semibold text-foreground mb-2">
+                  1 Term Matched ({groupedResults.oneMatch.length})
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {groupedResults.oneMatch.map((result) => (
-                    <Card key={result.id} className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 space-y-1">
-                          <p className="font-semibold text-foreground">
-                            {result.profile_name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Document Type: {result.document_name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Date: {format(new Date(result.document_date), 'dd MMMM, yyyy')}
-                          </p>
-                          <p className="text-sm text-foreground mt-2">
-                            <span className="font-medium">Keywords:</span> {result.matchedTags.join(', ')}
-                          </p>
-                        </div>
-                        <div className="flex gap-2 ml-4">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewDocument(result.document_url)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteClick(result.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
+                    <ResultCard key={result.id} result={result} />
                   ))}
                 </div>
               </div>
@@ -520,20 +433,18 @@ const DocumentSearch = () => {
         )}
       </div>
 
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Document</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              document.
+              Are you sure you want to delete this document? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteConfirm}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

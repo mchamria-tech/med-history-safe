@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, Star, Send } from "lucide-react";
+import { MessageSquare, Star, Send, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -163,18 +163,25 @@ const AdminFeedback = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-            ← Back to Dashboard
-          </Button>
-        </div>
+    <div className="min-h-screen bg-background">
+      {/* Compact Header */}
+      <header className="flex w-full items-center bg-primary px-4 py-3">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-primary-foreground hover:bg-primary/80 mr-2"
+          onClick={() => navigate("/dashboard")}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl font-bold text-primary-foreground">Admin Dashboard</h1>
+      </header>
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Admin Feedback Dashboard</CardTitle>
-            <CardDescription>
+      <div className="p-4 max-w-6xl mx-auto">
+        <Card className="mb-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Admin Feedback Dashboard</CardTitle>
+            <CardDescription className="text-sm">
               View and respond to all user feedback submissions
             </CardDescription>
           </CardHeader>
@@ -187,7 +194,7 @@ const AdminFeedback = () => {
         ) : feedbacks.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <MessageSquare className="w-10 h-10 mx-auto mb-4 text-muted-foreground" />
               <p className="text-muted-foreground">No feedback submissions yet</p>
             </CardContent>
           </Card>
@@ -195,32 +202,32 @@ const AdminFeedback = () => {
           <div className="space-y-4">
             {feedbacks.map((feedback) => (
               <Card key={feedback.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <MessageSquare className="w-5 h-5" />
-                        <span className="text-sm text-muted-foreground">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <MessageSquare className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-xs text-muted-foreground">
                           {feedback.category}
                         </span>
-                        <Badge className={getStatusColor(feedback.status)}>
+                        <Badge className={`${getStatusColor(feedback.status)} text-xs`}>
                           {feedback.status}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground truncate">
                           from {feedback.user_email}
                         </span>
                       </div>
-                      <CardTitle className="text-lg">{feedback.subject}</CardTitle>
-                      <CardDescription>
+                      <CardTitle className="text-base">{feedback.subject}</CardTitle>
+                      <CardDescription className="text-xs">
                         Submitted on {new Date(feedback.created_at).toLocaleString()}
                       </CardDescription>
                     </div>
                     {feedback.rating && (
-                      <div className="flex gap-1">
+                      <div className="flex gap-0.5 flex-shrink-0">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`w-4 h-4 ${
+                            className={`w-3 h-3 ${
                               i < feedback.rating!
                                 ? "fill-primary text-primary"
                                 : "text-muted-foreground"
@@ -231,9 +238,9 @@ const AdminFeedback = () => {
                     )}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 pt-0">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">
                       User's Feedback:
                     </p>
                     <p className="text-sm text-foreground whitespace-pre-wrap">
@@ -242,18 +249,18 @@ const AdminFeedback = () => {
                   </div>
 
                   {feedback.admin_response && (
-                    <div className="border-t pt-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-primary">
+                    <div className="border-t pt-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-medium text-primary">
                           Your Previous Response:
                         </p>
                         {feedback.admin_responded_at && (
                           <p className="text-xs text-muted-foreground">
-                            {new Date(feedback.admin_responded_at).toLocaleString()}
+                            {new Date(feedback.admin_responded_at).toLocaleDateString()}
                           </p>
                         )}
                       </div>
-                      <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="bg-muted/50 rounded-lg p-2">
                         <p className="text-sm text-foreground whitespace-pre-wrap">
                           {feedback.admin_response}
                         </p>
@@ -261,19 +268,19 @@ const AdminFeedback = () => {
                     </div>
                   )}
 
-                  <div className="border-t pt-4 space-y-3">
+                  <div className="border-t pt-3 space-y-3">
                     <div className="flex items-center gap-3">
-                      <label className="text-sm font-medium">Status:</label>
+                      <label className="text-xs font-medium">Status:</label>
                       <Select
                         value={statusUpdates[feedback.id]}
                         onValueChange={(value) =>
                           setStatusUpdates(prev => ({ ...prev, [feedback.id]: value }))
                         }
                       >
-                        <SelectTrigger className="w-40">
+                        <SelectTrigger className="w-32 h-9 text-sm">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-background z-50">
                           <SelectItem value="New">New</SelectItem>
                           <SelectItem value="In Review">In Review</SelectItem>
                           <SelectItem value="Resolved">Resolved</SelectItem>
@@ -287,11 +294,11 @@ const AdminFeedback = () => {
                       onChange={(e) =>
                         setResponses(prev => ({ ...prev, [feedback.id]: e.target.value }))
                       }
-                      className="min-h-24"
+                      className="min-h-20 text-sm"
                     />
                     <Button
                       onClick={() => handleSubmitResponse(feedback.id)}
-                      className="w-full sm:w-auto"
+                      className="w-full sm:w-auto h-10"
                     >
                       <Send className="w-4 h-4 mr-2" />
                       Submit Response
