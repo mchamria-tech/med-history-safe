@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { getSignedUrl } from "@/hooks/useSignedUrl";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +31,7 @@ const Profiles_Main = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [profilePhotoUrls, setProfilePhotoUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
@@ -66,6 +68,20 @@ const Profiles_Main = () => {
       });
 
       setProfiles(sortedProfiles);
+      
+      // Fetch signed URLs for profile photos
+      const photoUrls: Record<string, string> = {};
+      await Promise.all(
+        sortedProfiles.map(async (profile) => {
+          if (profile.profile_photo_url) {
+            const { url } = await getSignedUrl('profile-photos', profile.profile_photo_url);
+            if (url) {
+              photoUrls[profile.id] = url;
+            }
+          }
+        })
+      );
+      setProfilePhotoUrls(photoUrls);
     } catch (error: any) {
       console.error('Error fetching profiles:', error);
       toast({
@@ -236,9 +252,9 @@ const Profiles_Main = () => {
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary bg-background overflow-hidden flex-shrink-0">
-                        {profile.profile_photo_url ? (
+                        {profilePhotoUrls[profile.id] ? (
                           <img 
-                            src={profile.profile_photo_url} 
+                            src={profilePhotoUrls[profile.id]} 
                             alt={profile.name}
                             className="w-full h-full object-cover"
                           />
