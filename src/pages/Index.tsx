@@ -19,8 +19,8 @@ const Index = () => {
       <main className="flex flex-1 flex-col items-center px-4 pb-32 pt-6">
         {/* Hero Section */}
         <div className="flex flex-col items-center space-y-4 animate-fade-in">
-          {/* Logo - Compact for mobile */}
-          <div className="flex h-40 w-40 items-center justify-center rounded-full border-4 border-primary bg-white p-4">
+          {/* Logo */}
+          <div className="flex h-60 w-60 items-center justify-center rounded-full border-4 border-primary bg-white p-4 animate-scale-in">
             <img
               src={careBagLogo}
               alt="CareBag Logo"
@@ -42,7 +42,7 @@ const Index = () => {
         </div>
 
         {/* Value Props Strip */}
-        <div className="flex w-full max-w-sm justify-around pt-6 pb-2">
+        <div className="flex w-full max-w-sm justify-around pt-6 pb-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <div className="flex flex-col items-center space-y-1">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
               <Users className="h-5 w-5 text-primary" />

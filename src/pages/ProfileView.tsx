@@ -494,10 +494,10 @@ const ProfileView = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-4 pb-32 pt-4 space-y-4">
+      <main className="flex-1 px-4 pb-32 pt-4 space-y-4 animate-fade-in">
         {/* Profile Photo and Basic Info */}
-        <div className="flex flex-col items-center space-y-2 animate-fade-in">
-          <Avatar className="h-24 w-24 border-2 border-primary">
+        <div className="flex flex-col items-center space-y-2">
+          <Avatar className="h-36 w-36 border-2 border-primary animate-scale-in">
             <AvatarImage src={profilePhotoUrl || undefined} alt={profile.name} />
             <AvatarFallback className="text-2xl bg-muted">
               {profile.name.charAt(0).toUpperCase()}

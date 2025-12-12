@@ -286,7 +286,7 @@ const NewProfile = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-4 pb-32 pt-4 max-w-4xl mx-auto w-full">
+      <main className="flex-1 px-4 pb-32 pt-4 max-w-4xl mx-auto w-full animate-fade-in">
         {isLoading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Loading profile data...</p>
@@ -307,7 +307,7 @@ const NewProfile = () => {
               />
               <label
                 htmlFor="photo-upload"
-                className="flex items-center justify-center w-28 h-28 rounded-full bg-muted cursor-pointer hover:bg-muted/80 transition-colors relative overflow-hidden border-2 border-primary"
+                className="flex items-center justify-center w-40 h-40 rounded-full bg-muted cursor-pointer hover:bg-muted/80 transition-colors relative overflow-hidden border-2 border-primary animate-scale-in"
               >
                 {profilePhoto ? (
                   <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />

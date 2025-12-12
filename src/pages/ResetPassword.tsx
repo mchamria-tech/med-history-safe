@@ -71,9 +71,9 @@ const ResetPassword = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex flex-1 flex-col items-center px-4 py-8">
-        {/* Logo - Compact */}
-        <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full border-4 border-primary bg-white p-3">
+      <main className="flex flex-1 flex-col items-center px-4 py-8 animate-fade-in">
+        {/* Logo */}
+        <div className="mb-6 flex h-36 w-36 items-center justify-center rounded-full border-4 border-primary bg-white p-3 animate-scale-in">
           <img
             src={careBagLogo}
             alt="CareBag Logo"
