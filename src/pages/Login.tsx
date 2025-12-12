@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import careBagLogo from "@/assets/carebag-logo.png";
+import careBagLogo from "@/assets/carebag-logo-new.png";
 import { ArrowLeft } from "lucide-react";
 
 const Login = () => {

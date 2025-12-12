@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeSelector } from "@/components/ThemeSelector";
-import careBagLogo from "@/assets/carebag-logo.png";
+import careBagLogo from "@/assets/carebag-logo-new.png";
 import { Users, Search, Shield } from "lucide-react";
 
 const Index = () => {
