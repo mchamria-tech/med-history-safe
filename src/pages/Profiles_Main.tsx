@@ -227,7 +227,7 @@ const Profiles_Main = () => {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header with Logo and Title */}
-      <header className="relative bg-gradient-to-r from-primary to-primary/80 px-4 py-4 rounded-b-3xl shadow-lg">
+      <header className="relative bg-gradient-to-r from-primary/10 via-primary/50 to-primary px-4 py-4 rounded-b-3xl shadow-lg">
         {/* Logo and Title - Left */}
         <div className="flex items-center gap-3">
           <img
@@ -235,7 +235,7 @@ const Profiles_Main = () => {
             alt="CareBag"
             className="h-10 w-10 object-contain"
           />
-          <h1 className="text-2xl font-bold text-primary-foreground">CareBag</h1>
+          <h1 className="text-2xl font-bold text-primary">CareBag</h1>
         </div>
         
         {/* Action Buttons - Top Right */}
