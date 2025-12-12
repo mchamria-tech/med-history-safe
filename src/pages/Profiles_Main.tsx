@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ThemeSelector } from "@/components/ThemeSelector";
-import careBagLogo from "@/assets/carebag-logo.png";
+import careBagLogo from "@/assets/carebag-logo-new.png";
 import { Plus, User, Edit, Trash2, Search, LogOut, MessageSquare, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
