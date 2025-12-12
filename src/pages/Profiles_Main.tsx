@@ -226,46 +226,50 @@ const Profiles_Main = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header with Prominent Floating Logo */}
-      <header className="relative flex flex-col items-center bg-gradient-to-br from-primary to-primary/80 px-4 py-4 pb-6">
-        {/* Action buttons - top right */}
-        <div className="absolute right-2 top-2 flex items-center gap-0.5">
+      {/* Header with Logo and Title */}
+      <header className="relative bg-gradient-to-r from-primary to-primary/80 px-4 py-4 rounded-b-3xl shadow-lg">
+        {/* Logo and Title - Left */}
+        <div className="flex items-center gap-3">
+          <img
+            src={careBagIcon}
+            alt="CareBag"
+            className="h-10 w-10 object-contain"
+          />
+          <h1 className="text-2xl font-bold text-primary-foreground">CareBag</h1>
+        </div>
+        
+        {/* Action Buttons - Top Right */}
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
           {isAdmin && (
             <Button
-              onClick={() => navigate("/admin/feedback")}
               variant="ghost"
               size="icon"
-              className="h-9 w-9 text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={() => navigate('/admin/feedback')}
+              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 h-8 w-8"
+              title="Admin Dashboard"
             >
               <Shield className="h-4 w-4" />
             </Button>
           )}
           <Button
-            onClick={() => navigate("/feedback-hub")}
             variant="ghost"
             size="icon"
-            className="h-9 w-9 text-primary-foreground hover:bg-primary-foreground/20"
+            onClick={() => navigate('/feedback-hub')}
+            className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 h-8 w-8"
+            title="Feedback"
           >
             <MessageSquare className="h-4 w-4" />
           </Button>
           <ThemeSelector />
           <Button
-            onClick={handleLogout}
             variant="ghost"
             size="icon"
-            className="h-9 w-9 text-primary-foreground hover:bg-primary-foreground/20"
+            onClick={handleLogout}
+            className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 h-8 w-8"
+            title="Logout"
           >
             <LogOut className="h-4 w-4" />
           </Button>
-        </div>
-        
-        {/* Prominent Floating Logo */}
-        <div className="mt-4 mb-2 h-20 w-20 rounded-full bg-white shadow-lg ring-4 ring-white/30 flex items-center justify-center p-3">
-          <img
-            src={careBagIcon}
-            alt="CareBag"
-            className="h-full w-full object-contain"
-          />
         </div>
       </header>
 
