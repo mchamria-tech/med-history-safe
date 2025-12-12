@@ -32,6 +32,7 @@ const Profiles_Main = () => {
   const { toast } = useToast();
   const [profiles, setProfiles] = useState<any[]>([]);
   const [profilePhotoUrls, setProfilePhotoUrls] = useState<Record<string, string>>({});
+  const [photosLoading, setPhotosLoading] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
@@ -69,15 +70,30 @@ const Profiles_Main = () => {
 
       setProfiles(sortedProfiles);
       
+      // Set loading state for profiles with photos
+      const loadingState: Record<string, boolean> = {};
+      sortedProfiles.forEach((profile) => {
+        if (profile.profile_photo_url) {
+          loadingState[profile.id] = true;
+        }
+      });
+      setPhotosLoading(loadingState);
+      
       // Fetch signed URLs for profile photos
       const photoUrls: Record<string, string> = {};
       await Promise.all(
         sortedProfiles.map(async (profile) => {
           if (profile.profile_photo_url) {
-            const { url } = await getSignedUrl('profile-photos', profile.profile_photo_url);
+            console.log(`[ProfilePhoto] Fetching signed URL for ${profile.name}:`, profile.profile_photo_url);
+            const { url, error } = await getSignedUrl('profile-photos', profile.profile_photo_url);
+            if (error) {
+              console.error(`[ProfilePhoto] Error for ${profile.name}:`, error);
+            }
             if (url) {
+              console.log(`[ProfilePhoto] Got signed URL for ${profile.name}:`, url.substring(0, 80) + '...');
               photoUrls[profile.id] = url;
             }
+            setPhotosLoading(prev => ({ ...prev, [profile.id]: false }));
           }
         })
       );
@@ -252,11 +268,17 @@ const Profiles_Main = () => {
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary bg-background overflow-hidden flex-shrink-0">
-                        {profilePhotoUrls[profile.id] ? (
+                        {photosLoading[profile.id] ? (
+                          <div className="w-full h-full bg-muted animate-pulse" />
+                        ) : profilePhotoUrls[profile.id] ? (
                           <img 
                             src={profilePhotoUrls[profile.id]} 
                             alt={profile.name}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error(`[ProfilePhoto] Image failed to load for ${profile.name}`);
+                              e.currentTarget.style.display = 'none';
+                            }}
                           />
                         ) : (
                           <User className="h-6 w-6 text-primary" />
