@@ -307,7 +307,7 @@ const NewProfile = () => {
               />
               <label
                 htmlFor="photo-upload"
-                className="flex items-center justify-center w-40 h-40 rounded-full bg-muted cursor-pointer hover:bg-muted/80 transition-colors relative overflow-hidden border-2 border-primary animate-scale-in"
+                className="flex items-center justify-center w-32 h-32 rounded-full bg-muted cursor-pointer hover:bg-muted/80 transition-colors relative overflow-hidden border-2 border-primary animate-scale-in"
               >
                 {profilePhoto ? (
                   <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />

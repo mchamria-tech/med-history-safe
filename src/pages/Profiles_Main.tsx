@@ -210,7 +210,7 @@ const Profiles_Main = () => {
       {/* Main Content */}
       <main className="flex flex-1 flex-col items-center px-4 pb-32 pt-6 animate-fade-in">
         {/* Logo */}
-        <div className="mb-4 flex h-48 w-48 items-center justify-center rounded-full border-4 border-primary bg-white p-4 animate-scale-in">
+        <div className="mb-4 flex h-36 w-36 items-center justify-center rounded-full border-4 border-primary bg-white p-4 animate-scale-in">
           <img
             src={careBagLogo}
             alt="CareBag Logo"
