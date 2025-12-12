@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ThemeSelector } from "@/components/ThemeSelector";
-import careBagLogo from "@/assets/carebag-logo-new.png";
+import careBagIcon from "@/assets/carebag-icon.png";
 import { Plus, User, Edit, Trash2, Search, LogOut, MessageSquare, Shield, FileText, Users, MoreVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -260,16 +260,13 @@ const Profiles_Main = () => {
         </div>
         
         {/* Prominent Floating Logo */}
-        <div className="mt-2 h-16 w-16 rounded-full bg-white shadow-lg ring-4 ring-white/30 flex items-center justify-center">
+        <div className="mt-4 mb-2 h-20 w-20 rounded-full bg-white shadow-lg ring-4 ring-white/30 flex items-center justify-center p-3">
           <img
-            src={careBagLogo}
+            src={careBagIcon}
             alt="CareBag"
-            className="h-12 w-12 object-contain"
+            className="h-full w-full object-contain"
           />
         </div>
-        
-        {/* Title */}
-        <h1 className="mt-2 text-xl font-bold text-primary-foreground">CareBag</h1>
       </header>
 
       {/* Quick Stats Strip */}
