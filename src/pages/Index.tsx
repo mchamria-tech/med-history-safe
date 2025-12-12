@@ -20,7 +20,7 @@ const Index = () => {
         {/* Hero Section */}
         <div className="flex flex-col items-center space-y-4 animate-fade-in">
           {/* Logo */}
-          <div className="flex h-60 w-60 items-center justify-center rounded-full border-4 border-primary bg-white p-4 animate-scale-in">
+          <div className="flex h-40 w-40 items-center justify-center rounded-full border-4 border-primary bg-white p-4 animate-scale-in">
             <img
               src={careBagLogo}
               alt="CareBag Logo"

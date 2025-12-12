@@ -497,7 +497,7 @@ const ProfileView = () => {
       <main className="flex-1 px-4 pb-32 pt-4 space-y-4 animate-fade-in">
         {/* Profile Photo and Basic Info */}
         <div className="flex flex-col items-center space-y-2">
-          <Avatar className="h-36 w-36 border-2 border-primary animate-scale-in">
+          <Avatar className="h-28 w-28 border-2 border-primary animate-scale-in">
             <AvatarImage src={profilePhotoUrl || undefined} alt={profile.name} />
             <AvatarFallback className="text-2xl bg-muted">
               {profile.name.charAt(0).toUpperCase()}
