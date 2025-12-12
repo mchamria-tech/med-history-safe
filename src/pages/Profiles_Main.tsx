@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import careBagLogo from "@/assets/carebag-logo-new.png";
-import { Plus, User, Edit, Trash2, Search, LogOut, MessageSquare, Shield } from "lucide-react";
+import { Plus, User, Edit, Trash2, Search, LogOut, MessageSquare, Shield, FileText, Users, MoreVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { getSignedUrl } from "@/hooks/useSignedUrl";
 import {
@@ -33,6 +33,8 @@ const Profiles_Main = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [profilePhotoUrls, setProfilePhotoUrls] = useState<Record<string, string>>({});
   const [photosLoading, setPhotosLoading] = useState<Record<string, boolean>>({});
+  const [documentCounts, setDocumentCounts] = useState<Record<string, number>>({});
+  const [totalDocuments, setTotalDocuments] = useState(0);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
@@ -69,6 +71,22 @@ const Profiles_Main = () => {
       });
 
       setProfiles(sortedProfiles);
+      
+      // Fetch document counts for each profile
+      const docCounts: Record<string, number> = {};
+      let total = 0;
+      await Promise.all(
+        sortedProfiles.map(async (profile) => {
+          const { count } = await supabase
+            .from('documents')
+            .select('*', { count: 'exact', head: true })
+            .eq('profile_id', profile.id);
+          docCounts[profile.id] = count || 0;
+          total += count || 0;
+        })
+      );
+      setDocumentCounts(docCounts);
+      setTotalDocuments(total);
       
       // Set loading state for profiles with photos
       const loadingState: Record<string, boolean> = {};
@@ -198,76 +216,108 @@ const Profiles_Main = () => {
     }
   };
 
+  const getInsuranceStatus = (expiryDate: string | null) => {
+    if (!expiryDate) return null;
+    const daysUntilExpiry = differenceInDays(new Date(expiryDate), new Date());
+    if (daysUntilExpiry < 0) return { label: "Expired", color: "text-destructive" };
+    if (daysUntilExpiry <= 30) return { label: "Expiring Soon", color: "text-amber-500" };
+    return { label: "Valid", color: "text-green-500" };
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Compact Header */}
-      <header className="flex w-full items-center justify-between bg-primary px-4 py-3">
-        <h1 className="text-xl font-bold text-primary-foreground">CareBag</h1>
-        <ThemeSelector />
+      {/* Compact Header with Inline Logo */}
+      <header className="flex w-full items-center justify-between bg-primary px-3 py-2">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-full bg-white p-1 flex items-center justify-center">
+            <img
+              src={careBagLogo}
+              alt="CareBag"
+              className="h-full w-full object-contain"
+            />
+          </div>
+          <h1 className="text-lg font-bold text-primary-foreground">CareBag</h1>
+        </div>
+        <div className="flex items-center gap-1">
+          {isAdmin && (
+            <Button
+              onClick={() => navigate("/admin/feedback")}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+            >
+              <Shield className="h-4 w-4" />
+            </Button>
+          )}
+          <Button
+            onClick={() => navigate("/feedback-hub")}
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+          >
+            <MessageSquare className="h-4 w-4" />
+          </Button>
+          <ThemeSelector />
+          <Button
+            onClick={handleLogout}
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
       </header>
 
-      {/* Action Bar */}
-      <div className="w-full flex justify-end gap-1 px-4 py-2 border-b border-border">
-        {isAdmin && (
-          <Button
-            onClick={() => navigate("/admin/feedback")}
-            variant="ghost"
-            size="sm"
-            className="text-foreground"
-          >
-            <Shield className="h-4 w-4 mr-1" />
-            <span className="text-xs">Admin</span>
-          </Button>
-        )}
-        <Button
-          onClick={() => navigate("/feedback-hub")}
-          variant="ghost"
-          size="sm"
-          className="text-foreground"
-        >
-          <MessageSquare className="h-4 w-4 mr-1" />
-          <span className="text-xs">Feedback</span>
-        </Button>
-        <Button
-          onClick={handleLogout}
-          variant="ghost"
-          size="sm"
-          className="text-foreground"
-        >
-          <LogOut className="h-4 w-4 mr-1" />
-          <span className="text-xs">Logout</span>
-        </Button>
+      {/* Quick Stats Strip */}
+      <div className="flex items-center justify-center gap-6 bg-muted/50 px-4 py-2 border-b border-border">
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Users className="h-4 w-4" />
+          <span className="font-medium text-foreground">{profiles.length}</span>
+          <span>Profiles</span>
+        </div>
+        <div className="w-px h-4 bg-border" />
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <FileText className="h-4 w-4" />
+          <span className="font-medium text-foreground">{totalDocuments}</span>
+          <span>Documents</span>
+        </div>
       </div>
 
       {/* Main Content */}
-      <main className="flex flex-1 flex-col items-center px-4 pb-32 pt-6 animate-fade-in">
-        {/* Logo */}
-        <div className="mb-4 flex h-36 w-36 items-center justify-center rounded-full border-4 border-primary bg-white p-4 animate-scale-in">
-          <img
-            src={careBagLogo}
-            alt="CareBag Logo"
-            className="h-full w-full object-contain"
-          />
-        </div>
-
-        <div className="w-full max-w-2xl space-y-4">
-          <h2 className="text-center text-lg font-semibold text-foreground">
-            {loading ? "Loading profiles..." : "Select a Profile or Create New"}
-          </h2>
-
-          {/* Existing Profiles */}
-          {!loading && profiles.length > 0 && (
+      <main className="flex flex-1 flex-col px-4 pb-36 pt-4 animate-fade-in">
+        <div className="w-full max-w-2xl mx-auto space-y-4">
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading profiles...</div>
+          ) : profiles.length === 0 ? (
+            /* Empty State */
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mb-4">
+                <User className="h-10 w-10 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No Profiles Yet</h3>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                Create your first profile to start managing your medical documents securely.
+              </p>
+            </div>
+          ) : (
+            /* Profile Cards */
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground">Your Profiles</h3>
-              <div className="grid gap-3">
-                {profiles.map((profile) => (
+              {profiles.map((profile, index) => {
+                const insuranceStatus = getInsuranceStatus(profile.expiry_date);
+                const isPrimary = profile.relation?.toLowerCase() === 'self';
+                
+                return (
                   <Card
                     key={profile.id}
-                    className="cursor-pointer p-4 transition-all hover:shadow-lg hover:border-primary"
+                    className={`cursor-pointer p-4 transition-all hover:shadow-lg hover:border-primary ${
+                      isPrimary ? 'border-primary/50 bg-primary/5' : ''
+                    }`}
                     onClick={() => handleSelectProfile(profile.id)}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary bg-background overflow-hidden flex-shrink-0">
+                    <div className="flex items-start gap-3">
+                      {/* Profile Photo */}
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-primary bg-background overflow-hidden flex-shrink-0">
                         {photosLoading[profile.id] ? (
                           <div className="w-full h-full bg-muted animate-pulse" />
                         ) : profilePhotoUrls[profile.id] ? (
@@ -281,29 +331,59 @@ const Profiles_Main = () => {
                             }}
                           />
                         ) : (
-                          <User className="h-6 w-6 text-primary" />
+                          <User className="h-7 w-7 text-primary" />
                         )}
                       </div>
+                      
+                      {/* Profile Info */}
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-foreground truncate">{profile.name}</h4>
-                        {profile.relation && (
-                          <p className="text-xs text-muted-foreground">{profile.relation}</p>
-                        )}
-                        {profile.insurer && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {profile.insurer}
-                          </p>
-                        )}
-                        {profile.expiry_date && (
-                          <p className="text-xs text-muted-foreground">
-                            Expires: {format(new Date(profile.expiry_date), 'PP')}
-                          </p>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-foreground truncate">{profile.name}</h4>
+                          {isPrimary && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-medium">
+                              Primary
+                            </span>
+                          )}
+                          {profile.relation && !isPrimary && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                              {profile.relation}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Insurance Info */}
+                        <div className="flex items-center gap-2 mt-1">
+                          {profile.insurer ? (
+                            <span className="text-xs text-muted-foreground truncate">
+                              {profile.insurer}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">No insurance</span>
+                          )}
+                          {insuranceStatus && (
+                            <>
+                              <span className="text-muted-foreground">•</span>
+                              <span className={`text-xs font-medium ${insuranceStatus.color}`}>
+                                {insuranceStatus.label}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        
+                        {/* Document Count */}
+                        <div className="flex items-center gap-1 mt-1.5">
+                          <FileText className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            {documentCounts[profile.id] || 0} documents
+                          </span>
+                        </div>
                       </div>
+                      
+                      {/* Actions */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="flex-shrink-0">
-                            <Edit className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-background z-50">
@@ -322,8 +402,8 @@ const Profiles_Main = () => {
                       </DropdownMenu>
                     </div>
                   </Card>
-                ))}
-              </div>
+                );
+              })}
             </div>
           )}
         </div>
