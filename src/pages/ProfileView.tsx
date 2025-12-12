@@ -459,22 +459,22 @@ const ProfileView = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-primary text-primary-foreground p-4 flex items-center justify-between">
+    <div className="flex min-h-screen flex-col bg-background">
+      {/* Compact Header */}
+      <header className="flex w-full items-center justify-between bg-primary px-4 py-3">
         <Button 
           variant="ghost" 
           size="icon" 
-          className="text-primary-foreground hover:bg-primary/80"
+          className="h-8 w-8 text-primary-foreground hover:bg-primary/80"
           onClick={() => navigate("/dashboard")}
         >
-          <ArrowLeft className="h-6 w-6" />
+          <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-semibold">Profile View</h1>
+        <h1 className="text-lg font-bold text-primary-foreground">Profile View</h1>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
-              <MoreVertical className="h-6 w-6" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-foreground hover:bg-primary/80">
+              <MoreVertical className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -494,92 +494,92 @@ const ProfileView = () => {
       </header>
 
       {/* Main Content */}
-      <div className="p-6 space-y-6 max-w-4xl mx-auto">
+      <main className="flex-1 px-4 pb-32 pt-4 space-y-4">
         {/* Profile Photo and Basic Info */}
-        <div className="flex flex-col items-center space-y-4">
-          <Avatar className="h-32 w-32">
+        <div className="flex flex-col items-center space-y-2 animate-fade-in">
+          <Avatar className="h-24 w-24 border-2 border-primary">
             <AvatarImage src={profilePhotoUrl || undefined} alt={profile.name} />
-            <AvatarFallback className="text-3xl bg-[hsl(190,50%,85%)]">
+            <AvatarFallback className="text-2xl bg-muted">
               {profile.name.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <h2 className="text-2xl font-semibold text-foreground">{profile.name}</h2>
+          <h2 className="text-xl font-semibold text-foreground">{profile.name}</h2>
           {profile.relation && (
-            <p className="text-muted-foreground">Relation: {profile.relation}</p>
+            <p className="text-sm text-muted-foreground">Relation: {profile.relation}</p>
           )}
         </div>
 
         {/* Statistics */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-card rounded-lg p-6 border flex flex-col items-center">
-            <p className="text-4xl font-bold text-primary">{documents.length}</p>
-            <p className="text-sm text-muted-foreground mt-2">Documents</p>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-card rounded-lg p-3 border flex flex-col items-center">
+            <p className="text-2xl font-bold text-primary">{documents.length}</p>
+            <p className="text-xs text-muted-foreground">Documents</p>
           </div>
-          <div className="bg-card rounded-lg p-6 border flex flex-col items-center">
-            <p className="text-4xl font-bold text-primary">{familyMembersCount}</p>
-            <p className="text-sm text-muted-foreground mt-2">Family Members</p>
+          <div className="bg-card rounded-lg p-3 border flex flex-col items-center">
+            <p className="text-2xl font-bold text-primary">{familyMembersCount}</p>
+            <p className="text-xs text-muted-foreground">Family</p>
           </div>
-          <div className="bg-card rounded-lg p-6 border flex flex-col items-center">
-            <p className="text-4xl font-bold text-primary">{calculateDaysSinceLastDocument()}</p>
-            <p className="text-sm text-muted-foreground mt-2">Days Healthy</p>
+          <div className="bg-card rounded-lg p-3 border flex flex-col items-center">
+            <p className="text-2xl font-bold text-primary">{calculateDaysSinceLastDocument()}</p>
+            <p className="text-xs text-muted-foreground">Days Healthy</p>
           </div>
         </div>
 
         {/* Personal Details */}
-        <div className="bg-card rounded-lg p-6 space-y-4 border">
-          <h3 className="text-xl font-semibold text-foreground mb-4">Personal Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-card rounded-lg p-4 space-y-3 border">
+          <h3 className="text-base font-semibold text-foreground">Personal Information</h3>
+          <div className="grid grid-cols-2 gap-2 text-sm">
             {profile.gender && (
               <div>
-                <Label className="text-muted-foreground">Gender</Label>
+                <Label className="text-xs text-muted-foreground">Gender</Label>
                 <p className="text-foreground">{profile.gender}</p>
               </div>
             )}
             {profile.date_of_birth && (
               <div>
-                <Label className="text-muted-foreground">Date of Birth</Label>
-                <p className="text-foreground">{format(new Date(profile.date_of_birth), 'PPP')}</p>
+                <Label className="text-xs text-muted-foreground">Date of Birth</Label>
+                <p className="text-foreground">{format(new Date(profile.date_of_birth), 'PP')}</p>
               </div>
             )}
             {profile.email && (
-              <div>
-                <Label className="text-muted-foreground">Email</Label>
-                <p className="text-foreground">{profile.email}</p>
+              <div className="col-span-2">
+                <Label className="text-xs text-muted-foreground">Email</Label>
+                <p className="text-foreground truncate">{profile.email}</p>
               </div>
             )}
             {profile.phone && (
               <div>
-                <Label className="text-muted-foreground">Phone</Label>
+                <Label className="text-xs text-muted-foreground">Phone</Label>
                 <p className="text-foreground">{profile.phone}</p>
               </div>
             )}
             {profile.height && (
               <div>
-                <Label className="text-muted-foreground">Height</Label>
+                <Label className="text-xs text-muted-foreground">Height</Label>
                 <p className="text-foreground">{profile.height}</p>
               </div>
             )}
             {profile.weight && (
               <div>
-                <Label className="text-muted-foreground">Weight</Label>
+                <Label className="text-xs text-muted-foreground">Weight</Label>
                 <p className="text-foreground">{profile.weight}</p>
               </div>
             )}
             {profile.blood_pressure && (
               <div>
-                <Label className="text-muted-foreground">Blood Pressure</Label>
+                <Label className="text-xs text-muted-foreground">Blood Pressure</Label>
                 <p className="text-foreground">{profile.blood_pressure}</p>
               </div>
             )}
             {profile.blood_glucose && (
               <div>
-                <Label className="text-muted-foreground">Blood Group</Label>
+                <Label className="text-xs text-muted-foreground">Blood Group</Label>
                 <p className="text-foreground">{profile.blood_glucose}</p>
               </div>
             )}
             {profile.allergies && (
-              <div className="md:col-span-2">
-                <Label className="text-muted-foreground">Allergies</Label>
+              <div className="col-span-2">
+                <Label className="text-xs text-muted-foreground">Allergies</Label>
                 <p className="text-foreground">{profile.allergies}</p>
               </div>
             )}
@@ -588,42 +588,42 @@ const ProfileView = () => {
 
         {/* Medical Insurance Details */}
         {(profile.insurer || profile.policy_no || profile.type_of_plan || profile.expiry_date || profile.rm_name || profile.rm_no) && (
-          <div className="bg-card rounded-lg p-6 space-y-4 border">
-            <h3 className="text-xl font-semibold text-foreground mb-4">Medical Insurance</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-card rounded-lg p-4 space-y-3 border">
+            <h3 className="text-base font-semibold text-foreground">Medical Insurance</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
               {profile.insurer && (
-                <div>
-                  <Label className="text-muted-foreground">Insurer</Label>
+                <div className="col-span-2">
+                  <Label className="text-xs text-muted-foreground">Insurer</Label>
                   <p className="text-foreground">{profile.insurer}</p>
                 </div>
               )}
               {profile.policy_no && (
                 <div>
-                  <Label className="text-muted-foreground">Policy Number</Label>
+                  <Label className="text-xs text-muted-foreground">Policy No.</Label>
                   <p className="text-foreground">{profile.policy_no}</p>
                 </div>
               )}
               {profile.type_of_plan && (
                 <div>
-                  <Label className="text-muted-foreground">Type of Plan</Label>
+                  <Label className="text-xs text-muted-foreground">Plan Type</Label>
                   <p className="text-foreground">{profile.type_of_plan}</p>
                 </div>
               )}
               {profile.expiry_date && (
                 <div>
-                  <Label className="text-muted-foreground">Expiry Date</Label>
-                  <p className="text-foreground">{format(new Date(profile.expiry_date), 'PPP')}</p>
+                  <Label className="text-xs text-muted-foreground">Expiry</Label>
+                  <p className="text-foreground">{format(new Date(profile.expiry_date), 'PP')}</p>
                 </div>
               )}
               {profile.rm_name && (
                 <div>
-                  <Label className="text-muted-foreground">RM Name</Label>
+                  <Label className="text-xs text-muted-foreground">RM Name</Label>
                   <p className="text-foreground">{profile.rm_name}</p>
                 </div>
               )}
               {profile.rm_no && (
                 <div>
-                  <Label className="text-muted-foreground">RM Number</Label>
+                  <Label className="text-xs text-muted-foreground">RM No.</Label>
                   <p className="text-foreground">{profile.rm_no}</p>
                 </div>
               )}
@@ -632,48 +632,49 @@ const ProfileView = () => {
         )}
 
         {/* Upload Document Button */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-1">
           <Button
             onClick={() => setShowUploadDialog(true)}
             size="lg"
-            className="rounded-full h-16 w-16 p-0"
+            className="rounded-full h-12 w-12 p-0"
             disabled={documents.length >= BETA_DOCUMENT_LIMIT}
           >
-            <Plus className="h-8 w-8" />
+            <Plus className="h-6 w-6" />
           </Button>
-          <p className="text-sm text-muted-foreground">
-            {documents.length}/{BETA_DOCUMENT_LIMIT} documents (Beta limit)
+          <p className="text-xs text-muted-foreground">
+            {documents.length}/{BETA_DOCUMENT_LIMIT} docs (Beta)
           </p>
         </div>
 
         {/* Search Documents Section */}
-        <div className="bg-card rounded-lg p-6 border">
-          <h3 className="text-xl font-semibold text-foreground mb-4">Documents</h3>
-          <div className="mb-4">
+        <div className="bg-card rounded-lg p-4 border">
+          <h3 className="text-base font-semibold text-foreground mb-3">Documents</h3>
+          <div className="mb-3">
             <Input
-              placeholder="Search documents by keywords or name..."
+              placeholder="Search documents..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-[hsl(190,50%,85%)]"
+              className="bg-muted text-sm"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-48 overflow-y-auto">
             {filteredDocuments.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">
-                {searchTerm ? "No documents found matching your search" : "No documents uploaded yet"}
+              <p className="text-muted-foreground text-center py-3 text-sm">
+                {searchTerm ? "No documents found" : "No documents yet"}
               </p>
             ) : (
-              filteredDocuments.map((doc) => (
-                <div key={doc.id} className="p-4 bg-background rounded-md border flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-foreground">{doc.document_name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Keywords: {doc.document_type} • Date: {format(new Date(doc.document_date), 'PPP')}
+              filteredDocuments.slice(0, 3).map((doc) => (
+                <div key={doc.id} className="p-3 bg-background rounded-md border flex justify-between items-center">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground text-sm truncate">{doc.document_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {doc.document_type} • {format(new Date(doc.document_date), 'PP')}
                     </p>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
+                    className="ml-2 text-xs h-7"
                     onClick={async () => {
                       const popupPermission = localStorage.getItem('popup-permission');
                       
@@ -707,26 +708,26 @@ const ProfileView = () => {
             )}
           </div>
         </div>
+      </main>
 
-        {/* Action Buttons */}
-        <div className="flex gap-4 justify-center pt-4">
-          <Button
-            onClick={() => navigate(`/view-documents/${profileId}`)}
-            variant="default"
-            size="lg"
-            className="min-w-[200px]"
-          >
-            View All Documents
-          </Button>
-          <Button
-            onClick={() => navigate("/dashboard")}
-            variant="outline"
-            size="lg"
-            className="min-w-[200px]"
-          >
-            Back
-          </Button>
-        </div>
+      {/* Sticky Bottom CTA */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-4 pb-6 grid grid-cols-2 gap-3">
+        <Button
+          onClick={() => navigate("/dashboard")}
+          variant="outline"
+          size="lg"
+          className="h-12 font-semibold"
+        >
+          Back
+        </Button>
+        <Button
+          onClick={() => navigate(`/view-documents/${profileId}`)}
+          variant="default"
+          size="lg"
+          className="h-12 bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+        >
+          All Documents
+        </Button>
       </div>
 
       {/* Upload Document Dialog */}

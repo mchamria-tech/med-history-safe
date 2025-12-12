@@ -268,27 +268,25 @@ const NewProfile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-primary text-primary-foreground p-4 flex items-center justify-between">
+    <div className="flex min-h-screen flex-col bg-background">
+      {/* Compact Header */}
+      <header className="flex w-full items-center justify-between bg-primary px-4 py-3">
         <Button 
           variant="ghost" 
           size="icon" 
-          className="text-primary-foreground hover:bg-primary/80"
+          className="h-8 w-8 text-primary-foreground hover:bg-primary/80"
           onClick={() => navigate("/dashboard")}
         >
-          <ArrowLeft className="h-6 w-6" />
+          <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-semibold">
-          {editProfileId ? "Edit Profile" : "Add New Family Member"}
+        <h1 className="text-lg font-bold text-primary-foreground">
+          {editProfileId ? "Edit Profile" : "Add Family Member"}
         </h1>
-        <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
-          <MoreVertical className="h-6 w-6" />
-        </Button>
+        <div className="w-8" /> {/* Spacer for centering */}
       </header>
 
       {/* Main Content */}
-      <div className="p-6 space-y-8 max-w-4xl mx-auto">
+      <main className="flex-1 px-4 pb-32 pt-4 max-w-4xl mx-auto w-full">
         {isLoading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Loading profile data...</p>
@@ -296,38 +294,61 @@ const NewProfile = () => {
         ) : (
           <>
         {/* Section 1: Basic Info with Photo */}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr,auto] gap-8 items-start">
-          {/* Left side - Form fields */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Label htmlFor="name" className="text-foreground font-normal text-lg w-32">Name :</Label>
+        <div className="space-y-4">
+          {/* Photo upload - centered on mobile */}
+          <div className="flex justify-center mb-4">
+            <div className="relative">
+              <input
+                type="file"
+                id="photo-upload"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              <label
+                htmlFor="photo-upload"
+                className="flex items-center justify-center w-28 h-28 rounded-full bg-muted cursor-pointer hover:bg-muted/80 transition-colors relative overflow-hidden border-2 border-primary"
+              >
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <Plus className="w-8 h-8 text-muted-foreground" />
+                )}
+              </label>
+            </div>
+          </div>
+
+          {/* Form fields - stacked on mobile */}
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="name" className="text-sm font-medium text-foreground">Name *</Label>
               <Input 
                 id="name" 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                className="bg-muted border-border" 
                 required
               />
             </div>
 
-            <div className="flex items-center gap-4">
-              <Label htmlFor="gender" className="text-foreground font-normal text-lg w-32">Gender:</Label>
+            <div className="space-y-1">
+              <Label htmlFor="gender" className="text-sm font-medium text-foreground">Gender</Label>
               <Input 
                 id="gender" 
                 value={gender}
                 onChange={(e) => setGender(e.target.value)}
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                className="bg-muted border-border" 
               />
             </div>
 
-            <div className="flex items-center gap-4">
-              <Label className="text-foreground font-normal text-lg w-32">D.O.B :</Label>
+            <div className="space-y-1">
+              <Label className="text-sm font-medium text-foreground">Date of Birth</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "flex-1 justify-start text-left font-normal bg-[hsl(190,50%,85%)] border-border hover:bg-[hsl(190,50%,80%)]",
+                      "w-full justify-start text-left font-normal bg-muted border-border hover:bg-muted/80",
                       !dateOfBirth && "text-muted-foreground"
                     )}
                   >
@@ -349,73 +370,50 @@ const NewProfile = () => {
               </Popover>
             </div>
 
-            <div className="flex items-center gap-4">
-              <Label htmlFor="relation" className="text-foreground font-normal text-lg w-32">Relation:</Label>
+            <div className="space-y-1">
+              <Label htmlFor="relation" className="text-sm font-medium text-foreground">Relation</Label>
               <Input 
                 id="relation" 
                 value={relation}
                 onChange={(e) => setRelation(e.target.value)}
-                placeholder="If Primary, then write Self" 
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border placeholder:text-[hsl(190,30%,60%)]" 
+                placeholder="If Primary, write Self" 
+                className="bg-muted border-border" 
               />
-            </div>
-          </div>
-
-          {/* Right side - Photo upload */}
-          <div className="flex items-center justify-center">
-            <div className="relative">
-              <input
-                type="file"
-                id="photo-upload"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="hidden"
-              />
-              <label
-                htmlFor="photo-upload"
-                className="flex items-center justify-center w-48 h-48 rounded-full bg-[hsl(190,50%,85%)] cursor-pointer hover:bg-[hsl(190,50%,80%)] transition-colors relative overflow-hidden"
-              >
-                {profilePhoto ? (
-                  <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <Plus className="w-12 h-12 text-foreground absolute bottom-8 right-8" />
-                )}
-              </label>
             </div>
           </div>
         </div>
 
         {/* Section 2: Personal Details */}
-        <div>
-          <h2 className="text-xl font-semibold text-foreground text-center mb-6">Personal Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-4">
-            <div className="flex items-center gap-4">
-              <Label htmlFor="email" className="text-foreground font-normal text-lg w-32">Email :</Label>
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold text-foreground border-b border-border pb-2">Personal Details</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2 space-y-1">
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
               <Input 
                 id="email" 
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                className="bg-muted border-border" 
               />
             </div>
 
-            <div className="flex items-center gap-4">
-              <Label htmlFor="phone" className="text-foreground font-normal text-lg w-32">Phone :</Label>
+            <div className="col-span-2 space-y-1">
+              <Label htmlFor="phone" className="text-sm font-medium text-foreground">Phone</Label>
               <Input 
                 id="phone" 
                 type="tel" 
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                className="bg-muted border-border" 
               />
             </div>
 
-            <div className="flex items-center gap-4">
-              <Label htmlFor="height" className="text-foreground font-normal text-lg w-32">Height :</Label>
+            <div className="space-y-1">
+              <Label htmlFor="height" className="text-sm font-medium text-foreground">Height</Label>
               <Select value={height} onValueChange={setHeight}>
-                <SelectTrigger className="flex-1 bg-[hsl(190,50%,85%)] border-border">
-                  <SelectValue placeholder="Select height" />
+                <SelectTrigger className="bg-muted border-border">
+                  <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px] bg-popover z-50">
                   {heightOptions.map((option) => (
@@ -427,90 +425,90 @@ const NewProfile = () => {
               </Select>
             </div>
 
-            <div className="flex items-center gap-4">
-              <Label htmlFor="weight" className="text-foreground font-normal text-lg w-32">Weight :</Label>
+            <div className="space-y-1">
+              <Label htmlFor="weight" className="text-sm font-medium text-foreground">Weight</Label>
               <Input 
                 id="weight" 
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                className="bg-muted border-border" 
               />
             </div>
 
-            <div className="flex items-center gap-4">
-              <Label htmlFor="blood-pressure" className="text-foreground font-normal text-lg w-32">B. Pressure :</Label>
+            <div className="space-y-1">
+              <Label htmlFor="blood-pressure" className="text-sm font-medium text-foreground">B. Pressure</Label>
               <Input 
                 id="blood-pressure" 
                 value={bloodPressure}
                 onChange={(e) => setBloodPressure(e.target.value)}
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                className="bg-muted border-border" 
               />
             </div>
 
-            <div className="flex items-center gap-4">
-              <Label htmlFor="blood-glucose" className="text-foreground font-normal text-lg w-32">Blood Group :</Label>
+            <div className="space-y-1">
+              <Label htmlFor="blood-glucose" className="text-sm font-medium text-foreground">Blood Group</Label>
               <Input 
                 id="blood-glucose" 
                 value={bloodGlucose}
                 onChange={(e) => setBloodGlucose(e.target.value)}
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                className="bg-muted border-border" 
               />
             </div>
 
-            <div className="md:col-span-2 flex items-center gap-4">
-              <Label htmlFor="allergies" className="text-foreground font-normal text-lg w-32">Allergies :</Label>
+            <div className="col-span-2 space-y-1">
+              <Label htmlFor="allergies" className="text-sm font-medium text-foreground">Allergies</Label>
               <Input 
                 id="allergies" 
                 value={allergies}
                 onChange={(e) => setAllergies(e.target.value)}
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                className="bg-muted border-border" 
               />
             </div>
           </div>
         </div>
 
         {/* Section 3: Medical Insurance Details */}
-        <div>
-          <h2 className="text-xl font-semibold text-foreground text-center mb-6">Medical Insurance Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-4">
-            <div className="flex items-center gap-4">
-              <Label htmlFor="insurer" className="text-foreground font-normal text-lg w-32">Insurer :</Label>
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold text-foreground border-b border-border pb-2">Medical Insurance</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2 space-y-1">
+              <Label htmlFor="insurer" className="text-sm font-medium text-foreground">Insurer</Label>
               <Input 
                 id="insurer" 
                 value={insurer}
                 onChange={(e) => setInsurer(e.target.value)}
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                className="bg-muted border-border" 
               />
             </div>
 
-            <div className="flex items-center gap-4">
-              <Label htmlFor="policy-no" className="text-foreground font-normal text-lg w-32">Policy No. :</Label>
+            <div className="space-y-1">
+              <Label htmlFor="policy-no" className="text-sm font-medium text-foreground">Policy No.</Label>
               <Input 
                 id="policy-no" 
                 value={policyNo}
                 onChange={(e) => setPolicyNo(e.target.value)}
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                className="bg-muted border-border" 
               />
             </div>
 
-            <div className="flex items-center gap-4">
-              <Label htmlFor="type-of-plan" className="text-foreground font-normal text-lg w-32">Type of Plan :</Label>
+            <div className="space-y-1">
+              <Label htmlFor="type-of-plan" className="text-sm font-medium text-foreground">Plan Type</Label>
               <Input 
                 id="type-of-plan" 
                 value={typeOfPlan}
                 onChange={(e) => setTypeOfPlan(e.target.value)}
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                className="bg-muted border-border" 
               />
             </div>
 
-            <div className="flex items-center gap-4">
-              <Label className="text-foreground font-normal text-lg w-32">Expiry :</Label>
+            <div className="col-span-2 space-y-1">
+              <Label className="text-sm font-medium text-foreground">Expiry Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "flex-1 justify-start text-left font-normal bg-[hsl(190,50%,85%)] border-border hover:bg-[hsl(190,50%,80%)]",
+                      "w-full justify-start text-left font-normal bg-muted border-border hover:bg-muted/80",
                       !expiryDate && "text-muted-foreground"
                     )}
                   >
@@ -530,49 +528,50 @@ const NewProfile = () => {
               </Popover>
             </div>
 
-            <div className="flex items-center gap-4">
-              <Label htmlFor="rm-name" className="text-foreground font-normal text-lg w-32">R. M Name :</Label>
+            <div className="space-y-1">
+              <Label htmlFor="rm-name" className="text-sm font-medium text-foreground">RM Name</Label>
               <Input 
                 id="rm-name" 
                 value={rmName}
                 onChange={(e) => setRmName(e.target.value)}
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                className="bg-muted border-border" 
               />
             </div>
 
-            <div className="flex items-center gap-4">
-              <Label htmlFor="rm-no" className="text-foreground font-normal text-lg w-32">R. M. No. :</Label>
+            <div className="space-y-1">
+              <Label htmlFor="rm-no" className="text-sm font-medium text-foreground">RM No.</Label>
               <Input 
                 id="rm-no" 
                 value={rmNo}
                 onChange={(e) => setRmNo(e.target.value)}
-                className="flex-1 bg-[hsl(190,50%,85%)] border-border" 
+                className="bg-muted border-border" 
               />
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-0 pt-6">
-          <Button 
-            variant="secondary" 
-            size="lg" 
-            onClick={handleReset}
-            className="w-full uppercase font-bold text-lg py-8 rounded-none bg-muted hover:bg-muted/80 text-foreground"
-          >
-            Reset Details
-          </Button>
-          <Button 
-            size="lg" 
-            onClick={handleSave}
-            disabled={isSubmitting}
-            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground uppercase font-bold text-lg py-8 rounded-none"
-          >
-            {isSubmitting ? "Saving..." : "Save"}
-          </Button>
-        </div>
         </>
         )}
+      </main>
+
+      {/* Sticky Bottom CTA */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-4 pb-6 grid grid-cols-2 gap-3">
+        <Button 
+          variant="outline" 
+          size="lg" 
+          onClick={handleReset}
+          className="h-12 font-semibold"
+        >
+          Reset
+        </Button>
+        <Button 
+          size="lg" 
+          onClick={handleSave}
+          disabled={isSubmitting}
+          className="h-12 bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+        >
+          {isSubmitting ? "Saving..." : "Save"}
+        </Button>
       </div>
     </div>
   );
