@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays } from "date-fns";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { getSignedUrl } from "@/hooks/useSignedUrl";
+import SplashOverlay from "@/components/SplashOverlay";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +38,21 @@ const Profiles_Main = () => {
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
+  const [showSplash, setShowSplash] = useState(false);
   const { isAdmin } = useAdminCheck();
+
+  // Check if we should show splash animation (coming from login)
+  useEffect(() => {
+    const shouldShowSplash = sessionStorage.getItem("showSplash");
+    if (shouldShowSplash === "true") {
+      setShowSplash(true);
+      sessionStorage.removeItem("showSplash");
+    }
+  }, []);
+
+  const handleSplashComplete = useCallback(() => {
+    setShowSplash(false);
+  }, []);
 
   useEffect(() => {
     fetchProfiles();
@@ -218,7 +233,9 @@ const Profiles_Main = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <>
+      {showSplash && <SplashOverlay onComplete={handleSplashComplete} />}
+      <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 glass border-b border-border/50 px-4 py-3">
         <div className="flex items-center justify-between">
@@ -442,7 +459,8 @@ const Profiles_Main = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </>
   );
 };
 
