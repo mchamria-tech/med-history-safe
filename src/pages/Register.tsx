@@ -46,7 +46,7 @@ const Register = () => {
       if (error) throw error;
 
       toast.success("Account created successfully!");
-      navigate("/dashboard");
+      navigate("/splash");
     } catch (error: any) {
       toast.error(error.message || "Failed to create account");
     } finally {

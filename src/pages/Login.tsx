@@ -28,7 +28,7 @@ const Login = () => {
       if (error) throw error;
 
       toast.success("Welcome back!");
-      navigate("/dashboard");
+      navigate("/splash");
     } catch (error: any) {
       toast.error(error.message || "Failed to log in");
     } finally {
