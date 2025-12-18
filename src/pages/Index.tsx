@@ -14,13 +14,11 @@ const Index = () => {
         <div className="flex flex-col items-center animate-fade-in">
           {/* Logo */}
           <div className="mb-8">
-            <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-primary to-primary/80 p-4 shadow-elevated flex items-center justify-center">
-              <img
-                src={careBagLogo}
-                alt="CareBag Logo"
-                className="h-16 w-16 object-contain"
-              />
-            </div>
+            <img
+              src={careBagLogo}
+              alt="CareBag Logo"
+              className="h-24 w-auto object-contain"
+            />
           </div>
 
           {/* Brand */}

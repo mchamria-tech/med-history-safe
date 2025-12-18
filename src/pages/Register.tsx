@@ -72,13 +72,11 @@ const Register = () => {
       <main className="flex flex-1 flex-col px-6 pt-2 pb-8 animate-fade-in">
         {/* Logo & Welcome */}
         <div className="mb-8">
-          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-primary/80 p-3 shadow-soft mb-6 flex items-center justify-center">
-            <img
-              src={careBagLogo}
-              alt="CareBag Logo"
-              className="h-10 w-10 object-contain"
-            />
-          </div>
+          <img
+            src={careBagLogo}
+            alt="CareBag Logo"
+            className="h-16 w-auto object-contain mb-6"
+          />
           <h1 className="text-2xl font-bold text-foreground mb-2">
             Create your account
           </h1>

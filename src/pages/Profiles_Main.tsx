@@ -223,13 +223,11 @@ const Profiles_Main = () => {
       <header className="sticky top-0 z-50 glass border-b border-border/50 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 p-2 shadow-soft flex items-center justify-center">
-              <img
-                src={careBagLogo}
-                alt="CareBag"
-                className="h-6 w-6 object-contain"
-              />
-            </div>
+            <img
+              src={careBagLogo}
+              alt="CareBag"
+              className="h-10 w-auto object-contain"
+            />
             <h1 className="text-xl font-bold text-foreground">CareBag</h1>
           </div>
           
