@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import careBagLogo from "@/assets/carebag-logo-new.png";
+import careBagLogo from "@/assets/carebag-logo-redesign.png";
 import { Plus, User, Edit, Trash2, Search, LogOut, MessageSquare, Shield, FileText, Users, MoreVertical, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
