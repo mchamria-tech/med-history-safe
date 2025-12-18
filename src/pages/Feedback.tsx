@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { themes } from "@/lib/themes";
+// Theme selector removed - single theme design
 
 interface FeedbackCategory {
   id: string;
@@ -103,14 +103,6 @@ const Feedback = () => {
       // Submit each non-empty feedback as a separate entry
       for (const [category, message] of filledEntries) {
         let finalMessage = message;
-        
-        // Add theme preference to Theme Preference category
-        if (category === "Theme Preference" && preferredTheme) {
-          const selectedTheme = themes.find(t => t.id === preferredTheme);
-          if (selectedTheme) {
-            finalMessage = `[Preferred Theme: ${selectedTheme.name}]\n\n${message}`;
-          }
-        }
 
         const { error } = await supabase.from("feedback").insert({
           user_id: user.id,
@@ -203,58 +195,11 @@ const Feedback = () => {
                     {feedbackEntries[category.id].length}/1000
                   </p>
 
-                  {/* Theme selector appears when Theme Preference has content */}
+                  {/* Theme preference note */}
                   {category.id === "Theme Preference" && hasThemeFeedback && (
-                    <Card className="border-2 border-primary/20 bg-primary/5 mt-2">
-                      <CardHeader className="pb-2 pt-3">
-                        <div className="flex items-center gap-2">
-                          <Palette className="w-4 h-4 text-primary" />
-                          <CardTitle className="text-base">Choose Your Preferred Theme</CardTitle>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <RadioGroup
-                          value={preferredTheme}
-                          onValueChange={setPreferredTheme}
-                          className="grid gap-2"
-                        >
-                          {themes.map((theme) => (
-                            <div key={theme.id} className="relative">
-                              <RadioGroupItem
-                                value={theme.id}
-                                id={theme.id}
-                                className="peer sr-only"
-                              />
-                              <Label
-                                htmlFor={theme.id}
-                                className="flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all hover:bg-accent/10 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10"
-                              >
-                                <div className="flex gap-1 shrink-0">
-                                  <div
-                                    className="w-5 h-5 rounded-full border border-border"
-                                    style={{ backgroundColor: theme.colors.primary }}
-                                  />
-                                  <div
-                                    className="w-5 h-5 rounded-full border border-border"
-                                    style={{ backgroundColor: theme.colors.accent }}
-                                  />
-                                  <div
-                                    className="w-5 h-5 rounded-full border border-border"
-                                    style={{ backgroundColor: theme.colors.background }}
-                                  />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-sm">{theme.name}</p>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {theme.description}
-                                  </p>
-                                </div>
-                              </Label>
-                            </div>
-                          ))}
-                        </RadioGroup>
-                      </CardContent>
-                    </Card>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Share your thoughts on the app's visual design
+                    </p>
                   )}
                 </div>
               ))}

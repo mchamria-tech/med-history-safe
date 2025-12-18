@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, FlaskConical } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const BetaBanner = () => {
@@ -20,22 +20,18 @@ const BetaBanner = () => {
   if (!isVisible) return null;
 
   return (
-    <div className="bg-amber-500/90 text-amber-950 px-4 py-2 text-sm">
+    <div className="bg-muted border-b border-border px-4 py-2 text-xs">
       <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <FlaskConical className="h-4 w-4 flex-shrink-0" />
-          <p>
-            <span className="font-semibold">Beta Version:</span> Document uploads limited to 5 per profile. 
-            Your feedback helps us improve!
-          </p>
-        </div>
+        <p className="text-muted-foreground">
+          <span className="font-medium text-foreground">Beta</span> · Document uploads limited to 5 per profile
+        </p>
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 hover:bg-amber-600/20 text-amber-950"
+          className="h-6 w-6 rounded-lg"
           onClick={handleDismiss}
         >
-          <X className="h-4 w-4" />
+          <X className="h-3 w-3" />
         </Button>
       </div>
     </div>
