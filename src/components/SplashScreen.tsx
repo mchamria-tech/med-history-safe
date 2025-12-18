@@ -30,7 +30,7 @@ const SplashScreen = () => {
             ? "scale-0 opacity-0" 
             : stage === 1 
               ? "scale-100 opacity-100" 
-              : "scale-[0.12] -translate-x-[42vw] -translate-y-[42vh] opacity-90"
+              : "scale-[0.3125] -translate-x-[38vw] -translate-y-[42vh] opacity-100"
         }`}
         style={{
           animation: stage === 0 ? "none" : stage === 1 ? "logo-entrance 0.8s ease-out forwards" : undefined,
