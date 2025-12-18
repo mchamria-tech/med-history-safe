@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import careBagLogo from "@/assets/carebag-logo-new.png";
+import careBagLogo from "@/assets/carebag-logo-redesign.png";
 import { Users, Search, Shield, ChevronRight } from "lucide-react";
 
 const Index = () => {
