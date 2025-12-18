@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import careBagLogo from "@/assets/carebag-logo-new.png";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Mail, Lock } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ const Login = () => {
 
       if (error) throw error;
 
-      toast.success("Logged in successfully!");
+      toast.success("Welcome back!");
       navigate("/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Failed to log in");
@@ -61,91 +61,106 @@ const Login = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Compact Header */}
-      <header className="flex w-full items-center bg-primary px-4 py-3">
+      {/* Header */}
+      <header className="flex items-center px-4 py-4">
         <Button 
           variant="ghost" 
           size="icon" 
-          className="text-primary-foreground hover:bg-primary/80 mr-2"
+          className="rounded-xl"
           onClick={() => navigate("/")}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-bold text-primary-foreground">Welcome Back!</h1>
       </header>
 
       {/* Main Content */}
-      <main className="flex flex-1 flex-col items-center px-4 py-8 animate-fade-in">
-        {/* Logo */}
-        <div className="mb-6 flex h-28 w-28 items-center justify-center rounded-full border-4 border-primary bg-white p-3 animate-scale-in">
-          <img
-            src={careBagLogo}
-            alt="CareBag Logo"
-            className="h-full w-full object-contain"
-          />
+      <main className="flex flex-1 flex-col px-6 pt-4 animate-fade-in">
+        {/* Logo & Welcome */}
+        <div className="mb-10">
+          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-primary/80 p-3 shadow-soft mb-6 flex items-center justify-center">
+            <img
+              src={careBagLogo}
+              alt="CareBag Logo"
+              className="h-10 w-10 object-contain"
+            />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            Welcome back
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Sign in to access your health records
+          </p>
         </div>
 
         {/* Login Form */}
-        <div className="w-full max-w-md space-y-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium">
+              Email
+            </Label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-12"
+                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-colors"
               />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm font-medium">
+              Password
+            </Label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-12"
+                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-colors"
               />
             </div>
-
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={handleForgotPassword}
-                disabled={resetLoading}
-                className="text-sm text-primary hover:underline"
-              >
-                {resetLoading ? "Sending..." : "Forgot password?"}
-              </button>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full h-14 text-lg font-semibold"
-              disabled={loading}
-            >
-              {loading ? "LOGGING IN..." : "LOG IN"}
-            </Button>
-          </form>
-
-          {/* Register Link */}
-          <div className="text-center pt-4">
-            <p className="text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <button
-                onClick={() => navigate("/register")}
-                className="font-semibold text-primary hover:underline"
-              >
-                Register here
-              </button>
-            </p>
           </div>
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              disabled={resetLoading}
+              className="text-sm text-primary font-medium hover:underline"
+            >
+              {resetLoading ? "Sending..." : "Forgot password?"}
+            </button>
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full h-12 text-base font-semibold rounded-xl mt-2"
+            disabled={loading}
+          >
+            {loading ? "Signing in..." : "Sign In"}
+          </Button>
+        </form>
+
+        {/* Register Link */}
+        <div className="text-center mt-8">
+          <p className="text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <button
+              onClick={() => navigate("/register")}
+              className="font-semibold text-primary hover:underline"
+            >
+              Create one
+            </button>
+          </p>
         </div>
       </main>
     </div>

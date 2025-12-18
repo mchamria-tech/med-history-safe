@@ -2,9 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ThemeSelector } from "@/components/ThemeSelector";
-import careBagIcon from "@/assets/carebag-icon.png";
-import { Plus, User, Edit, Trash2, Search, LogOut, MessageSquare, Shield, FileText, Users, MoreVertical } from "lucide-react";
+import careBagLogo from "@/assets/carebag-logo-new.png";
+import { Plus, User, Edit, Trash2, Search, LogOut, MessageSquare, Shield, FileText, Users, MoreVertical, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays } from "date-fns";
@@ -102,13 +101,8 @@ const Profiles_Main = () => {
       await Promise.all(
         sortedProfiles.map(async (profile) => {
           if (profile.profile_photo_url) {
-            console.log(`[ProfilePhoto] Fetching signed URL for ${profile.name}:`, profile.profile_photo_url);
             const { url, error } = await getSignedUrl('profile-photos', profile.profile_photo_url);
-            if (error) {
-              console.error(`[ProfilePhoto] Error for ${profile.name}:`, error);
-            }
             if (url) {
-              console.log(`[ProfilePhoto] Got signed URL for ${profile.name}:`, url.substring(0, 80) + '...');
               photoUrls[profile.id] = url;
             }
             setPhotosLoading(prev => ({ ...prev, [profile.id]: false }));
@@ -181,7 +175,7 @@ const Profiles_Main = () => {
       // Delete profile photo from storage if it exists
       if (profile?.profile_photo_url) {
         const urlParts = profile.profile_photo_url.split('/');
-        const fileName = urlParts.slice(-2).join('/'); // Get user_id/filename
+        const fileName = urlParts.slice(-2).join('/');
         
         await supabase.storage
           .from('profile-photos')
@@ -201,7 +195,6 @@ const Profiles_Main = () => {
         description: "Profile deleted successfully",
       });
 
-      // Refresh profiles list
       fetchProfiles();
     } catch (error: any) {
       console.error('Error deleting profile:', error);
@@ -219,231 +212,233 @@ const Profiles_Main = () => {
   const getInsuranceStatus = (expiryDate: string | null) => {
     if (!expiryDate) return null;
     const daysUntilExpiry = differenceInDays(new Date(expiryDate), new Date());
-    if (daysUntilExpiry < 0) return { label: "Expired", color: "text-destructive" };
-    if (daysUntilExpiry <= 30) return { label: "Expiring Soon", color: "text-amber-500" };
-    return { label: "Valid", color: "text-green-500" };
+    if (daysUntilExpiry < 0) return { label: "Expired", color: "bg-destructive/10 text-destructive" };
+    if (daysUntilExpiry <= 30) return { label: "Expiring Soon", color: "bg-warning/10 text-warning" };
+    return { label: "Valid", color: "bg-success/10 text-success" };
   };
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header with Logo and Title */}
-      <header className="relative bg-gradient-to-r from-primary/10 via-primary/50 to-primary px-4 py-4 rounded-b-3xl shadow-lg">
-        {/* Logo and Title - Left */}
-        <div className="flex items-center gap-3">
-          <img
-            src={careBagIcon}
-            alt="CareBag"
-            className="h-10 w-10 object-contain"
-          />
-          <h1 className="text-2xl font-bold text-primary">CareBag</h1>
-        </div>
-        
-        {/* Action Buttons - Top Right */}
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {isAdmin && (
+      {/* Header */}
+      <header className="sticky top-0 z-50 glass border-b border-border/50 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 p-2 shadow-soft flex items-center justify-center">
+              <img
+                src={careBagLogo}
+                alt="CareBag"
+                className="h-6 w-6 object-contain"
+              />
+            </div>
+            <h1 className="text-xl font-bold text-foreground">CareBag</h1>
+          </div>
+          
+          <div className="flex items-center gap-1">
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/admin/feedback')}
+                className="h-9 w-9 rounded-xl"
+                title="Admin Dashboard"
+              >
+                <Shield className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/admin/feedback')}
-              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 h-8 w-8"
-              title="Admin Dashboard"
+              onClick={() => navigate('/feedback-hub')}
+              className="h-9 w-9 rounded-xl"
+              title="Feedback"
             >
-              <Shield className="h-4 w-4" />
+              <MessageSquare className="h-4 w-4" />
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/feedback-hub')}
-            className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 h-8 w-8"
-            title="Feedback"
-          >
-            <MessageSquare className="h-4 w-4" />
-          </Button>
-          <ThemeSelector />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleLogout}
-            className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 h-8 w-8"
-            title="Logout"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              className="h-9 w-9 rounded-xl"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </header>
 
-      {/* Quick Stats Strip */}
-      <div className="flex items-center justify-center gap-6 bg-muted/50 px-4 py-2 border-b border-border">
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Users className="h-4 w-4" />
-          <span className="font-medium text-foreground">{profiles.length}</span>
-          <span>Profiles</span>
-        </div>
-        <div className="w-px h-4 bg-border" />
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <FileText className="h-4 w-4" />
-          <span className="font-medium text-foreground">{totalDocuments}</span>
-          <span>Documents</span>
+      {/* Stats Summary */}
+      <div className="px-4 py-4">
+        <div className="flex gap-3">
+          <div className="flex-1 rounded-2xl bg-card border border-border/50 p-4 shadow-soft">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{profiles.length}</p>
+                <p className="text-xs text-muted-foreground">Profiles</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 rounded-2xl bg-card border border-border/50 p-4 shadow-soft">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                <FileText className="h-5 w-5 text-accent" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{totalDocuments}</p>
+                <p className="text-xs text-muted-foreground">Documents</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <main className="flex flex-1 flex-col px-4 pb-36 pt-4 animate-fade-in">
-        <div className="w-full max-w-2xl mx-auto space-y-4">
-          {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading profiles...</div>
-          ) : profiles.length === 0 ? (
-            /* Empty State */
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mb-4">
-                <User className="h-10 w-10 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No Profiles Yet</h3>
-              <p className="text-sm text-muted-foreground max-w-xs">
-                Create your first profile to start managing your medical documents securely.
-              </p>
+      <main className="flex flex-1 flex-col px-4 pb-36 animate-fade-in">
+        {loading ? (
+          <div className="space-y-3 pt-2">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-24 rounded-2xl bg-muted animate-pulse" />
+            ))}
+          </div>
+        ) : profiles.length === 0 ? (
+          /* Empty State */
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="h-20 w-20 rounded-2xl bg-muted flex items-center justify-center mb-5">
+              <User className="h-10 w-10 text-muted-foreground" />
             </div>
-          ) : (
-            /* Profile Cards */
-            <div className="space-y-3">
-              {profiles.map((profile, index) => {
-                const insuranceStatus = getInsuranceStatus(profile.expiry_date);
-                const isPrimary = profile.relation?.toLowerCase() === 'self';
-                
-                return (
-                  <Card
-                    key={profile.id}
-                    className={`cursor-pointer p-4 transition-all hover:shadow-lg hover:border-primary ${
-                      isPrimary ? 'border-primary/50 bg-primary/5' : ''
-                    }`}
-                    onClick={() => handleSelectProfile(profile.id)}
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* Profile Photo */}
-                      <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-primary bg-background overflow-hidden flex-shrink-0">
-                        {photosLoading[profile.id] ? (
-                          <div className="w-full h-full bg-muted animate-pulse" />
-                        ) : profilePhotoUrls[profile.id] ? (
-                          <img 
-                            src={profilePhotoUrls[profile.id]} 
-                            alt={profile.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              console.error(`[ProfilePhoto] Image failed to load for ${profile.name}`);
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <User className="h-7 w-7 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">No Profiles Yet</h3>
+            <p className="text-sm text-muted-foreground max-w-[240px]">
+              Create your first profile to start managing your medical documents securely.
+            </p>
+          </div>
+        ) : (
+          /* Profile Cards */
+          <div className="space-y-3 pt-2">
+            {profiles.map((profile, index) => {
+              const insuranceStatus = getInsuranceStatus(profile.expiry_date);
+              const isPrimary = profile.relation?.toLowerCase() === 'self';
+              
+              return (
+                <Card
+                  key={profile.id}
+                  className="cursor-pointer p-4 rounded-2xl border-border/50 shadow-soft hover:shadow-elevated transition-all duration-200"
+                  onClick={() => handleSelectProfile(profile.id)}
+                >
+                  <div className="flex items-center gap-4">
+                    {/* Profile Photo */}
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted overflow-hidden flex-shrink-0">
+                      {photosLoading[profile.id] ? (
+                        <div className="w-full h-full bg-muted animate-pulse" />
+                      ) : profilePhotoUrls[profile.id] ? (
+                        <img 
+                          src={profilePhotoUrls[profile.id]} 
+                          alt={profile.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <User className="h-6 w-6 text-muted-foreground" />
+                      )}
+                    </div>
+                    
+                    {/* Profile Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-foreground truncate">{profile.name}</h4>
+                        {isPrimary && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                            Primary
+                          </span>
                         )}
                       </div>
                       
-                      {/* Profile Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold text-foreground truncate">{profile.name}</h4>
-                          {isPrimary && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-medium">
-                              Primary
-                            </span>
-                          )}
-                          {profile.relation && !isPrimary && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                              {profile.relation}
-                            </span>
-                          )}
-                        </div>
-                        
-                        {/* Insurance Info */}
-                        <div className="flex items-center gap-2 mt-1">
-                          {profile.insurer ? (
-                            <span className="text-xs text-muted-foreground truncate">
-                              {profile.insurer}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground italic">No insurance</span>
-                          )}
-                          {insuranceStatus && (
-                            <>
-                              <span className="text-muted-foreground">•</span>
-                              <span className={`text-xs font-medium ${insuranceStatus.color}`}>
-                                {insuranceStatus.label}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                        
-                        {/* Document Count */}
-                        <div className="flex items-center gap-1 mt-1.5">
-                          <FileText className="h-3 w-3 text-muted-foreground" />
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {profile.insurer && (
                           <span className="text-xs text-muted-foreground">
-                            {documentCounts[profile.id] || 0} documents
+                            {profile.insurer}
                           </span>
-                        </div>
+                        )}
+                        {insuranceStatus && (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${insuranceStatus.color}`}>
+                            {insuranceStatus.label}
+                          </span>
+                        )}
                       </div>
                       
-                      {/* Actions */}
+                      <div className="flex items-center gap-1 mt-1.5 text-xs text-muted-foreground">
+                        <FileText className="h-3 w-3" />
+                        <span>{documentCounts[profile.id] || 0} documents</span>
+                      </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex items-center gap-1">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-background z-50">
-                          <DropdownMenuItem onClick={(e) => handleEditProfile(e, profile.id)}>
+                        <DropdownMenuContent align="end" className="rounded-xl">
+                          <DropdownMenuItem onClick={(e) => handleEditProfile(e, profile.id)} className="rounded-lg">
                             <Edit className="mr-2 h-4 w-4" />
-                            Edit Profile
+                            Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={(e) => handleDeleteClick(e, profile.id)}
-                            className="text-destructive"
+                            className="text-destructive rounded-lg"
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Profile
+                            Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </div>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </main>
 
-      {/* Sticky Bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 pb-6 space-y-2">
+      {/* Bottom CTA */}
+      <div className="fixed bottom-0 left-0 right-0 glass border-t border-border/50 px-4 py-4 pb-8 space-y-2">
         <Button
           onClick={handleCreateProfile}
-          className="w-full h-12 text-base font-semibold bg-accent text-accent-foreground hover:bg-accent/90"
+          className="w-full h-12 text-base font-semibold rounded-xl shadow-soft"
         >
           <Plus className="mr-2 h-5 w-5" />
-          Create New Profile
+          Add Profile
         </Button>
         <Button
           onClick={handleDocumentSearch}
           variant="outline"
-          className="w-full h-12 text-base font-semibold"
+          className="w-full h-12 text-base font-medium rounded-xl"
         >
           <Search className="mr-2 h-5 w-5" />
-          Document Search
+          Search Documents
         </Button>
       </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Profile</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this profile? This will remove all saved data except your login credentials. This action cannot be undone.
+              Are you sure you want to delete this profile? This will remove all saved data except your login credentials.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

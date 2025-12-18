@@ -1,90 +1,107 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ThemeSelector } from "@/components/ThemeSelector";
 import careBagLogo from "@/assets/carebag-logo-new.png";
-import { Users, Search, Shield } from "lucide-react";
+import { Users, Search, Shield, ChevronRight } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Compact Header */}
-      <header className="flex w-full items-center justify-between bg-primary px-4 py-3">
-        <h1 className="text-xl font-bold text-primary-foreground">CareBag</h1>
-        <ThemeSelector />
-      </header>
-
       {/* Main Content */}
-      <main className="flex flex-1 flex-col items-center px-4 pb-32 pt-6">
+      <main className="flex flex-1 flex-col px-6 pb-40 pt-16">
         {/* Hero Section */}
-        <div className="flex flex-col items-center space-y-4 animate-fade-in">
+        <div className="flex flex-col items-center animate-fade-in">
           {/* Logo */}
-          <div className="flex h-40 w-40 items-center justify-center rounded-full border-4 border-primary bg-white p-4 animate-scale-in">
-            <img
-              src={careBagLogo}
-              alt="CareBag Logo"
-              className="h-full w-full object-contain"
-            />
+          <div className="mb-8">
+            <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-primary to-primary/80 p-4 shadow-elevated flex items-center justify-center">
+              <img
+                src={careBagLogo}
+                alt="CareBag Logo"
+                className="h-16 w-16 object-contain"
+              />
+            </div>
           </div>
 
-          {/* Punchy Headline */}
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-foreground leading-tight">
-              Your Family's Health,
+          {/* Brand */}
+          <h1 className="text-3xl font-bold text-foreground tracking-tight mb-3">
+            CareBag
+          </h1>
+
+          {/* Headline */}
+          <div className="text-center space-y-3 max-w-xs">
+            <h2 className="text-xl font-semibold text-foreground leading-snug">
+              Your family's health records,
               <br />
-              One Tap Away
+              beautifully organized
             </h2>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              Store and access all your medical records securely from anywhere
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Store, access, and manage all your medical documents securely from anywhere.
             </p>
           </div>
         </div>
 
-        {/* Value Props Strip */}
-        <div className="flex w-full max-w-sm justify-around pt-6 pb-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <div className="flex flex-col items-center space-y-1">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Users className="h-5 w-5 text-primary" />
-            </div>
-            <span className="text-xs font-medium text-muted-foreground">Family</span>
-          </div>
-          <div className="flex flex-col items-center space-y-1">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Search className="h-5 w-5 text-primary" />
-            </div>
-            <span className="text-xs font-medium text-muted-foreground">Smart Search</span>
-          </div>
-          <div className="flex flex-col items-center space-y-1">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Shield className="h-5 w-5 text-primary" />
-            </div>
-            <span className="text-xs font-medium text-muted-foreground">Secure</span>
-          </div>
+        {/* Value Props */}
+        <div className="mt-12 space-y-3 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <FeatureCard
+            icon={<Users className="h-5 w-5" />}
+            title="Family Profiles"
+            description="Manage health records for your entire family"
+          />
+          <FeatureCard
+            icon={<Search className="h-5 w-5" />}
+            title="Smart Search"
+            description="Find any document instantly with intelligent search"
+          />
+          <FeatureCard
+            icon={<Shield className="h-5 w-5" />}
+            title="Bank-Level Security"
+            description="Your data is encrypted and protected"
+          />
         </div>
       </main>
 
-      {/* Sticky Bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-4 pb-6 space-y-3">
+      {/* Bottom CTA */}
+      <div className="fixed bottom-0 left-0 right-0 glass border-t border-border/50 px-6 py-5 pb-8 space-y-3">
         <Button
-          variant="default"
           size="lg"
           onClick={() => navigate("/register")}
-          className="w-full h-14 text-lg font-semibold bg-accent text-accent-foreground hover:bg-accent/90"
+          className="w-full h-14 text-base font-semibold rounded-xl shadow-soft hover:shadow-elevated transition-all"
         >
-          GET STARTED
+          Get Started
+          <ChevronRight className="ml-2 h-5 w-5" />
         </Button>
         <Button
-          variant="outline"
+          variant="ghost"
           size="lg"
           onClick={() => navigate("/login")}
-          className="w-full h-14 text-lg font-semibold"
+          className="w-full h-12 text-base font-medium text-muted-foreground hover:text-foreground"
         >
-          I HAVE AN ACCOUNT
+          I already have an account
         </Button>
       </div>
     </div>
   );
 };
+
+const FeatureCard = ({ 
+  icon, 
+  title, 
+  description 
+}: { 
+  icon: React.ReactNode; 
+  title: string; 
+  description: string;
+}) => (
+  <div className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/50 shadow-soft">
+    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary flex-shrink-0">
+      {icon}
+    </div>
+    <div className="flex-1 min-w-0">
+      <h3 className="font-semibold text-foreground text-sm">{title}</h3>
+      <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+    </div>
+  </div>
+);
 
 export default Index;
