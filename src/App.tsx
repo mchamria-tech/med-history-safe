@@ -20,6 +20,7 @@ import MyFeedback from "./pages/MyFeedback";
 import FeedbackHub from "./pages/FeedbackHub";
 import AdminFeedback from "./pages/AdminFeedback";
 import NotFound from "./pages/NotFound";
+import SplashScreen from "./components/SplashScreen";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/splash" element={<SplashScreen />} />
               <Route path="/dashboard" element={<Profiles_Main />} />
               <Route path="/new-profile" element={<NewProfile />} />
               <Route path="/profile/:profileId" element={<ProfileView />} />
