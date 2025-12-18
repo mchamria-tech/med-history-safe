@@ -9,25 +9,25 @@ const Index = () => {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Main Content */}
-      <main className="flex flex-1 flex-col px-6 pb-40 pt-16">
+      <main className="flex flex-1 flex-col px-6 pb-40 pt-10">
         {/* Hero Section */}
         <div className="flex flex-col items-center animate-fade-in">
           {/* Logo */}
-          <div className="mb-8">
+          <div className="mb-6">
             <img
               src={careBagLogo}
               alt="CareBag Logo"
-              className="h-24 w-auto object-contain"
+              className="h-16 w-auto object-contain"
             />
           </div>
 
           {/* Brand */}
-          <h1 className="text-3xl font-bold text-foreground tracking-tight mb-3">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">
             CareBag
           </h1>
 
           {/* Headline */}
-          <div className="text-center space-y-3 max-w-xs">
+          <div className="text-center space-y-2 max-w-xs">
             <h2 className="text-xl font-semibold text-foreground leading-snug">
               Your family's health records,
               <br />
