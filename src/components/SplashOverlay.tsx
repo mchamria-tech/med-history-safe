@@ -58,9 +58,9 @@ const SplashOverlay = ({ onComplete }: SplashOverlayProps) => {
     }
   }, [stage]);
 
-  // Logo position in header: accounts for beta banner (~32px) + header py-3 (12px) + left-4 (16px)
-  const logoFinalX = 36; // Approximate center of logo in final position
-  const logoFinalY = 56; // 32px banner + 12px header padding + ~12px to center logo
+  // Logo position in header: accounts for beta banner (~36px) + header py-3 (12px) + left-4 (16px)
+  const logoFinalX = 36;
+  const logoFinalY = 64; // Adjusted for beta banner + header
 
   return (
     <div 
@@ -110,7 +110,7 @@ const SplashOverlay = ({ onComplete }: SplashOverlayProps) => {
             ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-0 opacity-0" 
             : stage === 1 
               ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100 opacity-100" 
-              : "top-[44px] left-4 translate-x-0 translate-y-0 scale-100 opacity-100"
+              : "top-[52px] left-4 translate-x-0 translate-y-0 scale-100 opacity-100"
         }`}
         style={{
           animation: stage === 1 ? "logo-entrance 0.8s ease-out forwards" : undefined,
