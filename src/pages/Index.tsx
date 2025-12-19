@@ -22,7 +22,7 @@ const Index = () => {
           </div>
 
           {/* Brand */}
-          <h1 className="text-2xl font-bold text-foreground tracking-tight mb-2">
+          <h1 className="text-2xl font-bold text-accent tracking-tight mb-2">
             CareBag
           </h1>
 
