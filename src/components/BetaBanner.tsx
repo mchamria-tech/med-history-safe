@@ -20,7 +20,7 @@ const BetaBanner = () => {
   if (!isVisible) return null;
 
   return (
-    <div className="bg-muted border-b border-border px-4 py-2 text-xs">
+    <div className="bg-accent/20 border-b border-accent/30 px-4 py-2 text-xs">
       <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
         <p className="text-muted-foreground">
           <span className="font-medium text-foreground">Beta</span> · Document uploads limited to 5 per profile
