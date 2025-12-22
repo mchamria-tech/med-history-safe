@@ -87,8 +87,16 @@ const AdminLogin = () => {
       <main className="flex-1 flex items-center justify-center p-6">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-              <Shield className="w-8 h-8 text-primary" />
+            {/* Shield with Logo Inside */}
+            <div className="mx-auto relative">
+              <div className="w-24 h-24 bg-primary/10 rounded-2xl flex items-center justify-center relative">
+                <Shield className="w-20 h-20 text-primary/30 absolute" />
+                <img 
+                  src={carebagLogo} 
+                  alt="CareBag" 
+                  className="h-10 w-auto object-contain relative z-10" 
+                />
+              </div>
             </div>
             <div>
               <CardTitle className="text-2xl">Admin Login</CardTitle>
@@ -151,11 +159,6 @@ const AdminLogin = () => {
           </CardContent>
         </Card>
       </main>
-
-      {/* Footer */}
-      <footer className="p-4 text-center">
-        <img src={carebagLogo} alt="CareBag" className="h-6 mx-auto opacity-50" />
-      </footer>
     </div>
   );
 };

@@ -8,8 +8,24 @@ const Index = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      {/* Header with Partner/Admin Login Links */}
+      <header className="flex items-center justify-between px-6 pt-6 pb-2">
+        <button
+          onClick={() => navigate("/partner/login")}
+          className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
+        >
+          Partner Login
+        </button>
+        <button
+          onClick={() => navigate("/admin/login")}
+          className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
+        >
+          Admin Login
+        </button>
+      </header>
+
       {/* Main Content */}
-      <main className="flex flex-1 flex-col px-6 pb-40 pt-10">
+      <main className="flex flex-1 flex-col px-6 pb-48 pt-4">
         {/* Hero Section */}
         <div className="flex flex-col items-center animate-fade-in">
           {/* Logo */}
@@ -77,21 +93,6 @@ const Index = () => {
         >
           I already have an account
         </Button>
-        <div className="flex items-center justify-center gap-3 pt-2 text-xs">
-          <button
-            onClick={() => navigate("/partner/login")}
-            className="text-muted-foreground hover:text-primary transition-colors"
-          >
-            Partner Portal
-          </button>
-          <span className="text-border">•</span>
-          <button
-            onClick={() => navigate("/admin/login")}
-            className="text-muted-foreground hover:text-primary transition-colors"
-          >
-            Admin
-          </button>
-        </div>
       </div>
     </div>
   );
