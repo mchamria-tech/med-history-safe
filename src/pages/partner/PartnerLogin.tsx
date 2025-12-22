@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, ArrowLeft } from "lucide-react";
+import { Handshake, ArrowLeft } from "lucide-react";
+import carebagLogo from "@/assets/carebag-logo-redesign.png";
 
 const PartnerLogin = () => {
   const navigate = useNavigate();
@@ -99,7 +100,10 @@ const PartnerLogin = () => {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-lg font-bold text-primary-foreground">Partner Portal</h1>
+        <div className="flex items-center gap-2">
+          <img src={carebagLogo} alt="CareBag" className="h-6 w-auto" />
+          <h1 className="text-lg font-bold text-primary-foreground">Partner Portal</h1>
+        </div>
         <div className="w-10" />
       </header>
 
@@ -108,7 +112,7 @@ const PartnerLogin = () => {
         <Card className="w-full max-w-md shadow-elevated">
           <CardHeader className="text-center">
             <div className="mx-auto w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-4">
-              <Building2 className="h-8 w-8 text-accent" />
+              <Handshake className="h-8 w-8 text-accent" />
             </div>
             <CardTitle className="text-2xl">Partner Login</CardTitle>
             <CardDescription>

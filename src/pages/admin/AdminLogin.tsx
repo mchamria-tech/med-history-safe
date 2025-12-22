@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Shield, Loader2 } from "lucide-react";
-import carebagLogo from "@/assets/carebag-logo-new.png";
+import carebagLogo from "@/assets/carebag-logo-redesign.png";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -73,37 +73,33 @@ const AdminLogin = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="p-4 flex items-center gap-3 border-b border-border/50">
-        <button
-          onClick={() => navigate("/login")}
-          className="p-2 hover:bg-accent rounded-full transition-colors"
+      <header className="flex items-center justify-between bg-primary px-4 py-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-primary-foreground hover:bg-primary/80"
+          onClick={() => navigate("/")}
         >
-          <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-        </button>
-        <span className="text-lg font-semibold text-foreground">Admin Portal</span>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex items-center gap-2">
+          <img src={carebagLogo} alt="CareBag" className="h-6 w-auto" />
+          <h1 className="text-lg font-bold text-primary-foreground">Admin Portal</h1>
+        </div>
+        <div className="w-10" />
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-6">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center space-y-4">
-            {/* Shield with Logo Inside */}
-            <div className="mx-auto relative">
-              <div className="w-24 h-24 bg-primary/10 rounded-2xl flex items-center justify-center relative">
-                <Shield className="w-20 h-20 text-primary/30 absolute" />
-                <img 
-                  src={carebagLogo} 
-                  alt="CareBag" 
-                  className="h-10 w-auto object-contain relative z-10" 
-                />
-              </div>
+      <main className="flex-1 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-elevated">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-4">
+              <Shield className="h-8 w-8 text-accent" />
             </div>
-            <div>
-              <CardTitle className="text-2xl">Admin Login</CardTitle>
-              <CardDescription className="mt-2">
-                Sign in with your super admin credentials
-              </CardDescription>
-            </div>
+            <CardTitle className="text-2xl">Admin Login</CardTitle>
+            <CardDescription>
+              Sign in with your super admin credentials
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
