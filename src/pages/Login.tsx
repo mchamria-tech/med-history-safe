@@ -161,6 +161,28 @@ const Login = () => {
             </button>
           </p>
         </div>
+
+        {/* Portal Links */}
+        <div className="text-center mt-6 pt-6 border-t border-border/50">
+          <p className="text-xs text-muted-foreground mb-2">
+            Are you a healthcare provider?
+          </p>
+          <div className="flex items-center justify-center gap-4 text-xs">
+            <button
+              onClick={() => navigate("/partner/login")}
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              Partner Login
+            </button>
+            <span className="text-border">•</span>
+            <button
+              onClick={() => navigate("/admin")}
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              Admin
+            </button>
+          </div>
+        </div>
       </main>
     </div>
   );
