@@ -1,19 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Calendar, UserPlus } from "lucide-react";
+import { ArrowLeft, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePartnerCheck } from "@/hooks/usePartnerCheck";
 import PartnerLayout from "@/components/partner/PartnerLayout";
+import DateDropdowns from "@/components/DateDropdowns";
 import { z } from "zod";
 
 const profileSchema = z.object({
@@ -198,31 +196,12 @@ const PartnerNewUser = () => {
 
               <div className="space-y-2">
                 <Label>Date of Birth</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal bg-muted",
-                        !dateOfBirth && "text-muted-foreground"
-                      )}
-                    >
-                      {dateOfBirth ? format(dateOfBirth, "PP") : "Select date"}
-                      <Calendar className="ml-auto h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={dateOfBirth}
-                      onSelect={setDateOfBirth}
-                      initialFocus
-                      captionLayout="dropdown-buttons"
-                      fromYear={1920}
-                      toYear={new Date().getFullYear()}
-                    />
-                  </PopoverContent>
-                </Popover>
+                <DateDropdowns
+                  value={dateOfBirth}
+                  onChange={setDateOfBirth}
+                  fromYear={1920}
+                  toYear={new Date().getFullYear()}
+                />
               </div>
             </div>
 
