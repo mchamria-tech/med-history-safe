@@ -1,18 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Menu, MoreVertical, Calendar, Plus, ArrowLeft } from "lucide-react";
+import { Menu, MoreVertical, Plus, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { getSignedUrl } from "@/hooks/useSignedUrl";
+import DateDropdowns from "@/components/DateDropdowns";
 
 // Validation schema
 const profileSchema = z.object({
@@ -341,31 +339,12 @@ const NewProfile = () => {
 
             <div className="space-y-1">
               <Label className="text-sm font-medium text-foreground">Date of Birth</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal bg-muted border-border hover:bg-muted/80",
-                      !dateOfBirth && "text-muted-foreground"
-                    )}
-                  >
-                    {dateOfBirth ? format(dateOfBirth, "PPP") : <span>Select date</span>}
-                    <Calendar className="ml-auto h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={dateOfBirth}
-                    onSelect={setDateOfBirth}
-                    initialFocus
-                    captionLayout="dropdown-buttons"
-                    fromYear={1920}
-                    toYear={new Date().getFullYear()}
-                  />
-                </PopoverContent>
-              </Popover>
+              <DateDropdowns
+                value={dateOfBirth}
+                onChange={setDateOfBirth}
+                fromYear={1920}
+                toYear={new Date().getFullYear()}
+              />
             </div>
 
             <div className="space-y-1">
@@ -501,29 +480,12 @@ const NewProfile = () => {
 
             <div className="col-span-2 space-y-1">
               <Label className="text-sm font-medium text-foreground">Expiry Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal bg-muted border-border hover:bg-muted/80",
-                      !expiryDate && "text-muted-foreground"
-                    )}
-                  >
-                    {expiryDate ? format(expiryDate, "PPP") : <span>Select date</span>}
-                    <Calendar className="ml-auto h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={expiryDate}
-                    onSelect={setExpiryDate}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
+              <DateDropdowns
+                value={expiryDate}
+                onChange={setExpiryDate}
+                fromYear={new Date().getFullYear()}
+                toYear={new Date().getFullYear() + 30}
+              />
             </div>
 
             <div className="space-y-1">
