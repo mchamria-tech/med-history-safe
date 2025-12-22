@@ -26,6 +26,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPartners from "./pages/admin/AdminPartners";
 import AdminPartnerForm from "./pages/admin/AdminPartnerForm";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminUserAnalytics from "./pages/admin/AdminUserAnalytics";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminAuditLogs from "./pages/admin/AdminAuditLogs";
 
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="/admin/partners/new" element={<AdminPartnerForm />} />
               <Route path="/admin/partners/:id" element={<AdminPartnerForm />} />
               <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/users/:userId/analytics" element={<AdminUserAnalytics />} />
               <Route path="/admin/analytics" element={<AdminAnalytics />} />
               <Route path="/admin/feedback" element={<AdminFeedback />} />
               <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
