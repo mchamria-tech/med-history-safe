@@ -44,12 +44,12 @@ const AdminFeedback = () => {
         return;
       }
 
-      // Check if user has admin role
+      // Check if user has admin or super_admin role
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
-        .eq("role", "admin");
+        .in("role", ["admin", "super_admin"]);
 
       if (rolesError) throw rolesError;
 
