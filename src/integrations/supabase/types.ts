@@ -253,8 +253,11 @@ export type Database = {
       }
       partners: {
         Row: {
+          address: string | null
           created_at: string | null
           email: string
+          govt_certification: string | null
+          gst_number: string | null
           id: string
           is_active: boolean | null
           logo_url: string | null
@@ -264,8 +267,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          address?: string | null
           created_at?: string | null
           email: string
+          govt_certification?: string | null
+          gst_number?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
@@ -275,8 +281,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          address?: string | null
           created_at?: string | null
           email?: string
+          govt_certification?: string | null
+          gst_number?: string | null
           id?: string
           is_active?: boolean | null
           logo_url?: string | null

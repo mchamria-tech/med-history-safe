@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, Link as LinkIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSuperAdminCheck } from "@/hooks/useSuperAdminCheck";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminPartnerForm = () => {
@@ -19,12 +21,17 @@ const AdminPartnerForm = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [logoInputMode, setLogoInputMode] = useState<"url" | "upload">("url");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     is_active: true,
     logo_url: "",
+    address: "",
+    gst_number: "",
+    govt_certification: "",
   });
   const [partnerCode, setPartnerCode] = useState<string | null>(null);
 
@@ -53,6 +60,9 @@ const AdminPartnerForm = () => {
         password: "",
         is_active: data.is_active,
         logo_url: data.logo_url || "",
+        address: data.address || "",
+        gst_number: data.gst_number || "",
+        govt_certification: data.govt_certification || "",
       });
       setPartnerCode(data.partner_code);
     } catch (error) {
@@ -65,6 +75,63 @@ const AdminPartnerForm = () => {
       navigate("/admin/partners");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid file",
+        description: "Please upload an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Logo must be less than 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("partner-logos")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrl } = supabase.storage
+        .from("partner-logos")
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, logo_url: publicUrl.publicUrl });
+      toast({
+        title: "Logo uploaded",
+        description: "Logo has been uploaded successfully",
+      });
+    } catch (error: any) {
+      console.error("Error uploading logo:", error);
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to upload logo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -101,6 +168,9 @@ const AdminPartnerForm = () => {
             email: formData.email,
             is_active: formData.is_active,
             logo_url: formData.logo_url || null,
+            address: formData.address || null,
+            gst_number: formData.gst_number || null,
+            govt_certification: formData.govt_certification || null,
           })
           .eq("id", id);
 
@@ -120,63 +190,29 @@ const AdminPartnerForm = () => {
           description: "Partner updated successfully",
         });
       } else {
-        // Create new partner
-        // First, create auth user for the partner
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/partner/dashboard`,
+        // Create new partner via edge function
+        const { data, error } = await supabase.functions.invoke("create-partner", {
+          body: {
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+            is_active: formData.is_active,
+            logo_url: formData.logo_url || null,
+            address: formData.address || null,
+            gst_number: formData.gst_number || null,
+            govt_certification: formData.govt_certification || null,
           },
         });
 
-        if (authError) throw authError;
+        if (error) throw error;
 
-        if (!authData.user) {
-          throw new Error("Failed to create user account");
+        if (data?.error) {
+          throw new Error(data.error);
         }
-
-        // Generate partner code using RPC or manual generation
-        const generatedCode = "X" + Math.random().toString(36).substring(2, 7).toUpperCase();
-
-        // Create partner record
-        const { data: partnerData, error: partnerError } = await supabase
-          .from("partners")
-          .insert({
-            user_id: authData.user.id,
-            partner_code: generatedCode,
-            name: formData.name,
-            email: formData.email,
-            is_active: formData.is_active,
-            logo_url: formData.logo_url || null,
-          })
-          .select()
-          .single();
-
-        if (partnerError) throw partnerError;
-
-        // Add partner role
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert({
-            user_id: authData.user.id,
-            role: "partner",
-          });
-
-        if (roleError) throw roleError;
-
-        // Log the action
-        await supabase.from("admin_audit_logs").insert({
-          admin_id: user?.id,
-          action: "create_partner",
-          target_type: "partner",
-          target_id: partnerData.id,
-          details: { partner_name: formData.name, partner_code: generatedCode },
-        });
 
         toast({
           title: "Success",
-          description: `Partner created successfully. Code: ${generatedCode}`,
+          description: `Partner created successfully. Code: ${data.partner_code}`,
         });
       }
 
@@ -267,13 +303,93 @@ const AdminPartnerForm = () => {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="logo_url">Logo URL (Optional)</Label>
-                <Input
-                  id="logo_url"
-                  value={formData.logo_url}
-                  onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                  placeholder="https://example.com/logo.png"
+                <Label htmlFor="address">Business Address</Label>
+                <Textarea
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Enter full business address"
+                  rows={3}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="gst_number">GST Number</Label>
+                <Input
+                  id="gst_number"
+                  value={formData.gst_number}
+                  onChange={(e) => setFormData({ ...formData, gst_number: e.target.value })}
+                  placeholder="e.g., 22AAAAA0000A1Z5"
+                />
+                <p className="text-xs text-muted-foreground">
+                  15-character GST identification number
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Government Certification</Label>
+                <div className="p-4 border border-dashed border-border rounded-lg bg-muted/30">
+                  <p className="text-sm text-muted-foreground text-center">
+                    🏛️ Government certification integration coming soon
+                  </p>
+                  <p className="text-xs text-muted-foreground text-center mt-1">
+                    This feature is under development
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Logo (Optional)</Label>
+                <Tabs value={logoInputMode} onValueChange={(v) => setLogoInputMode(v as "url" | "upload")}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="url" className="flex items-center gap-2">
+                      <LinkIcon className="h-4 w-4" />
+                      URL
+                    </TabsTrigger>
+                    <TabsTrigger value="upload" className="flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      Upload
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="url" className="mt-2">
+                    <Input
+                      id="logo_url"
+                      value={formData.logo_url}
+                      onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+                      placeholder="https://example.com/logo.png"
+                    />
+                  </TabsContent>
+                  <TabsContent value="upload" className="mt-2">
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        disabled={isUploading}
+                        className="cursor-pointer"
+                      />
+                      {isUploading && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Uploading...
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+                {formData.logo_url && (
+                  <div className="mt-2 p-2 border rounded-lg bg-muted/30">
+                    <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+                    <img
+                      src={formData.logo_url}
+                      alt="Logo preview"
+                      className="h-16 w-auto object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
@@ -303,7 +419,7 @@ const AdminPartnerForm = () => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" className="flex-1" disabled={isSaving}>
+                <Button type="submit" className="flex-1" disabled={isSaving || isUploading}>
                   {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {isEditing ? "Update Partner" : "Create Partner"}
                 </Button>
