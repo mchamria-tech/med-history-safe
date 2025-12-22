@@ -126,6 +126,7 @@ export type Database = {
           rating: number | null
           status: string
           subject: string
+          ticket_code: string | null
           updated_at: string
           user_email: string
           user_id: string
@@ -142,6 +143,7 @@ export type Database = {
           rating?: number | null
           status?: string
           subject: string
+          ticket_code?: string | null
           updated_at?: string
           user_email: string
           user_id: string
@@ -158,6 +160,7 @@ export type Database = {
           rating?: number | null
           status?: string
           subject?: string
+          ticket_code?: string | null
           updated_at?: string
           user_email?: string
           user_id?: string
@@ -399,6 +402,7 @@ export type Database = {
     Functions: {
       generate_carebag_id: { Args: never; Returns: string }
       generate_partner_code: { Args: never; Returns: string }
+      generate_ticket_code: { Args: never; Returns: string }
       get_partner_id: { Args: { user_id: string }; Returns: string }
       has_role: {
         Args: {

@@ -76,16 +76,34 @@ const AdminUsers = () => {
         .from("user_roles")
         .select("user_id, role");
 
-      // Group profiles by user_id
+      // Get all partner user_ids to exclude them
+      const { data: partners } = await supabase
+        .from("partners")
+        .select("user_id");
+      
+      const partnerUserIds = new Set(partners?.map(p => p.user_id) || []);
+
+      // Group profiles by user_id, excluding partner accounts
       const userMap = new Map<string, GroupedUser>();
       
       (profiles || []).forEach((profile) => {
+        // Skip if this user_id is a partner account
+        if (partnerUserIds.has(profile.user_id)) {
+          return;
+        }
+
         if (!userMap.has(profile.user_id)) {
           const userRoles = roles?.filter(r => r.user_id === profile.user_id).map(r => r.role) || [];
+          
+          // Skip if user has partner role
+          if (userRoles.includes("partner")) {
+            return;
+          }
+
           userMap.set(profile.user_id, {
             user_id: profile.user_id,
             email: profile.email,
-            name: profile.name,
+            name: profile.name || "User", // Default to "User" if name is missing
             profileCount: 1,
             roles: userRoles.length > 0 ? userRoles : ["user"],
             created_at: profile.created_at,
@@ -97,10 +115,19 @@ const AdminUsers = () => {
           if (!existing.email && profile.email) {
             existing.email = profile.email;
           }
+          // Update name if current is "User" and profile has a name
+          if (existing.name === "User" && profile.name) {
+            existing.name = profile.name;
+          }
         }
       });
 
-      setGroupedUsers(Array.from(userMap.values()));
+      // Convert to array and sort alphabetically by name
+      const sortedUsers = Array.from(userMap.values()).sort((a, b) => 
+        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+      );
+
+      setGroupedUsers(sortedUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
     }
@@ -192,7 +219,7 @@ const AdminUsers = () => {
                     <div className="flex items-center gap-4">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                         <span className="text-sm font-bold text-primary">
-                          {user.name?.charAt(0).toUpperCase() || "?"}
+                          {user.name?.charAt(0).toUpperCase() || "U"}
                         </span>
                       </div>
                       <div>
