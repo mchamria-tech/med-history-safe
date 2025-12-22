@@ -86,7 +86,7 @@ const Index = () => {
           </button>
           <span className="text-border">•</span>
           <button
-            onClick={() => navigate("/admin")}
+            onClick={() => navigate("/admin/login")}
             className="text-muted-foreground hover:text-primary transition-colors"
           >
             Admin
