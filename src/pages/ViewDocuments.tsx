@@ -31,6 +31,7 @@ interface Document {
   document_date: string;
   document_type: string | null;
   uploaded_at: string;
+  partner_source_name: string | null;
 }
 
 const ViewDocuments = () => {
@@ -240,7 +241,14 @@ const ViewDocuments = () => {
               <CardContent className="p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-sm truncate">{doc.document_name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-foreground text-sm truncate">{doc.document_name}</h3>
+                      {doc.partner_source_name && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent/20 text-accent shrink-0">
+                          {doc.partner_source_name}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-x-3 mt-1 text-xs text-muted-foreground">
                       <span>Date: {format(new Date(doc.document_date), 'PP')}</span>
                       {doc.document_type && <span>Type: {doc.document_type}</span>}
