@@ -8,7 +8,8 @@ import {
   MessageSquare, 
   ScrollText,
   LogOut,
-  ChevronLeft
+  ChevronLeft,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +27,7 @@ const navItems = [
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { label: "Feedback", href: "/admin/feedback", icon: MessageSquare },
   { label: "Audit Logs", href: "/admin/audit-logs", icon: ScrollText },
+  { label: "Profile", href: "/admin/profile", icon: User },
 ];
 
 const AdminLayout = ({ children, title }: AdminLayoutProps) => {
@@ -87,7 +89,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
             variant="ghost"
             size="icon"
             className="mr-3"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/admin")}
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>

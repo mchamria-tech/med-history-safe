@@ -54,7 +54,7 @@ const AdminPartners = () => {
       const { data, error } = await supabase
         .from("partners")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("name", { ascending: true });
 
       if (error) throw error;
       setPartners(data || []);
