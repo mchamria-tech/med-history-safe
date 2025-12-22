@@ -235,24 +235,22 @@ const NewProfile = () => {
           .eq('id', editProfileId);
 
         if (updateError) throw updateError;
-
-        toast({
-          title: "Success",
-          description: "Profile updated successfully",
-        });
       } else {
-        // Insert new profile
+        // Generate CareBag ID for new profile
+        const { data: carebagIdData } = await supabase.rpc('generate_carebag_id');
+        
+        // Insert new profile with CareBag ID
         const { error: insertError } = await supabase
           .from('profiles')
-          .insert(profileData);
+          .insert({ ...profileData, carebag_id: carebagIdData });
 
         if (insertError) throw insertError;
-
-        toast({
-          title: "Success",
-          description: "Profile created successfully",
-        });
       }
+
+      toast({
+        title: "Success",
+        description: editProfileId ? "Profile updated successfully" : "Profile created successfully",
+      });
 
       navigate("/dashboard");
     } catch (error: any) {

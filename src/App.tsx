@@ -28,6 +28,12 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminAuditLogs from "./pages/admin/AdminAuditLogs";
 
+// Partner Pages
+import PartnerLogin from "./pages/partner/PartnerLogin";
+import PartnerDashboard from "./pages/partner/PartnerDashboard";
+import PartnerUserSearch from "./pages/partner/PartnerUserSearch";
+import PartnerDocumentUpload from "./pages/partner/PartnerDocumentUpload";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -61,6 +67,13 @@ const App = () => (
               <Route path="/admin/analytics" element={<AdminAnalytics />} />
               <Route path="/admin/feedback" element={<AdminFeedback />} />
               <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+              
+              {/* Partner Routes */}
+              <Route path="/partner/login" element={<PartnerLogin />} />
+              <Route path="/partner/dashboard" element={<PartnerDashboard />} />
+              <Route path="/partner/users" element={<PartnerUserSearch />} />
+              <Route path="/partner/upload" element={<PartnerDocumentUpload />} />
+              <Route path="/partner/upload/:profileId" element={<PartnerDocumentUpload />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
