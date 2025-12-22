@@ -73,7 +73,7 @@ const AdminFeedback = () => {
           description: "You don't have super admin privileges",
           variant: "destructive",
         });
-        navigate("/admin/dashboard");
+        navigate("/admin");
         return;
       }
 
@@ -81,7 +81,7 @@ const AdminFeedback = () => {
       fetchAllFeedback();
     } catch (error) {
       console.error("Error checking admin access:", error);
-      navigate("/admin/dashboard");
+      navigate("/admin");
     }
   };
 
@@ -250,7 +250,7 @@ const AdminFeedback = () => {
           variant="ghost" 
           size="icon" 
           className="text-primary-foreground hover:bg-primary/80 mr-2"
-          onClick={() => navigate("/admin/dashboard")}
+          onClick={() => navigate("/admin")}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>

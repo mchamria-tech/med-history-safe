@@ -29,6 +29,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminUserAnalytics from "./pages/admin/AdminUserAnalytics";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminAuditLogs from "./pages/admin/AdminAuditLogs";
+import AdminProfile from "./pages/admin/AdminProfile";
 
 // Partner Pages
 import PartnerLogin from "./pages/partner/PartnerLogin";
@@ -71,6 +72,7 @@ const App = () => (
               <Route path="/admin/analytics" element={<AdminAnalytics />} />
               <Route path="/admin/feedback" element={<AdminFeedback />} />
               <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+              <Route path="/admin/profile" element={<AdminProfile />} />
               
               {/* Partner Routes */}
               <Route path="/partner/login" element={<PartnerLogin />} />
