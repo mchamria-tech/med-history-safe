@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Partner {
   id: string;
+  user_id: string;
   partner_code: string;
   name: string;
   logo_url: string | null;

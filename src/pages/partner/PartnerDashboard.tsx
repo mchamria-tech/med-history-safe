@@ -476,7 +476,7 @@ const PartnerDashboard = () => {
                 <p className="text-sm text-muted-foreground mb-3">
                   No user exists with this CareBag ID. Would you like to create a new user?
                 </p>
-                <Button variant="outline" onClick={() => navigate("/partner/users")}>
+                <Button variant="outline" onClick={() => navigate("/partner/new-user")}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Create New User
                 </Button>
@@ -571,7 +571,7 @@ const PartnerDashboard = () => {
                   This {forgotCodeTab === "phone" ? "phone number" : "email"} is not registered with CareBag. 
                   This user needs to be created as a new member.
                 </p>
-                <Button variant="outline" onClick={() => navigate("/partner/users")}>
+                <Button variant="outline" onClick={() => navigate("/partner/new-user")}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Create New User
                 </Button>
