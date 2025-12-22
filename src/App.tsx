@@ -21,6 +21,7 @@ import AdminFeedback from "./pages/AdminFeedback";
 import NotFound from "./pages/NotFound";
 
 // Super Admin Pages
+import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPartners from "./pages/admin/AdminPartners";
 import AdminPartnerForm from "./pages/admin/AdminPartnerForm";
@@ -59,6 +60,7 @@ const App = () => (
               <Route path="/my-feedback" element={<MyFeedback />} />
               
               {/* Super Admin Routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/partners" element={<AdminPartners />} />
               <Route path="/admin/partners/new" element={<AdminPartnerForm />} />

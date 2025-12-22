@@ -19,7 +19,7 @@ export const useSuperAdminCheck = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        navigate("/login");
+        navigate("/admin/login");
         return;
       }
 
