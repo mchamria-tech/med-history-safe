@@ -30,7 +30,6 @@ const PartnerNewUser = () => {
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState<Date>();
-  const [relation, setRelation] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [height, setHeight] = useState("");
@@ -38,6 +37,12 @@ const PartnerNewUser = () => {
   const [bloodPressure, setBloodPressure] = useState("");
   const [bloodGlucose, setBloodGlucose] = useState("");
   const [allergies, setAllergies] = useState("");
+
+  // Emergency contact fields
+  const [emergencyName, setEmergencyName] = useState("");
+  const [emergencyRelation, setEmergencyRelation] = useState("");
+  const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [emergencyEmail, setEmergencyEmail] = useState("");
 
   // Generate height options
   const heightOptions = [];
@@ -82,11 +87,10 @@ const PartnerNewUser = () => {
 
       // Create profile with partner's user_id (partner creates on behalf of user)
       const profileData = {
-        user_id: partner.user_id, // Use partner's user_id as the owner
+        user_id: partner.user_id,
         name: name.trim(),
         gender: gender || null,
         date_of_birth: dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : null,
-        relation: relation.trim() || null,
         email: email.trim() || null,
         phone: phone.trim() || null,
         height: height || null,
@@ -95,6 +99,13 @@ const PartnerNewUser = () => {
         blood_glucose: bloodGlucose.trim() || null,
         allergies: allergies.trim() || null,
         carebag_id: carebagIdData,
+        // Store emergency contact info in relation field as JSON string for now
+        relation: emergencyName ? JSON.stringify({
+          name: emergencyName.trim(),
+          relation: emergencyRelation.trim(),
+          phone: emergencyPhone.trim(),
+          email: emergencyEmail.trim(),
+        }) : null,
       };
 
       const { data: newProfile, error: insertError } = await supabase
@@ -204,17 +215,6 @@ const PartnerNewUser = () => {
                 />
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="relation">Relation</Label>
-              <Input
-                id="relation"
-                value={relation}
-                onChange={(e) => setRelation(e.target.value)}
-                placeholder="e.g., Self, Spouse, Parent"
-                className="bg-muted"
-              />
-            </div>
           </CardContent>
         </Card>
 
@@ -222,40 +222,112 @@ const PartnerNewUser = () => {
         <Card className="shadow-soft">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Contact Information</CardTitle>
-            <CardDescription>How to reach this user</CardDescription>
+            <CardDescription>User and emergency contact details</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="user@example.com"
-                className="bg-muted"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <div className="flex gap-2">
-                <div className="flex items-center gap-1 px-3 bg-muted rounded-md border border-input">
-                  <span className="text-sm">🇮🇳</span>
-                  <span className="text-sm font-medium">+91</span>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Left: User Contact */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground border-b border-border pb-2">User Contact</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="user@example.com"
+                    className="bg-muted"
+                  />
                 </div>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-                    setPhone(value);
-                  }}
-                  placeholder="10-digit mobile"
-                  className="bg-muted flex-1"
-                  maxLength={10}
-                />
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <div className="flex gap-2">
+                    <div className="flex items-center gap-1 px-3 bg-muted rounded-md border border-input">
+                      <span className="text-sm">🇮🇳</span>
+                      <span className="text-sm font-medium">+91</span>
+                    </div>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        setPhone(value);
+                      }}
+                      placeholder="10-digit mobile"
+                      className="bg-muted flex-1"
+                      maxLength={10}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Emergency Contact */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground border-b border-border pb-2">Emergency Contact</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyName">Contact Name</Label>
+                  <Input
+                    id="emergencyName"
+                    value={emergencyName}
+                    onChange={(e) => setEmergencyName(e.target.value)}
+                    placeholder="Emergency contact name"
+                    className="bg-muted"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyRelation">Relation</Label>
+                  <Select value={emergencyRelation} onValueChange={setEmergencyRelation}>
+                    <SelectTrigger className="bg-muted">
+                      <SelectValue placeholder="Select relation" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      <SelectItem value="Spouse">Spouse</SelectItem>
+                      <SelectItem value="Parent">Parent</SelectItem>
+                      <SelectItem value="Child">Child</SelectItem>
+                      <SelectItem value="Sibling">Sibling</SelectItem>
+                      <SelectItem value="Friend">Friend</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyPhone">Phone</Label>
+                  <div className="flex gap-2">
+                    <div className="flex items-center gap-1 px-3 bg-muted rounded-md border border-input">
+                      <span className="text-sm">🇮🇳</span>
+                      <span className="text-sm font-medium">+91</span>
+                    </div>
+                    <Input
+                      id="emergencyPhone"
+                      type="tel"
+                      value={emergencyPhone}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        setEmergencyPhone(value);
+                      }}
+                      placeholder="10-digit mobile"
+                      className="bg-muted flex-1"
+                      maxLength={10}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyEmail">Email</Label>
+                  <Input
+                    id="emergencyEmail"
+                    type="email"
+                    value={emergencyEmail}
+                    onChange={(e) => setEmergencyEmail(e.target.value)}
+                    placeholder="emergency@example.com"
+                    className="bg-muted"
+                  />
+                </div>
               </div>
             </div>
           </CardContent>
