@@ -8,3 +8,9 @@ verify_jwt = true
 
 [functions.send-changelog-email]
 verify_jwt = false
+
+[functions.create-partner]
+verify_jwt = true
+
+[functions.send-partner-otp]
+verify_jwt = false
