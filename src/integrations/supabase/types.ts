@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_logs: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           ailment: string | null
@@ -26,6 +56,8 @@ export type Database = {
           id: string
           medicine: string | null
           other_tags: string | null
+          partner_id: string | null
+          partner_source_name: string | null
           profile_id: string
           uploaded_at: string
           user_id: string
@@ -41,6 +73,8 @@ export type Database = {
           id?: string
           medicine?: string | null
           other_tags?: string | null
+          partner_id?: string | null
+          partner_source_name?: string | null
           profile_id: string
           uploaded_at?: string
           user_id: string
@@ -56,11 +90,20 @@ export type Database = {
           id?: string
           medicine?: string | null
           other_tags?: string | null
+          partner_id?: string | null
+          partner_source_name?: string | null
           profile_id?: string
           uploaded_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "documents_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documents_profile_id_fkey"
             columns: ["profile_id"]
@@ -121,11 +164,135 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_otp_requests: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          otp_code: string
+          partner_id: string
+          profile_id: string
+          verified: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          otp_code: string
+          partner_id: string
+          profile_id: string
+          verified?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          otp_code?: string
+          partner_id?: string
+          profile_id?: string
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_otp_requests_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_otp_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_users: {
+        Row: {
+          consent_given: boolean | null
+          consent_timestamp: string | null
+          id: string
+          linked_at: string | null
+          partner_id: string
+          profile_id: string
+        }
+        Insert: {
+          consent_given?: boolean | null
+          consent_timestamp?: string | null
+          id?: string
+          linked_at?: string | null
+          partner_id: string
+          profile_id: string
+        }
+        Update: {
+          consent_given?: boolean | null
+          consent_timestamp?: string | null
+          id?: string
+          linked_at?: string | null
+          partner_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_users_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_users_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          partner_code: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          partner_code: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          partner_code?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           allergies: string | null
           blood_glucose: string | null
           blood_pressure: string | null
+          carebag_id: string | null
           created_at: string
           date_of_birth: string | null
           email: string | null
@@ -150,6 +317,7 @@ export type Database = {
           allergies?: string | null
           blood_glucose?: string | null
           blood_pressure?: string | null
+          carebag_id?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -174,6 +342,7 @@ export type Database = {
           allergies?: string | null
           blood_glucose?: string | null
           blood_pressure?: string | null
+          carebag_id?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -219,6 +388,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_carebag_id: { Args: never; Returns: string }
+      generate_partner_code: { Args: never; Returns: string }
+      get_partner_id: { Args: { user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -226,9 +398,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_partner: { Args: { user_id: string }; Returns: boolean }
+      is_super_admin: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "partner" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -356,7 +530,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "partner", "super_admin"],
     },
   },
 } as const

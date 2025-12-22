@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import BetaBanner from "@/components/BetaBanner";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -21,6 +20,14 @@ import FeedbackHub from "./pages/FeedbackHub";
 import AdminFeedback from "./pages/AdminFeedback";
 import NotFound from "./pages/NotFound";
 
+// Super Admin Pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminPartners from "./pages/admin/AdminPartners";
+import AdminPartnerForm from "./pages/admin/AdminPartnerForm";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminAuditLogs from "./pages/admin/AdminAuditLogs";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -31,7 +38,6 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <BetaBanner />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
@@ -45,7 +51,17 @@ const App = () => (
               <Route path="/feedback-hub" element={<FeedbackHub />} />
               <Route path="/feedback" element={<Feedback />} />
               <Route path="/my-feedback" element={<MyFeedback />} />
+              
+              {/* Super Admin Routes */}
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/partners" element={<AdminPartners />} />
+              <Route path="/admin/partners/new" element={<AdminPartnerForm />} />
+              <Route path="/admin/partners/:id" element={<AdminPartnerForm />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/analytics" element={<AdminAnalytics />} />
               <Route path="/admin/feedback" element={<AdminFeedback />} />
+              <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+              
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
