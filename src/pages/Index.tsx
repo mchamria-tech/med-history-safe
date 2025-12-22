@@ -77,6 +77,21 @@ const Index = () => {
         >
           I already have an account
         </Button>
+        <div className="flex items-center justify-center gap-3 pt-2 text-xs">
+          <button
+            onClick={() => navigate("/partner/login")}
+            className="text-muted-foreground hover:text-primary transition-colors"
+          >
+            Partner Portal
+          </button>
+          <span className="text-border">•</span>
+          <button
+            onClick={() => navigate("/admin")}
+            className="text-muted-foreground hover:text-primary transition-colors"
+          >
+            Admin
+          </button>
+        </div>
       </div>
     </div>
   );
