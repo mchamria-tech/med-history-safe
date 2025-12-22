@@ -36,6 +36,7 @@ import PartnerLogin from "./pages/partner/PartnerLogin";
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import PartnerUserSearch from "./pages/partner/PartnerUserSearch";
 import PartnerDocumentUpload from "./pages/partner/PartnerDocumentUpload";
+import PartnerNewUser from "./pages/partner/PartnerNewUser";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,7 @@ const App = () => (
               <Route path="/partner/users" element={<PartnerUserSearch />} />
               <Route path="/partner/upload" element={<PartnerDocumentUpload />} />
               <Route path="/partner/upload/:profileId" element={<PartnerDocumentUpload />} />
+              <Route path="/partner/new-user" element={<PartnerNewUser />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
