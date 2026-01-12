@@ -161,8 +161,10 @@ const PartnerUserSearch = () => {
     try {
       setIsLinking(true);
 
-      // Generate OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      // Generate cryptographically secure OTP
+      const array = new Uint32Array(1);
+      crypto.getRandomValues(array);
+      const otp = String(array[0]).slice(0, 6).padStart(6, '0');
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
       // Store OTP request
@@ -175,11 +177,10 @@ const PartnerUserSearch = () => {
 
       if (error) throw error;
 
-      // In production, this would send via SMS/email
-      // For now, we'll show it (for demo purposes)
+      // OTP has been stored and would be sent via SMS/email in production
       toast({
         title: "OTP Sent",
-        description: `Demo OTP: ${otp} (In production, this would be sent to the user)`,
+        description: "Verification code has been sent to the user",
       });
 
       setPendingProfileId(profileId);

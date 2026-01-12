@@ -2,11 +2,25 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+// Dynamic CORS headers based on origin
+function getCorsHeaders(request: Request) {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigins = [
+    'https://lovable.dev',
+    'https://www.lovable.dev',
+    'http://localhost:5173',
+    'http://localhost:3000',
+  ];
+  
+  // Allow Lovable preview URLs
+  const isLovablePreview = origin.includes('.lovable.app') || origin.includes('.lovableproject.com');
+  
+  return {
+    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) || isLovablePreview ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
 
 interface PasswordResetRequest {
   user: {
@@ -22,6 +36,8 @@ interface PasswordResetRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders(req);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -115,7 +131,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ error: error.message }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "application/json", ...getCorsHeaders(req) },
       }
     );
   }
