@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, TrendingUp, AlertTriangle, Calendar, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PartnerLayout } from "@/components/partner/PartnerLayout";
+import PartnerLayout from "@/components/partner/PartnerLayout";
 import { StatCard } from "@/components/partner/StatCard";
 import { StatusBadge } from "@/components/partner/StatusBadge";
 import {

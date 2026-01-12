@@ -1,5 +1,5 @@
 import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3 } from "lucide-react";
-import { PartnerLayout } from "@/components/partner/PartnerLayout";
+import PartnerLayout from "@/components/partner/PartnerLayout";
 import { DemographicsBarChart } from "@/components/partner/DemographicsBarChart";
 import { RiskDonutChart } from "@/components/partner/RiskDonutChart";
 import { mockFinancialMetrics } from "@/components/partner/mockData";

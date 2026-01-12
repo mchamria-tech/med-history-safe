@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { PartnerLayout } from "@/components/partner/PartnerLayout";
+import PartnerLayout from "@/components/partner/PartnerLayout";
 import { RiskDonutChart } from "@/components/partner/RiskDonutChart";
 import { ClinicalStatusChart } from "@/components/partner/ClinicalStatusChart";
 import { StatusBadge } from "@/components/partner/StatusBadge";

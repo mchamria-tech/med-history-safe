@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { PartnerLayout } from "@/components/partner/PartnerLayout";
+import PartnerLayout from "@/components/partner/PartnerLayout";
 import { usePartnerCheck } from "@/hooks/usePartnerCheck";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
@@ -33,8 +33,8 @@ const PartnerSettings = () => {
       setFormData({
         name: partner.name || "",
         email: partner.email || "",
-        address: partner.address || "",
-        gstNumber: partner.gst_number || "",
+        address: (partner as any).address || "",
+        gstNumber: (partner as any).gst_number || "",
       });
     }
   }, [partner]);
