@@ -1,12 +1,29 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Dynamic CORS headers based on origin
+function getCorsHeaders(request: Request) {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigins = [
+    'https://lovable.dev',
+    'https://www.lovable.dev',
+    'http://localhost:5173',
+    'http://localhost:3000',
+  ];
+  
+  // Allow Lovable preview URLs
+  const isLovablePreview = origin.includes('.lovable.app') || origin.includes('.lovableproject.com');
+  
+  return {
+    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) || isLovablePreview ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -100,8 +117,13 @@ serve(async (req) => {
 
     console.log('Auth user created:', authData.user.id);
 
-    // Generate partner code
-    const generatedCode = 'X' + Math.random().toString(36).substring(2, 7).toUpperCase();
+    // Generate cryptographically secure partner code
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Remove ambiguous chars (0, O, I, 1, L)
+    const array = new Uint8Array(5);
+    crypto.getRandomValues(array);
+    const generatedCode = 'X' + Array.from(array)
+      .map(byte => chars[byte % chars.length])
+      .join('');
 
     // Create partner record
     const { data: partnerData, error: partnerError } = await supabaseAdmin
@@ -178,7 +200,7 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
   }
 });

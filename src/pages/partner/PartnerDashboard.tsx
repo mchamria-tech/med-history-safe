@@ -174,7 +174,10 @@ const PartnerDashboard = () => {
     try {
       setIsLinking(true);
 
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      // Generate cryptographically secure OTP
+      const array = new Uint32Array(1);
+      crypto.getRandomValues(array);
+      const otp = String(array[0]).slice(0, 6).padStart(6, '0');
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
       const { error } = await supabase.from("partner_otp_requests").insert({
@@ -188,7 +191,7 @@ const PartnerDashboard = () => {
 
       toast({
         title: "OTP Sent",
-        description: `Demo OTP: ${otp} (In production, this would be sent to the user)`,
+        description: "Verification code has been sent to the user",
       });
 
       setPendingProfileId(profileId);
@@ -253,8 +256,10 @@ const PartnerDashboard = () => {
         return;
       }
 
-      // User found - generate OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      // User found - generate cryptographically secure OTP
+      const array = new Uint32Array(1);
+      crypto.getRandomValues(array);
+      const otp = String(array[0]).slice(0, 6).padStart(6, '0');
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
       const { error: otpError } = await supabase.from("partner_otp_requests").insert({
@@ -272,7 +277,7 @@ const PartnerDashboard = () => {
 
       toast({
         title: "OTP Sent",
-        description: `Demo OTP: ${otp} (Sent to ${forgotCodeTab === "phone" ? "phone" : "email"})`,
+        description: `Verification code sent to ${forgotCodeTab === "phone" ? "phone" : "email"}`,
       });
 
       setShowOtpDialog(true);

@@ -1,11 +1,25 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+// Dynamic CORS headers based on origin
+function getCorsHeaders(request: Request) {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigins = [
+    'https://lovable.dev',
+    'https://www.lovable.dev',
+    'http://localhost:5173',
+    'http://localhost:3000',
+  ];
+  
+  // Allow Lovable preview URLs
+  const isLovablePreview = origin.includes('.lovable.app') || origin.includes('.lovableproject.com');
+  
+  return {
+    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) || isLovablePreview ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
 
 interface OtpRequest {
   partnerId: string;
@@ -14,6 +28,8 @@ interface OtpRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders(req);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -161,8 +177,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Generate 6-digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate cryptographically secure 6-digit OTP
+    const array = new Uint32Array(1);
+    crypto.getRandomValues(array);
+    const otpCode = String(array[0]).slice(0, 6).padStart(6, '0');
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     // Store OTP in database
@@ -189,13 +207,11 @@ const handler = async (req: Request): Promise<Response> => {
     // For production, integrate with email/SMS provider
     console.log(`OTP generated for profile ${profileId} by partner ${partnerId} (user: ${user.id})`);
 
+    // Never return OTP in response - it should only be sent via email/SMS
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "OTP sent successfully",
-        // In production, don't return the OTP
-        // This is just for demo purposes
-        demo_otp: otpCode 
+        message: "OTP sent successfully"
       }),
       {
         status: 200,
@@ -208,7 +224,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ error: error.message }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "application/json", ...getCorsHeaders(req) },
       }
     );
   }
