@@ -336,6 +336,7 @@ export type Database = {
           blood_pressure: string | null
           carebag_id: string | null
           created_at: string
+          created_by_partner_id: string | null
           date_of_birth: string | null
           email: string | null
           expiry_date: string | null
@@ -352,7 +353,7 @@ export type Database = {
           rm_no: string | null
           type_of_plan: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
           weight: string | null
         }
         Insert: {
@@ -361,6 +362,7 @@ export type Database = {
           blood_pressure?: string | null
           carebag_id?: string | null
           created_at?: string
+          created_by_partner_id?: string | null
           date_of_birth?: string | null
           email?: string | null
           expiry_date?: string | null
@@ -377,7 +379,7 @@ export type Database = {
           rm_no?: string | null
           type_of_plan?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           weight?: string | null
         }
         Update: {
@@ -386,6 +388,7 @@ export type Database = {
           blood_pressure?: string | null
           carebag_id?: string | null
           created_at?: string
+          created_by_partner_id?: string | null
           date_of_birth?: string | null
           email?: string | null
           expiry_date?: string | null
@@ -402,10 +405,18 @@ export type Database = {
           rm_no?: string | null
           type_of_plan?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           weight?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_created_by_partner_id_fkey"
+            columns: ["created_by_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
