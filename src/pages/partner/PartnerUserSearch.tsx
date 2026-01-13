@@ -176,9 +176,10 @@ const PartnerUserSearch = () => {
         throw new Error(data.error);
       }
 
+      const maskedEmail = data?.maskedEmail || "user's email";
       toast({
         title: "OTP Sent",
-        description: "Verification code has been sent to the user",
+        description: `Verification code sent to ${maskedEmail}`,
       });
 
       setPendingProfileId(profileId);
@@ -409,7 +410,7 @@ const PartnerUserSearch = () => {
           <DialogHeader>
             <DialogTitle>Enter Verification Code</DialogTitle>
             <DialogDescription>
-              Enter the 6-digit OTP sent to the user to complete the linking process.
+              Enter the 6-digit OTP sent to the user's email to complete the linking process.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
