@@ -161,23 +161,21 @@ const PartnerUserSearch = () => {
     try {
       setIsLinking(true);
 
-      // Generate cryptographically secure OTP
-      const array = new Uint32Array(1);
-      crypto.getRandomValues(array);
-      const otp = String(array[0]).slice(0, 6).padStart(6, '0');
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-      // Store OTP request
-      const { error } = await supabase.from("partner_otp_requests").insert({
-        partner_id: partner!.id,
-        profile_id: profileId,
-        otp_code: otp,
-        expires_at: expiresAt.toISOString(),
+      // Call the secure edge function to generate and send OTP
+      const { data, error } = await supabase.functions.invoke('send-partner-otp', {
+        body: {
+          partnerId: partner!.id,
+          profileId: profileId,
+          method: 'email'
+        }
       });
 
       if (error) throw error;
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
-      // OTP has been stored and would be sent via SMS/email in production
       toast({
         title: "OTP Sent",
         description: "Verification code has been sent to the user",
@@ -189,7 +187,7 @@ const PartnerUserSearch = () => {
       console.error("Error requesting link:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to send OTP",
         variant: "destructive",
       });
     } finally {

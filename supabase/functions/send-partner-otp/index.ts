@@ -162,7 +162,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Get profile details
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("name, email, phone")
+      .select("id, name, email, phone, user_id")
       .eq("id", profileId)
       .single();
 
@@ -175,6 +175,46 @@ const handler = async (req: Request): Promise<Response> => {
           headers: { "Content-Type": "application/json", ...corsHeaders },
         }
       );
+    }
+
+    // Authorization check: Partner must have a valid relationship with the profile
+    // Option 1: Profile was created by the partner (partner's user_id matches profile's user_id)
+    // Option 2: Partner is already linked to the profile via partner_users table
+    const isProfileOwnedByPartner = profile.user_id === partner.user_id;
+    
+    const { data: existingLink } = await supabaseAdmin
+      .from("partner_users")
+      .select("id")
+      .eq("partner_id", partnerId)
+      .eq("profile_id", profileId)
+      .maybeSingle();
+
+    const isAlreadyLinked = !!existingLink;
+
+    // For security, we also check if there's NO existing link - this is for new linking flow
+    // We'll allow OTP for new links but log it for audit purposes
+    if (!isProfileOwnedByPartner && !isAlreadyLinked) {
+      // Log this OTP request for audit purposes (new profile linking attempt)
+      console.log(`Partner ${partnerId} requesting OTP for unlinked profile ${profileId} - allowed for linking flow`);
+      
+      // Additional security: Only allow if the profile has a carebag_id (registered user)
+      // This prevents partners from accessing profiles that may be incomplete or test data
+      const { data: fullProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("carebag_id")
+        .eq("id", profileId)
+        .single();
+      
+      if (!fullProfile?.carebag_id) {
+        console.error("Profile does not have a CareBag ID - cannot send OTP");
+        return new Response(
+          JSON.stringify({ error: "This profile cannot be linked. Contact support for assistance." }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
+      }
     }
 
     // Generate cryptographically secure 6-digit OTP

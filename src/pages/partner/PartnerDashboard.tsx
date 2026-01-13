@@ -174,20 +174,20 @@ const PartnerDashboard = () => {
     try {
       setIsLinking(true);
 
-      // Generate cryptographically secure OTP
-      const array = new Uint32Array(1);
-      crypto.getRandomValues(array);
-      const otp = String(array[0]).slice(0, 6).padStart(6, '0');
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-      const { error } = await supabase.from("partner_otp_requests").insert({
-        partner_id: partner!.id,
-        profile_id: profileId,
-        otp_code: otp,
-        expires_at: expiresAt.toISOString(),
+      // Call the secure edge function to generate and send OTP
+      const { data, error } = await supabase.functions.invoke('send-partner-otp', {
+        body: {
+          partnerId: partner!.id,
+          profileId: profileId,
+          method: 'email'
+        }
       });
 
       if (error) throw error;
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: "OTP Sent",
@@ -200,7 +200,7 @@ const PartnerDashboard = () => {
       console.error("Error requesting link:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to send OTP",
         variant: "destructive",
       });
     } finally {
@@ -256,20 +256,20 @@ const PartnerDashboard = () => {
         return;
       }
 
-      // User found - generate cryptographically secure OTP
-      const array = new Uint32Array(1);
-      crypto.getRandomValues(array);
-      const otp = String(array[0]).slice(0, 6).padStart(6, '0');
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-      const { error: otpError } = await supabase.from("partner_otp_requests").insert({
-        partner_id: partner!.id,
-        profile_id: data.id,
-        otp_code: otp,
-        expires_at: expiresAt.toISOString(),
+      // User found - call the secure edge function to generate and send OTP
+      const { data: otpData, error: otpError } = await supabase.functions.invoke('send-partner-otp', {
+        body: {
+          partnerId: partner!.id,
+          profileId: data.id,
+          method: forgotCodeTab
+        }
       });
 
       if (otpError) throw otpError;
+      
+      if (otpData?.error) {
+        throw new Error(otpData.error);
+      }
 
       setOtpSent(true);
       setPendingProfileId(data.id);
@@ -285,7 +285,7 @@ const PartnerDashboard = () => {
       console.error("Error sending OTP:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to send OTP",
         variant: "destructive",
       });
     } finally {
