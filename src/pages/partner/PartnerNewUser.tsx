@@ -85,9 +85,11 @@ const PartnerNewUser = () => {
       // Generate CareBag ID for new profile
       const { data: carebagIdData } = await supabase.rpc('generate_carebag_id');
 
-      // Create profile with partner's user_id (partner creates on behalf of user)
+      // Create profile without user_id - partner-created profiles have null user_id
+      // This prevents cascade deletion if partner is deleted, and allows patients to "claim" their profile later
       const profileData = {
-        user_id: partner.user_id,
+        user_id: null as unknown as string, // Null for partner-created profiles (patient can claim later)
+        created_by_partner_id: partner.id, // Track which partner created this profile
         name: name.trim(),
         gender: gender || null,
         date_of_birth: dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : null,
