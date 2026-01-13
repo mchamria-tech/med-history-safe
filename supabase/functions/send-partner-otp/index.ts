@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const resendApiKey = Deno.env.get("RESEND_API_KEY");
+
 // Dynamic CORS headers based on origin
 function getCorsHeaders(request: Request) {
   const origin = request.headers.get('origin') || '';
@@ -25,6 +27,93 @@ interface OtpRequest {
   partnerId: string;
   profileId: string;
   method: "email" | "sms";
+}
+
+// Helper to mask email for display
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (local.length <= 2) return `${local[0]}***@${domain}`;
+  return `${local[0]}${'*'.repeat(Math.min(local.length - 2, 5))}${local[local.length - 1]}@${domain}`;
+}
+
+// Generate branded HTML email template
+function generateOtpEmailHtml(otpCode: string, partnerName: string, userName: string): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <tr>
+      <td>
+        <!-- Header -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 12px 12px 0 0;">
+          <tr>
+            <td style="padding: 30px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">CareBag</h1>
+              <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Medical History Storage</p>
+            </td>
+          </tr>
+        </table>
+        
+        <!-- Content -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="margin: 0 0 10px 0; color: #18181b; font-size: 20px; font-weight: 600;">Verification Code</h2>
+              <p style="margin: 0 0 25px 0; color: #71717a; font-size: 15px; line-height: 1.5;">
+                Hi ${userName}, here is your one-time verification code:
+              </p>
+              
+              <!-- OTP Code Box -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="background-color: #f4f4f5; border-radius: 8px; padding: 20px; text-align: center;">
+                    <span style="font-family: 'SF Mono', Monaco, 'Courier New', monospace; font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #18181b;">${otpCode}</span>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Partner Info -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top: 25px;">
+                <tr>
+                  <td style="background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 0 8px 8px 0; padding: 15px;">
+                    <p style="margin: 0; color: #1e40af; font-size: 14px;">
+                      <strong>Requested by:</strong> ${partnerName}
+                    </p>
+                    <p style="margin: 5px 0 0 0; color: #3b82f6; font-size: 13px;">
+                      This code expires in 10 minutes
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Security Notice -->
+              <p style="margin: 25px 0 0 0; color: #a1a1aa; font-size: 13px; line-height: 1.5;">
+                If you didn't request this code, you can safely ignore this email. Never share this code with anyone.
+              </p>
+            </td>
+          </tr>
+        </table>
+        
+        <!-- Footer -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+          <tr>
+            <td style="padding: 25px; text-align: center;">
+              <p style="margin: 0; color: #a1a1aa; font-size: 12px;">
+                © ${new Date().getFullYear()} CareBag. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -107,6 +196,18 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // For now, only email is supported
+    if (method === "sms") {
+      console.error("SMS not yet supported");
+      return new Response(
+        JSON.stringify({ error: "SMS delivery is not yet available. Please use email." }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
     // Verify the authenticated user is a partner and matches the partnerId
     const { data: partner, error: partnerError } = await supabaseAdmin
       .from("partners")
@@ -162,7 +263,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Get profile details
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("id, name, email, phone, user_id")
+      .select("id, name, email, phone, user_id, carebag_id")
       .eq("id", profileId)
       .single();
 
@@ -177,9 +278,19 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Check if user has an email address
+    if (!profile.email) {
+      console.error("Profile does not have an email address:", profileId);
+      return new Response(
+        JSON.stringify({ error: "User does not have an email address on file. Please contact them directly." }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
     // Authorization check: Partner must have a valid relationship with the profile
-    // Option 1: Profile was created by the partner (partner's user_id matches profile's user_id)
-    // Option 2: Partner is already linked to the profile via partner_users table
     const isProfileOwnedByPartner = profile.user_id === partner.user_id;
     
     const { data: existingLink } = await supabaseAdmin
@@ -192,20 +303,11 @@ const handler = async (req: Request): Promise<Response> => {
     const isAlreadyLinked = !!existingLink;
 
     // For security, we also check if there's NO existing link - this is for new linking flow
-    // We'll allow OTP for new links but log it for audit purposes
     if (!isProfileOwnedByPartner && !isAlreadyLinked) {
-      // Log this OTP request for audit purposes (new profile linking attempt)
       console.log(`Partner ${partnerId} requesting OTP for unlinked profile ${profileId} - allowed for linking flow`);
       
       // Additional security: Only allow if the profile has a carebag_id (registered user)
-      // This prevents partners from accessing profiles that may be incomplete or test data
-      const { data: fullProfile } = await supabaseAdmin
-        .from("profiles")
-        .select("carebag_id")
-        .eq("id", profileId)
-        .single();
-      
-      if (!fullProfile?.carebag_id) {
+      if (!profile.carebag_id) {
         console.error("Profile does not have a CareBag ID - cannot send OTP");
         return new Response(
           JSON.stringify({ error: "This profile cannot be linked. Contact support for assistance." }),
@@ -244,14 +346,46 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // For production, integrate with email/SMS provider
-    console.log(`OTP generated for profile ${profileId} by partner ${partnerId} (user: ${user.id})`);
+    // Send OTP via email using Resend API
+    console.log(`Sending OTP email to ${maskEmail(profile.email)} for profile ${profileId}`);
+    
+    const emailHtml = generateOtpEmailHtml(otpCode, partner.name, profile.name);
+    
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "CareBag <onboarding@resend.dev>",
+        to: [profile.email],
+        subject: "Your CareBag Verification Code",
+        html: emailHtml,
+      }),
+    });
 
-    // Never return OTP in response - it should only be sent via email/SMS
+    const emailResult = await emailResponse.json();
+
+    if (!emailResponse.ok || emailResult.error) {
+      console.error("Error sending email:", emailResult.error || emailResult);
+      return new Response(
+        JSON.stringify({ error: "Failed to send verification email. Please try again." }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log(`OTP email sent successfully to ${maskEmail(profile.email)} (ID: ${emailResult.id})`);
+
+    // Return success with masked email for confirmation
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "OTP sent successfully"
+        message: "OTP sent successfully",
+        maskedEmail: maskEmail(profile.email)
       }),
       {
         status: 200,

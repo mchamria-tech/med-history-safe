@@ -189,9 +189,10 @@ const PartnerDashboard = () => {
         throw new Error(data.error);
       }
 
+      const maskedEmail = data?.maskedEmail || "user's email";
       toast({
         title: "OTP Sent",
-        description: "Verification code has been sent to the user",
+        description: `Verification code sent to ${maskedEmail}`,
       });
 
       setPendingProfileId(profileId);
@@ -275,9 +276,10 @@ const PartnerDashboard = () => {
       setPendingProfileId(data.id);
       setSearchResult(data);
 
+      const maskedEmail = otpData?.maskedEmail || "user's email";
       toast({
         title: "OTP Sent",
-        description: `Verification code sent to ${forgotCodeTab === "phone" ? "phone" : "email"}`,
+        description: `Verification code sent to ${maskedEmail}`,
       });
 
       setShowOtpDialog(true);
