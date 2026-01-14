@@ -82,8 +82,8 @@ const PartnerNewUser = () => {
         return;
       }
 
-      // Generate CareBag ID for new profile
-      const { data: carebagIdData } = await supabase.rpc('generate_carebag_id');
+      // Generate Global ID for new profile using the new format (IND-AXXXXX for users)
+      const { data: globalIdData } = await supabase.rpc('generate_global_id', { role_type: 'user' });
 
       // Create profile without user_id - partner-created profiles have null user_id
       // This prevents cascade deletion if partner is deleted, and allows patients to "claim" their profile later
@@ -100,7 +100,7 @@ const PartnerNewUser = () => {
         blood_pressure: bloodPressure.trim() || null,
         blood_glucose: bloodGlucose.trim() || null,
         allergies: allergies.trim() || null,
-        carebag_id: carebagIdData,
+        carebag_id: globalIdData,
         // Store emergency contact info in relation field as JSON string for now
         relation: emergencyName ? JSON.stringify({
           name: emergencyName.trim(),
@@ -131,12 +131,12 @@ const PartnerNewUser = () => {
         // Profile was created but linking failed - still show success but warn
         toast({
           title: "User Created",
-          description: `User created with CareBag ID: ${carebagIdData}. Note: Auto-linking failed, please link manually.`,
+          description: `User created with Global ID: ${globalIdData}. Note: Auto-linking failed, please link manually.`,
         });
       } else {
         toast({
           title: "Success",
-          description: `New user created and linked! CareBag ID: ${carebagIdData}`,
+          description: `New user created and linked! Global ID: ${globalIdData}`,
         });
       }
 

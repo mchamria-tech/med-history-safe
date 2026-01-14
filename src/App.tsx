@@ -38,6 +38,10 @@ import PartnerUserSearch from "./pages/partner/PartnerUserSearch";
 import PartnerDocumentUpload from "./pages/partner/PartnerDocumentUpload";
 import PartnerNewUser from "./pages/partner/PartnerNewUser";
 
+// Doctor Pages
+import DoctorLogin from "./pages/doctor/DoctorLogin";
+import DoctorDashboard from "./pages/doctor/DoctorDashboard";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -82,6 +86,10 @@ const App = () => (
               <Route path="/partner/upload" element={<PartnerDocumentUpload />} />
               <Route path="/partner/upload/:profileId" element={<PartnerDocumentUpload />} />
               <Route path="/partner/new-user" element={<PartnerNewUser />} />
+              
+              {/* Doctor Routes */}
+              <Route path="/doctor/login" element={<DoctorLogin />} />
+              <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
