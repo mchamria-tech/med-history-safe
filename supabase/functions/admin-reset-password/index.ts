@@ -3,7 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
 // Dynamic CORS headers based on origin
 function getCorsHeaders(request: Request) {
@@ -77,8 +76,9 @@ const handler = async (req: Request): Promise<Response> => {
     const origin = req.headers.get('origin') || 'https://carebag.lovable.app';
     const resetRedirectUrl = `${origin}/reset-password`;
 
-    // Generate a password reset link using the admin API
-    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+    // Use Supabase's built-in password reset which triggers Lovable Cloud's email service
+    // This uses the admin client to send the recovery email on behalf of the user
+    const { error: resetError } = await supabase.auth.admin.generateLink({
       type: 'recovery',
       email: userEmail,
       options: {
@@ -86,84 +86,25 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
 
-    if (linkError) {
-      throw new Error(`Failed to generate reset link: ${linkError.message}`);
+    if (resetError) {
+      console.error("Failed to generate reset link:", resetError);
+      throw new Error(`Failed to initiate password reset: ${resetError.message}`);
     }
 
-    // Extract the token from the generated link
-    const resetLink = linkData?.properties?.action_link;
-
-    if (!resetLink) {
-      throw new Error("Failed to generate reset link");
-    }
-
-    // Send the email using Resend
-    const emailResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "CareBag <onboarding@resend.dev>",
-        to: [userEmail],
-        subject: "Password Reset - CareBag",
-        html: `
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            </head>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <div style="background: linear-gradient(135deg, #3d4f5f 0%, #2a3b47 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-                <h1 style="color: white; margin: 0; font-size: 28px;">CareBag</h1>
-                <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0 0; font-size: 14px;">Medical History Storage</p>
-              </div>
-              
-              <div style="background: #ffffff; padding: 40px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
-                <h2 style="color: #E07A5F; margin-top: 0;">Password Reset Request</h2>
-                
-                <p>Hello${userName ? ` ${userName}` : ''},</p>
-                
-                <p>A password reset has been requested for your ${userType === 'partner' ? 'Partner Portal' : 'CareBag'} account by our support team.</p>
-                
-                <p>Click the button below to create a new password:</p>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="${resetLink}" 
-                     style="background: #E07A5F; color: white; padding: 14px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
-                    Reset Password
-                  </a>
-                </div>
-                
-                <p>Or copy and paste this link into your browser:</p>
-                <p style="background: #f5f5f5; padding: 10px; border-radius: 5px; word-break: break-all; font-size: 12px;">
-                  ${resetLink}
-                </p>
-                
-                <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #666; font-size: 14px;">
-                  <strong>Important:</strong> This link will expire in 1 hour for security reasons.
-                </p>
-                
-                <p style="color: #666; font-size: 14px;">
-                  If you did not request this password reset, please contact our support team immediately.
-                </p>
-              </div>
-              
-              <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-                <p>© 2025 CareBag. All rights reserved.</p>
-              </div>
-            </body>
-          </html>
-        `,
-      }),
+    // The generateLink with admin client generates the link but doesn't send email automatically
+    // We need to use the standard resetPasswordForEmail to trigger the email hook
+    const anonClient = createClient(
+      supabaseUrl, 
+      Deno.env.get("SUPABASE_ANON_KEY")!
+    );
+    
+    const { error: emailError } = await anonClient.auth.resetPasswordForEmail(userEmail, {
+      redirectTo: resetRedirectUrl,
     });
 
-    const emailData = await emailResponse.json();
-    
-    if (!emailResponse.ok) {
-      throw new Error(emailData.message || "Failed to send email");
+    if (emailError) {
+      console.error("Failed to send reset email:", emailError);
+      throw new Error(`Failed to send password reset email: ${emailError.message}`);
     }
 
     // Log the admin action
