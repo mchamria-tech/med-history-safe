@@ -602,6 +602,13 @@ export type Database = {
       generate_ticket_code: { Args: never; Returns: string }
       get_doctor_id: { Args: { user_id: string }; Returns: string }
       get_doctor_partner_id: { Args: { d_id: string }; Returns: string }
+      get_email_by_global_id: {
+        Args: { global_id: string }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
       get_partner_id: { Args: { user_id: string }; Returns: string }
       has_role: {
         Args: {

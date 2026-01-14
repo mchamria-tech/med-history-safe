@@ -83,11 +83,9 @@ const AdminLogin = () => {
         throw new Error("Invalid Admin Global ID format. Expected: IND-0XXXXX");
       }
 
-      // Look up admin profile by global_id (carebag_id)
+      // Look up admin profile by global_id using RPC (bypasses RLS for auth)
       const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("email, user_id")
-        .eq("carebag_id", globalId.toUpperCase())
+        .rpc('get_email_by_global_id', { global_id: globalId.toUpperCase() })
         .single();
 
       if (profileError || !profile) {
