@@ -9,19 +9,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePartnerCheck } from "@/hooks/usePartnerCheck";
 import { useToast } from "@/hooks/use-toast";
 import PartnerLayout from "@/components/partner/PartnerLayout";
-import { StatCard } from "@/components/partner/StatCard";
+import { DashboardHeader } from "@/components/partner/DashboardHeader";
+import { EnhancedStatCard } from "@/components/partner/EnhancedStatCard";
+import { PatientTrendsChart } from "@/components/partner/PatientTrendsChart";
+import { UrgentAlertsPanel } from "@/components/partner/UrgentAlertsPanel";
 import { 
   Search, 
   UserPlus, 
   Users, 
   FileText, 
-  Upload, 
+  Activity, 
   Phone,
   Mail,
   Send,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  AlertCircle
 } from "lucide-react";
 import {
   Dialog,
@@ -48,7 +52,7 @@ const PartnerDashboard = () => {
     linkedUsers: 0,
     totalDocuments: 0,
     documentsThisMonth: 0,
-    followups: 0,
+    criticalAlerts: 2,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -109,7 +113,7 @@ const PartnerDashboard = () => {
         linkedUsers: usersCount || 0,
         totalDocuments: docsCount || 0,
         documentsThisMonth: monthlyDocsCount || 0,
-        followups: 0, // Placeholder for future feature
+        criticalAlerts: 2, // Placeholder
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -374,65 +378,72 @@ const PartnerDashboard = () => {
   return (
     <PartnerLayout>
       <div className="space-y-6">
-        {/* Greeting Section with Action Buttons */}
+        {/* Top Header Bar */}
+        <DashboardHeader
+          partnerName={partner?.name || "Partner"}
+          userName={getGreetingName()}
+          onSearchClick={() => {
+            setShowSearchSection(true);
+            setShowForgotSection(false);
+          }}
+          logoUrl={partner?.logo_url}
+        />
+
+        {/* Greeting Section */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">
               Namaste, {getGreetingName()}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {partner?.name} has {stats.linkedUsers} linked users and {stats.totalDocuments} documents
+              {partner?.name} has <span className="font-semibold text-foreground">{stats.linkedUsers} patients</span> and{" "}
+              <span className="font-semibold text-accent">{stats.criticalAlerts} urgent alerts</span> pending today.
             </p>
           </div>
           
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <Button 
-              onClick={() => {
-                setShowSearchSection(true);
-                setShowForgotSection(false);
-              }}
-              className="bg-accent hover:bg-accent/90 text-accent-foreground"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Search Client
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => navigate("/partner/new-user")}
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              New Client
-            </Button>
-          </div>
+          {/* Action Button */}
+          <Button 
+            onClick={() => navigate("/partner/new-user")}
+            className="bg-accent hover:bg-accent/90 text-accent-foreground h-11 px-6 rounded-xl shadow-soft"
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            New Consult
+          </Button>
         </div>
 
         {/* Stats Grid - 4 Cards */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            icon={<Users className="h-5 w-5 text-blue-600" />}
-            label="Linked Users"
+          <EnhancedStatCard
+            icon={<Users className="h-5 w-5" />}
+            label="Active Patients"
             value={isLoading ? "..." : stats.linkedUsers}
-            iconBgColor="bg-blue-100"
+            trend={12.5}
+            iconBgColor="bg-slate-100"
+            iconColor="text-slate-600"
           />
-          <StatCard
-            icon={<FileText className="h-5 w-5 text-emerald-600" />}
-            label="Total Documents"
-            value={isLoading ? "..." : stats.totalDocuments}
-            iconBgColor="bg-emerald-100"
+          <EnhancedStatCard
+            icon={<Activity className="h-5 w-5" />}
+            label="Avg. Documents"
+            value={isLoading ? "..." : `${stats.totalDocuments > 0 ? Math.round((stats.totalDocuments / Math.max(stats.linkedUsers, 1)) * 10) / 10 : 0}`}
+            trend={4.1}
+            iconBgColor="bg-accent/10"
+            iconColor="text-accent"
           />
-          <StatCard
-            icon={<Upload className="h-5 w-5 text-accent" />}
+          <EnhancedStatCard
+            icon={<AlertCircle className="h-5 w-5" />}
+            label="Critical Alerts"
+            value={isLoading ? "..." : `0${stats.criticalAlerts}`}
+            trend={-8.2}
+            iconBgColor="bg-red-50"
+            iconColor="text-red-500"
+          />
+          <EnhancedStatCard
+            icon={<Clock className="h-5 w-5" />}
             label="Uploads This Month"
             value={isLoading ? "..." : stats.documentsThisMonth}
-            iconBgColor="bg-accent/20"
-          />
-          <StatCard
-            icon={<Clock className="h-5 w-5 text-purple-600" />}
-            label="Followups"
-            value={isLoading ? "..." : stats.followups}
-            iconBgColor="bg-purple-100"
-            trendLabel="Coming soon"
+            trend={2.3}
+            iconBgColor="bg-blue-50"
+            iconColor="text-blue-600"
           />
         </div>
 
@@ -635,37 +646,18 @@ const PartnerDashboard = () => {
           </Card>
         )}
 
-        {/* Quick Actions - Show when no search sections are open */}
+        {/* Bottom Section - Chart and Alerts */}
         {!showSearchSection && !showForgotSection && (
-          <div className="grid gap-4 md:grid-cols-2">
-            <button
-              onClick={() => navigate("/partner/users")}
-              className="flex items-center gap-4 p-5 rounded-xl bg-card border border-border/50 hover:border-accent/30 hover:shadow-soft transition-all text-left group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground">Manage Users</p>
-                <p className="text-sm text-muted-foreground">
-                  View and manage all {stats.linkedUsers} linked profiles
-                </p>
-              </div>
-            </button>
-            <button
-              onClick={() => navigate("/partner/upload")}
-              className="flex items-center gap-4 p-5 rounded-xl bg-card border border-border/50 hover:border-accent/30 hover:shadow-soft transition-all text-left group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Upload className="h-6 w-6 text-emerald-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground">Upload Document</p>
-                <p className="text-sm text-muted-foreground">
-                  Upload medical documents for linked users
-                </p>
-              </div>
-            </button>
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Patient Trends Chart - Takes 2 columns */}
+            <div className="lg:col-span-2">
+              <PatientTrendsChart linkedUsers={stats.linkedUsers} />
+            </div>
+            
+            {/* Urgent Alerts Panel - Takes 1 column */}
+            <div className="lg:col-span-1">
+              <UrgentAlertsPanel />
+            </div>
           </div>
         )}
 
