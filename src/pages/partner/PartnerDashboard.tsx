@@ -1,27 +1,27 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { usePartnerCheck } from "@/hooks/usePartnerCheck";
 import { useToast } from "@/hooks/use-toast";
 import PartnerLayout from "@/components/partner/PartnerLayout";
+import { StatCard } from "@/components/partner/StatCard";
 import { 
   Search, 
   UserPlus, 
   Users, 
   FileText, 
   Upload, 
-  HelpCircle,
   Phone,
   Mail,
   Send,
   CheckCircle,
-  XCircle
+  XCircle,
+  Clock
 } from "lucide-react";
 import {
   Dialog,
@@ -48,10 +48,12 @@ const PartnerDashboard = () => {
     linkedUsers: 0,
     totalDocuments: 0,
     documentsThisMonth: 0,
+    followups: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
 
   // Search states
+  const [showSearchSection, setShowSearchSection] = useState(false);
   const [searchCode, setSearchCode] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
@@ -59,11 +61,11 @@ const PartnerDashboard = () => {
   const [isLinking, setIsLinking] = useState(false);
 
   // Forgot Code states
+  const [showForgotSection, setShowForgotSection] = useState(false);
   const [forgotCodeTab, setForgotCodeTab] = useState<"phone" | "email">("phone");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [emailAddress, setEmailAddress] = useState("");
   const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
   const [userNotFound, setUserNotFound] = useState(false);
 
   // OTP Dialog states
@@ -107,6 +109,7 @@ const PartnerDashboard = () => {
         linkedUsers: usersCount || 0,
         totalDocuments: docsCount || 0,
         documentsThisMonth: monthlyDocsCount || 0,
+        followups: 0, // Placeholder for future feature
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -174,7 +177,6 @@ const PartnerDashboard = () => {
     try {
       setIsLinking(true);
 
-      // Call the secure edge function to generate and send OTP
       const { data, error } = await supabase.functions.invoke('send-partner-otp', {
         body: {
           partnerId: partner!.id,
@@ -211,7 +213,6 @@ const PartnerDashboard = () => {
 
   const handleSendForgotCodeOtp = async () => {
     setIsSendingOtp(true);
-    setOtpSent(false);
     setUserNotFound(false);
 
     try {
@@ -240,7 +241,6 @@ const PartnerDashboard = () => {
         searchValue = emailAddress.trim().toLowerCase();
       }
 
-      // Search for user
       const { data, error } = await supabase
         .from("profiles")
         .select("id, name, email, phone, carebag_id")
@@ -257,7 +257,6 @@ const PartnerDashboard = () => {
         return;
       }
 
-      // User found - call the secure edge function to generate and send OTP
       const { data: otpData, error: otpError } = await supabase.functions.invoke('send-partner-otp', {
         body: {
           partnerId: partner!.id,
@@ -272,7 +271,6 @@ const PartnerDashboard = () => {
         throw new Error(otpData.error);
       }
 
-      setOtpSent(true);
       setPendingProfileId(data.id);
       setSearchResult(data);
 
@@ -361,266 +359,329 @@ const PartnerDashboard = () => {
     setSearchNotFound(false);
     setPhoneNumber("");
     setEmailAddress("");
-    setOtpSent(false);
     setUserNotFound(false);
+    setShowSearchSection(false);
+    setShowForgotSection(false);
   };
 
-  const statCards = [
-    { title: "Linked Users", value: stats.linkedUsers, icon: Users, color: "text-blue-500", bgColor: "bg-blue-500/10" },
-    { title: "Total Documents", value: stats.totalDocuments, icon: FileText, color: "text-green-500", bgColor: "bg-green-500/10" },
-    { title: "Uploads This Month", value: stats.documentsThisMonth, icon: Upload, color: "text-accent", bgColor: "bg-accent/10" },
-  ];
+  // Extract first name for greeting
+  const getGreetingName = () => {
+    if (!partner?.name) return "";
+    const firstName = partner.name.split(" ")[0];
+    return firstName;
+  };
 
   return (
     <PartnerLayout>
       <div className="space-y-6">
-        {/* Header with Partner Info Panel */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Greeting Section with Action Buttons */}
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground">Manage your linked users and documents</p>
+            <h1 className="text-3xl font-bold text-foreground">
+              Namaste, {getGreetingName()}
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {partner?.name} has {stats.linkedUsers} linked users and {stats.totalDocuments} documents
+            </p>
           </div>
           
-          {/* Partner Info Panel */}
-          <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 rounded-lg border border-border">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Code:</span>
-              <Badge variant="secondary" className="font-mono">{partner?.partner_code}</Badge>
-            </div>
-            <div className="h-4 w-px bg-border" />
-            <Badge className={partner?.is_active ? "bg-green-500" : "bg-red-500"}>
-              {partner?.is_active ? "Active" : "Inactive"}
-            </Badge>
-            <div className="h-4 w-px bg-border hidden sm:block" />
-            <span className="text-xs text-muted-foreground hidden sm:block truncate max-w-[150px]">
-              {partner?.email}
-            </span>
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <Button 
+              onClick={() => {
+                setShowSearchSection(true);
+                setShowForgotSection(false);
+              }}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Search Client
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => navigate("/partner/new-user")}
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              New Client
+            </Button>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-3">
-          {statCards.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={stat.title} className="shadow-soft">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">{stat.title}</p>
-                      <p className="text-2xl font-bold text-foreground mt-1">
-                        {isLoading ? "..." : stat.value}
-                      </p>
-                    </div>
-                    <div className={`p-2.5 rounded-full ${stat.bgColor}`}>
-                      <Icon className={`h-5 w-5 ${stat.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+        {/* Stats Grid - 4 Cards */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            icon={<Users className="h-5 w-5 text-blue-600" />}
+            label="Linked Users"
+            value={isLoading ? "..." : stats.linkedUsers}
+            iconBgColor="bg-blue-100"
+          />
+          <StatCard
+            icon={<FileText className="h-5 w-5 text-emerald-600" />}
+            label="Total Documents"
+            value={isLoading ? "..." : stats.totalDocuments}
+            iconBgColor="bg-emerald-100"
+          />
+          <StatCard
+            icon={<Upload className="h-5 w-5 text-accent" />}
+            label="Uploads This Month"
+            value={isLoading ? "..." : stats.documentsThisMonth}
+            iconBgColor="bg-accent/20"
+          />
+          <StatCard
+            icon={<Clock className="h-5 w-5 text-purple-600" />}
+            label="Followups"
+            value={isLoading ? "..." : stats.followups}
+            iconBgColor="bg-purple-100"
+            trendLabel="Coming soon"
+          />
         </div>
 
-        {/* Main Action: Search or Add User */}
-        <Card className="shadow-soft">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Search className="h-5 w-5" />
-              Search User by Code
-            </CardTitle>
-            <CardDescription>
-              Enter the user's CareBag ID to find and link them
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-3">
-              <Input
-                placeholder="Enter CareBag ID (e.g., 1ABC12)"
-                value={searchCode}
-                onChange={(e) => {
-                  setSearchCode(e.target.value.toUpperCase());
-                  setSearchNotFound(false);
-                  setSearchResult(null);
-                }}
-                onKeyDown={(e) => e.key === "Enter" && handleSearchByCode()}
-                className="font-mono uppercase"
-              />
-              <Button onClick={handleSearchByCode} disabled={isSearching || !searchCode.trim()}>
-                {isSearching ? "Searching..." : "Search"}
-              </Button>
-            </div>
-
-            {/* Search Result - Found */}
-            {searchResult && (
-              <div className="p-4 border border-green-500/30 bg-green-500/5 rounded-lg animate-fade-in">
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="font-medium text-green-600">User Found!</span>
+        {/* Search Client Section - Expandable */}
+        {showSearchSection && (
+          <Card className="shadow-soft animate-fade-in">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Search className="h-5 w-5 text-accent" />
+                  <h3 className="text-lg font-semibold">Search by CareBag ID</h3>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-foreground">{searchResult.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      CareBag ID: {searchResult.carebag_id}
-                    </p>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    setShowSearchSection(false);
+                    setSearchResult(null);
+                    setSearchNotFound(false);
+                    setSearchCode("");
+                  }}
+                >
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="flex gap-3">
+                <Input
+                  placeholder="Enter CareBag ID (e.g., 1ABC12)"
+                  value={searchCode}
+                  onChange={(e) => {
+                    setSearchCode(e.target.value.toUpperCase());
+                    setSearchNotFound(false);
+                    setSearchResult(null);
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearchByCode()}
+                  className="font-mono uppercase"
+                />
+                <Button onClick={handleSearchByCode} disabled={isSearching || !searchCode.trim()}>
+                  {isSearching ? "Searching..." : "Search"}
+                </Button>
+              </div>
+
+              {/* Search Result - Found */}
+              {searchResult && (
+                <div className="p-4 border border-emerald-500/30 bg-emerald-500/5 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="h-5 w-5 text-emerald-500" />
+                    <span className="font-medium text-emerald-600">User Found!</span>
                   </div>
-                  <Button onClick={() => handleRequestLink(searchResult.id)} disabled={isLinking}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-foreground">{searchResult.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        CareBag ID: {searchResult.carebag_id}
+                      </p>
+                    </div>
+                    <Button onClick={() => handleRequestLink(searchResult.id)} disabled={isLinking}>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      {isLinking ? "Sending OTP..." : "Add User"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Search Result - Not Found */}
+              {searchNotFound && (
+                <div className="p-4 border border-orange-500/30 bg-orange-500/5 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <XCircle className="h-5 w-5 text-orange-500" />
+                    <span className="font-medium text-orange-600">User Not Found</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    No user exists with this CareBag ID. Would you like to create a new user?
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => navigate("/partner/new-user")}>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Create New User
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => {
+                        setShowSearchSection(false);
+                        setShowForgotSection(true);
+                      }}
+                    >
+                      Search by Phone/Email
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Forgot Code Section - Expandable */}
+        {showForgotSection && (
+          <Card className="shadow-soft animate-fade-in">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-5 w-5 text-accent" />
+                  <h3 className="text-lg font-semibold">Search by Phone or Email</h3>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    setShowForgotSection(false);
+                    setPhoneNumber("");
+                    setEmailAddress("");
+                    setUserNotFound(false);
+                  }}
+                >
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <Tabs value={forgotCodeTab} onValueChange={(v) => setForgotCodeTab(v as "phone" | "email")}>
+                <TabsList className="grid w-full max-w-xs grid-cols-2">
+                  <TabsTrigger value="phone" className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    Phone
+                  </TabsTrigger>
+                  <TabsTrigger value="email" className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    Email
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="phone" className="mt-4">
+                  <div className="flex gap-2">
+                    <div className="flex items-center gap-1 px-3 bg-muted rounded-l-md border border-r-0 border-input">
+                      <span className="text-sm text-muted-foreground">🇮🇳</span>
+                      <span className="text-sm font-medium">+91</span>
+                    </div>
+                    <Input
+                      type="tel"
+                      placeholder="10-digit mobile number"
+                      value={phoneNumber}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        setPhoneNumber(value);
+                        setUserNotFound(false);
+                      }}
+                      className="rounded-l-none flex-1"
+                      maxLength={10}
+                    />
+                    <Button 
+                      onClick={handleSendForgotCodeOtp} 
+                      disabled={isSendingOtp || phoneNumber.length !== 10}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      {isSendingOtp ? "Sending..." : "Send OTP"}
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="email" className="mt-4">
+                  <div className="flex gap-2">
+                    <Input
+                      type="email"
+                      placeholder="user@example.com"
+                      value={emailAddress}
+                      onChange={(e) => {
+                        setEmailAddress(e.target.value);
+                        setUserNotFound(false);
+                      }}
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={handleSendForgotCodeOtp} 
+                      disabled={isSendingOtp || !emailAddress.includes("@")}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      {isSendingOtp ? "Sending..." : "Send OTP"}
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              {/* User Not Found - Suggest Creating New */}
+              {userNotFound && (
+                <div className="p-4 border border-orange-500/30 bg-orange-500/5 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <XCircle className="h-5 w-5 text-orange-500" />
+                    <span className="font-medium text-orange-600">User Not Found</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    This {forgotCodeTab === "phone" ? "phone number" : "email"} is not registered with CareBag.
+                  </p>
+                  <Button variant="outline" onClick={() => navigate("/partner/new-user")}>
                     <UserPlus className="h-4 w-4 mr-2" />
-                    {isLinking ? "Sending OTP..." : "Add User"}
+                    Create New User
                   </Button>
                 </div>
-              </div>
-            )}
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-            {/* Search Result - Not Found */}
-            {searchNotFound && (
-              <div className="p-4 border border-orange-500/30 bg-orange-500/5 rounded-lg animate-fade-in">
-                <div className="flex items-center gap-2 mb-2">
-                  <XCircle className="h-5 w-5 text-orange-500" />
-                  <span className="font-medium text-orange-600">User Not Found</span>
-                </div>
-                <p className="text-sm text-muted-foreground mb-3">
-                  No user exists with this CareBag ID. Would you like to create a new user?
+        {/* Quick Actions - Show when no search sections are open */}
+        {!showSearchSection && !showForgotSection && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <button
+              onClick={() => navigate("/partner/users")}
+              className="flex items-center gap-4 p-5 rounded-xl bg-card border border-border/50 hover:border-accent/30 hover:shadow-soft transition-all text-left group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Manage Users</p>
+                <p className="text-sm text-muted-foreground">
+                  View and manage all {stats.linkedUsers} linked profiles
                 </p>
-                <Button variant="outline" onClick={() => navigate("/partner/new-user")}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Create New User
-                </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Forgot Code Section */}
-        <Card className="shadow-soft">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <HelpCircle className="h-5 w-5" />
-              Forgot CareBag Code?
-            </CardTitle>
-            <CardDescription>
-              Send an OTP to the user's phone or email to verify and link them
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Tabs value={forgotCodeTab} onValueChange={(v) => setForgotCodeTab(v as "phone" | "email")}>
-              <TabsList className="grid w-full max-w-xs grid-cols-2">
-                <TabsTrigger value="phone" className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  Phone
-                </TabsTrigger>
-                <TabsTrigger value="email" className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  Email
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="phone" className="mt-4">
-                <div className="flex gap-2">
-                  <div className="flex items-center gap-1 px-3 bg-muted rounded-l-md border border-r-0 border-input">
-                    <span className="text-sm text-muted-foreground">🇮🇳</span>
-                    <span className="text-sm font-medium">+91</span>
-                  </div>
-                  <Input
-                    type="tel"
-                    placeholder="10-digit mobile number"
-                    value={phoneNumber}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-                      setPhoneNumber(value);
-                      setUserNotFound(false);
-                    }}
-                    className="rounded-l-none flex-1"
-                    maxLength={10}
-                  />
-                  <Button 
-                    onClick={handleSendForgotCodeOtp} 
-                    disabled={isSendingOtp || phoneNumber.length !== 10}
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    {isSendingOtp ? "Sending..." : "Send OTP"}
-                  </Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="email" className="mt-4">
-                <div className="flex gap-2">
-                  <Input
-                    type="email"
-                    placeholder="user@example.com"
-                    value={emailAddress}
-                    onChange={(e) => {
-                      setEmailAddress(e.target.value);
-                      setUserNotFound(false);
-                    }}
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={handleSendForgotCodeOtp} 
-                    disabled={isSendingOtp || !emailAddress.includes("@")}
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    {isSendingOtp ? "Sending..." : "Send OTP"}
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
-
-            {/* User Not Found - Suggest Creating New */}
-            {userNotFound && (
-              <div className="p-4 border border-orange-500/30 bg-orange-500/5 rounded-lg animate-fade-in">
-                <div className="flex items-center gap-2 mb-2">
-                  <XCircle className="h-5 w-5 text-orange-500" />
-                  <span className="font-medium text-orange-600">User Not Found</span>
-                </div>
-                <p className="text-sm text-muted-foreground mb-3">
-                  This {forgotCodeTab === "phone" ? "phone number" : "email"} is not registered with CareBag. 
-                  This user needs to be created as a new member.
+            </button>
+            <button
+              onClick={() => navigate("/partner/upload")}
+              className="flex items-center gap-4 p-5 rounded-xl bg-card border border-border/50 hover:border-accent/30 hover:shadow-soft transition-all text-left group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Upload className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Upload Document</p>
+                <p className="text-sm text-muted-foreground">
+                  Upload medical documents for linked users
                 </p>
-                <Button variant="outline" onClick={() => navigate("/partner/new-user")}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Create New User
-                </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </button>
+          </div>
+        )}
 
-        {/* Quick Actions */}
-        <Card className="shadow-soft">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 md:grid-cols-2">
-              <button
-                onClick={() => navigate("/partner/users")}
-                className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted transition-colors text-left"
-              >
-                <Users className="h-5 w-5 text-accent" />
-                <div>
-                  <p className="font-medium text-foreground">Manage Users</p>
-                  <p className="text-sm text-muted-foreground">
-                    View all linked profiles
-                  </p>
-                </div>
-              </button>
-              <button
-                onClick={() => navigate("/partner/upload")}
-                className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-muted transition-colors text-left"
-              >
-                <Upload className="h-5 w-5 text-accent" />
-                <div>
-                  <p className="font-medium text-foreground">Upload Document</p>
-                  <p className="text-sm text-muted-foreground">
-                    Upload documents for users
-                  </p>
-                </div>
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Search by Phone/Email button when search section is shown */}
+        {showSearchSection && !searchNotFound && (
+          <Button 
+            variant="ghost" 
+            className="w-full"
+            onClick={() => {
+              setShowSearchSection(false);
+              setShowForgotSection(true);
+            }}
+          >
+            Don't have CareBag ID? Search by Phone or Email
+          </Button>
+        )}
       </div>
 
       {/* OTP Dialog */}
@@ -629,7 +690,7 @@ const PartnerDashboard = () => {
           <DialogHeader>
             <DialogTitle>Enter Verification Code</DialogTitle>
             <DialogDescription>
-              Enter the 6-digit OTP to verify and link the user.
+              Enter the 6-digit OTP sent to verify and link the user.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
