@@ -78,7 +78,7 @@ const Register = () => {
             alt="CareBag Logo"
             className="h-16 w-auto object-contain mb-6"
           />
-          <h1 className="text-2xl font-bold text-foreground mb-2">
+          <h1 className="text-2xl font-bold text-foreground mb-2 tracking-tight">
             Create your account
           </h1>
           <p className="text-muted-foreground text-sm">
@@ -101,7 +101,7 @@ const Register = () => {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
-                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-colors"
+                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-all duration-150"
               />
             </div>
           </div>
@@ -119,7 +119,7 @@ const Register = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-colors"
+                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-all duration-150"
               />
             </div>
           </div>
@@ -137,7 +137,7 @@ const Register = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-colors"
+                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-all duration-150"
               />
             </div>
           </div>
@@ -155,7 +155,7 @@ const Register = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-colors"
+                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-all duration-150"
               />
             </div>
           </div>
@@ -175,7 +175,7 @@ const Register = () => {
             Already have an account?{" "}
             <button
               onClick={() => navigate("/login")}
-              className="font-semibold text-primary hover:underline"
+              className="font-semibold text-primary hover:underline transition-all duration-150"
             >
               Sign in
             </button>

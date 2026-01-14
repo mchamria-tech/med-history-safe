@@ -12,13 +12,13 @@ const Index = () => {
       <header className="flex items-center justify-between px-6 pt-6 pb-2">
         <button
           onClick={() => navigate("/partner/login")}
-          className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
+          className="text-xs text-muted-foreground hover:text-primary transition-all duration-150 font-medium"
         >
           Partner Login
         </button>
         <button
           onClick={() => navigate("/admin/login")}
-          className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
+          className="text-xs text-muted-foreground hover:text-primary transition-all duration-150 font-medium"
         >
           Admin Login
         </button>
@@ -38,13 +38,13 @@ const Index = () => {
           </div>
 
           {/* Brand */}
-          <h1 className="text-2xl font-bold text-accent tracking-tight mb-2">
+          <h1 className="text-2xl font-bold text-accent tracking-tighter mb-2">
             CareBag
           </h1>
 
           {/* Headline */}
           <div className="text-center space-y-2 max-w-xs">
-            <h2 className="text-xl font-semibold text-foreground leading-snug">
+            <h2 className="text-xl font-bold text-foreground leading-snug tracking-tight">
               Your family's health records,
               <br />
               beautifully organized
@@ -56,7 +56,7 @@ const Index = () => {
         </div>
 
         {/* Value Props */}
-        <div className="mt-12 space-y-3 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <div className="mt-12 space-y-3 animate-slide-up" style={{ animationDelay: '0.1s' }}>
           <FeatureCard
             icon={<Users className="h-5 w-5" />}
             title="Family Profiles"
@@ -76,11 +76,11 @@ const Index = () => {
       </main>
 
       {/* Bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 glass border-t border-border/50 px-6 py-5 pb-8 space-y-3">
+      <div className="fixed bottom-0 left-0 right-0 glass px-6 py-5 pb-8 space-y-3">
         <Button
           size="lg"
           onClick={() => navigate("/register")}
-          className="w-full h-14 text-base font-semibold rounded-xl shadow-soft hover:shadow-elevated transition-all"
+          className="w-full h-14 text-base font-semibold rounded-xl shadow-soft hover:shadow-elevated transition-all duration-150"
         >
           Get Started
           <ChevronRight className="ml-2 h-5 w-5" />
@@ -107,12 +107,12 @@ const FeatureCard = ({
   title: string; 
   description: string;
 }) => (
-  <div className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/50 shadow-soft">
-    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary flex-shrink-0">
+  <div className="flex items-center gap-4 p-4 rounded-3xl bg-card border border-border/40 shadow-soft transition-all duration-150 hover:shadow-elevated">
+    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary flex-shrink-0">
       {icon}
     </div>
     <div className="flex-1 min-w-0">
-      <h3 className="font-semibold text-foreground text-sm">{title}</h3>
+      <h3 className="font-semibold text-foreground text-sm tracking-tight">{title}</h3>
       <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
     </div>
   </div>
