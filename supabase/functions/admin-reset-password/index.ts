@@ -27,6 +27,7 @@ interface AdminResetRequest {
   userEmail: string;
   userName?: string;
   userType: 'user' | 'partner';
+  newPassword?: string; // Optional: if provided, set password directly instead of sending email
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -64,35 +65,73 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Unauthorized: Super admin access required");
     }
 
-    const { userEmail, userName, userType }: AdminResetRequest = await req.json();
+    const { userEmail, userName, userType, newPassword }: AdminResetRequest = await req.json();
 
     if (!userEmail) {
       throw new Error("User email is required");
     }
 
-    console.log(`Admin ${adminUser.email} requesting password reset for ${userType}: ${userEmail}`);
+    // Find the user by email
+    const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+    
+    if (listError) {
+      throw new Error(`Failed to list users: ${listError.message}`);
+    }
 
-    // Get the site URL from the request origin
+    const targetUser = users?.find(u => u.email?.toLowerCase() === userEmail.toLowerCase());
+    
+    if (!targetUser) {
+      throw new Error(`User with email ${userEmail} not found`);
+    }
+
+    // If newPassword is provided, set it directly
+    if (newPassword) {
+      // Validate password length
+      if (newPassword.length < 6) {
+        throw new Error("Password must be at least 6 characters long");
+      }
+
+      console.log(`Admin ${adminUser.email} setting new password for ${userType}: ${userEmail}`);
+
+      const { error: updateError } = await supabase.auth.admin.updateUserById(
+        targetUser.id,
+        { password: newPassword }
+      );
+
+      if (updateError) {
+        console.error("Failed to update password:", updateError);
+        throw new Error(`Failed to set new password: ${updateError.message}`);
+      }
+
+      // Log the admin action
+      await supabase.from("admin_audit_logs").insert({
+        admin_id: adminUser.id,
+        action: "password_changed_by_admin",
+        target_type: userType,
+        target_id: targetUser.id,
+        details: { 
+          target_email: userEmail,
+          target_name: userName,
+        },
+      });
+
+      console.log("Password updated successfully for:", userEmail);
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Password updated successfully" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Otherwise, send a password reset email using Lovable Cloud's email service
+    console.log(`Admin ${adminUser.email} requesting password reset email for ${userType}: ${userEmail}`);
+
     const origin = req.headers.get('origin') || 'https://carebag.lovable.app';
     const resetRedirectUrl = `${origin}/reset-password`;
 
-    // Use Supabase's built-in password reset which triggers Lovable Cloud's email service
-    // This uses the admin client to send the recovery email on behalf of the user
-    const { error: resetError } = await supabase.auth.admin.generateLink({
-      type: 'recovery',
-      email: userEmail,
-      options: {
-        redirectTo: resetRedirectUrl,
-      },
-    });
-
-    if (resetError) {
-      console.error("Failed to generate reset link:", resetError);
-      throw new Error(`Failed to initiate password reset: ${resetError.message}`);
-    }
-
-    // The generateLink with admin client generates the link but doesn't send email automatically
-    // We need to use the standard resetPasswordForEmail to trigger the email hook
     const anonClient = createClient(
       supabaseUrl, 
       Deno.env.get("SUPABASE_ANON_KEY")!
@@ -110,8 +149,9 @@ const handler = async (req: Request): Promise<Response> => {
     // Log the admin action
     await supabase.from("admin_audit_logs").insert({
       admin_id: adminUser.id,
-      action: "password_reset_initiated",
+      action: "password_reset_email_sent",
       target_type: userType,
+      target_id: targetUser.id,
       details: { 
         target_email: userEmail,
         target_name: userName,

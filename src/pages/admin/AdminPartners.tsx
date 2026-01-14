@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, MoreVertical, Edit, Trash2, Power, KeyRound } from "lucide-react";
+import { Plus, Search, MoreVertical, Edit, Trash2, Power, KeyRound, Mail, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSuperAdminCheck } from "@/hooks/useSuperAdminCheck";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   DropdownMenu, 
@@ -24,6 +25,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface Partner {
@@ -44,6 +53,11 @@ const AdminPartners = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [partnerToDelete, setPartnerToDelete] = useState<Partner | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  
+  // Password reset dialog state
+  const [passwordResetPartner, setPasswordResetPartner] = useState<Partner | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     if (isSuperAdmin) {
@@ -136,13 +150,27 @@ const AdminPartners = () => {
     }
   };
 
-  const handleResetPassword = async (partner: Partner) => {
+  const openPasswordResetDialog = (partner: Partner) => {
+    setPasswordResetPartner(partner);
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
+  const closePasswordResetDialog = () => {
+    setPasswordResetPartner(null);
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
+  const handleSendResetEmail = async () => {
+    if (!passwordResetPartner) return;
+    
     setIsResettingPassword(true);
     try {
       const { data, error } = await supabase.functions.invoke("admin-reset-password", {
         body: {
-          userEmail: partner.email,
-          userName: partner.name,
+          userEmail: passwordResetPartner.email,
+          userName: passwordResetPartner.name,
           userType: "partner",
         },
       });
@@ -152,13 +180,66 @@ const AdminPartners = () => {
 
       toast({
         title: "Password Reset Email Sent",
-        description: `A password reset link has been sent to ${partner.email}`,
+        description: `A password reset link has been sent to ${passwordResetPartner.email}`,
       });
+      closePasswordResetDialog();
     } catch (error: any) {
       console.error("Error sending password reset:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to send password reset email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const handleSetNewPassword = async () => {
+    if (!passwordResetPartner) return;
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-reset-password", {
+        body: {
+          userEmail: passwordResetPartner.email,
+          userName: passwordResetPartner.name,
+          userType: "partner",
+          newPassword: newPassword,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Password Updated",
+        description: `Password has been successfully changed for ${passwordResetPartner.name}`,
+      });
+      closePasswordResetDialog();
+    } catch (error: any) {
+      console.error("Error setting new password:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to set new password",
         variant: "destructive",
       });
     } finally {
@@ -269,11 +350,10 @@ const AdminPartners = () => {
                             {partner.is_active ? "Deactivate" : "Activate"}
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleResetPassword(partner)}
-                            disabled={isResettingPassword}
+                            onClick={() => openPasswordResetDialog(partner)}
                           >
                             <KeyRound className="h-4 w-4 mr-2" />
-                            {isResettingPassword ? "Sending..." : "Reset Password"}
+                            Reset Password
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -312,6 +392,94 @@ const AdminPartners = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Password Reset Dialog */}
+      <Dialog open={!!passwordResetPartner} onOpenChange={(open) => !open && closePasswordResetDialog()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Reset password for <strong>{passwordResetPartner?.name}</strong> ({passwordResetPartner?.email})
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Option 1: Send Reset Email */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Mail className="h-4 w-4" />
+                Option 1: Send Reset Email
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Send a password reset link to the partner's email address.
+              </p>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={handleSendResetEmail}
+                disabled={isResettingPassword}
+              >
+                {isResettingPassword ? "Sending..." : "Send Reset Email"}
+              </Button>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+
+            {/* Option 2: Set Password Directly */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Lock className="h-4 w-4" />
+                Option 2: Set New Password Directly
+              </div>
+              <p className="text-xs text-muted-foreground">
+                For emergency situations when the partner cannot access their email.
+              </p>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    placeholder="Enter new password (min 6 characters)"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+                <Button 
+                  className="w-full"
+                  onClick={handleSetNewPassword}
+                  disabled={isResettingPassword || !newPassword || !confirmPassword}
+                >
+                  {isResettingPassword ? "Setting Password..." : "Set New Password"}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={closePasswordResetDialog}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
