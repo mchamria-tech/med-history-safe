@@ -121,6 +121,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          partner_id: string | null
           phone: string | null
           specialty: string | null
           updated_at: string | null
@@ -134,6 +135,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          partner_id?: string | null
           phone?: string | null
           specialty?: string | null
           updated_at?: string | null
@@ -147,17 +149,68 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          partner_id?: string | null
           phone?: string | null
           specialty?: string | null
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "doctors_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_access_grants: {
+        Row: {
+          created_at: string | null
+          document_id: string
+          expires_at: string
+          granted_by_user_id: string
+          granted_to_id: string
+          granted_to_type: Database["public"]["Enums"]["access_grant_type"]
+          id: string
+          is_revoked: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_id: string
+          expires_at: string
+          granted_by_user_id: string
+          granted_to_id: string
+          granted_to_type: Database["public"]["Enums"]["access_grant_type"]
+          id?: string
+          is_revoked?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          document_id?: string
+          expires_at?: string
+          granted_by_user_id?: string
+          granted_to_id?: string
+          granted_to_type?: Database["public"]["Enums"]["access_grant_type"]
+          id?: string
+          is_revoked?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_access_grants_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       documents: {
         Row: {
           ailment: string | null
           created_at: string
+          doctor_id: string | null
           doctor_name: string | null
           document_date: string
           document_name: string
@@ -175,6 +228,7 @@ export type Database = {
         Insert: {
           ailment?: string | null
           created_at?: string
+          doctor_id?: string | null
           doctor_name?: string | null
           document_date: string
           document_name: string
@@ -192,6 +246,7 @@ export type Database = {
         Update: {
           ailment?: string | null
           created_at?: string
+          doctor_id?: string | null
           doctor_name?: string | null
           document_date?: string
           document_name?: string
@@ -207,6 +262,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "documents_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documents_partner_id_fkey"
             columns: ["partner_id"]
@@ -521,11 +583,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      doctor_has_document_grant: {
+        Args: { d_id: string; doc_id: string }
+        Returns: boolean
+      }
+      doctor_is_attached: { Args: { d_id: string }; Returns: boolean }
+      document_uploaded_by_doctor: {
+        Args: { d_id: string; doc_id: string }
+        Returns: boolean
+      }
+      document_uploaded_by_partner: {
+        Args: { doc_id: string; p_id: string }
+        Returns: boolean
+      }
       generate_carebag_id: { Args: never; Returns: string }
       generate_global_id: { Args: { role_type?: string }; Returns: string }
       generate_partner_code: { Args: never; Returns: string }
       generate_ticket_code: { Args: never; Returns: string }
       get_doctor_id: { Args: { user_id: string }; Returns: string }
+      get_doctor_partner_id: { Args: { d_id: string }; Returns: string }
       get_partner_id: { Args: { user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -537,8 +613,17 @@ export type Database = {
       is_doctor: { Args: { user_id: string }; Returns: boolean }
       is_partner: { Args: { user_id: string }; Returns: boolean }
       is_super_admin: { Args: { user_id: string }; Returns: boolean }
+      partner_has_document_grant: {
+        Args: { doc_id: string; p_id: string }
+        Returns: boolean
+      }
+      user_owns_document: {
+        Args: { doc_id: string; u_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
+      access_grant_type: "partner" | "doctor"
       app_role:
         | "admin"
         | "moderator"
@@ -673,6 +758,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      access_grant_type: ["partner", "doctor"],
       app_role: [
         "admin",
         "moderator",
