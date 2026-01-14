@@ -83,7 +83,7 @@ const Login = () => {
             alt="CareBag Logo"
             className="h-16 w-auto object-contain mb-6"
           />
-          <h1 className="text-2xl font-bold text-foreground mb-2">
+          <h1 className="text-2xl font-bold text-foreground mb-2 tracking-tight">
             Welcome back
           </h1>
           <p className="text-muted-foreground text-sm">
@@ -106,7 +106,7 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-colors"
+                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-all duration-150"
               />
             </div>
           </div>
@@ -124,7 +124,7 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-colors"
+                className="h-12 pl-11 rounded-xl border-border bg-muted/50 focus:bg-background transition-all duration-150"
               />
             </div>
           </div>
@@ -134,7 +134,7 @@ const Login = () => {
               type="button"
               onClick={handleForgotPassword}
               disabled={resetLoading}
-              className="text-sm text-primary font-medium hover:underline"
+              className="text-sm text-primary font-medium hover:underline transition-all duration-150"
             >
               {resetLoading ? "Sending..." : "Forgot password?"}
             </button>
@@ -155,7 +155,7 @@ const Login = () => {
             Don't have an account?{" "}
             <button
               onClick={() => navigate("/register")}
-              className="font-semibold text-primary hover:underline"
+              className="font-semibold text-primary hover:underline transition-all duration-150"
             >
               Create one
             </button>
@@ -170,14 +170,14 @@ const Login = () => {
           <div className="flex items-center justify-center gap-4 text-xs">
             <button
               onClick={() => navigate("/partner/login")}
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-muted-foreground hover:text-primary transition-all duration-150"
             >
               Partner Login
             </button>
             <span className="text-border">•</span>
             <button
               onClick={() => navigate("/admin/login")}
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-muted-foreground hover:text-primary transition-all duration-150"
             >
               Admin
             </button>
