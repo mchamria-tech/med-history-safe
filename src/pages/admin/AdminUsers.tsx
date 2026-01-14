@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Users, MoreVertical, Trash2, BarChart3 } from "lucide-react";
+import { Search, Users, MoreVertical, Trash2, BarChart3, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSuperAdminCheck } from "@/hooks/useSuperAdminCheck";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -12,6 +12,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -54,6 +55,7 @@ const AdminUsers = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<GroupedUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   useEffect(() => {
     if (isSuperAdmin) {
@@ -160,6 +162,36 @@ const AdminUsers = () => {
     }
   };
 
+  const handleResetPassword = async (user: GroupedUser) => {
+    if (!user.email) {
+      toast.error("Cannot reset password: User has no email address");
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const { data, error } = await supabase.functions.invoke("admin-reset-password", {
+        body: {
+          userEmail: user.email,
+          userName: user.name,
+          userType: "user",
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success(`Password reset email sent to ${user.email}`);
+    } catch (error: any) {
+      console.error("Error sending password reset:", error);
+      toast.error(error.message || "Failed to send password reset email");
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   const filteredUsers = groupedUsers.filter(
     (u) =>
       u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -255,6 +287,16 @@ const AdminUsers = () => {
                             <BarChart3 className="h-4 w-4 mr-2" />
                             View Analytics
                           </DropdownMenuItem>
+                          {user.email && (
+                            <DropdownMenuItem
+                              onClick={() => handleResetPassword(user)}
+                              disabled={isResettingPassword}
+                            >
+                              <KeyRound className="h-4 w-4 mr-2" />
+                              {isResettingPassword ? "Sending..." : "Reset Password"}
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => {
                               setUserToDelete(user);

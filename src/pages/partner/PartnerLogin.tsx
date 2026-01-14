@@ -4,9 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Handshake, ArrowLeft } from "lucide-react";
+import { Handshake, ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import carebagLogo from "@/assets/carebag-logo-redesign.png";
 
 const PartnerLogin = () => {
@@ -16,6 +24,12 @@ const PartnerLogin = () => {
   const [password, setPassword] = useState("");
   const [partnerCode, setPartnerCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Forgot password states
+  const [showForgotDialog, setShowForgotDialog] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +102,44 @@ const PartnerLogin = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!forgotEmail.includes("@")) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSendingReset(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      setResetSent(true);
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send reset email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
+  const closeForgotDialog = () => {
+    setShowForgotDialog(false);
+    setForgotEmail("");
+    setResetSent(false);
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -134,7 +186,16 @@ const PartnerLogin = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotDialog(true)}
+                    className="text-sm text-accent hover:underline"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <Input
                   id="password"
                   type="password"
@@ -165,6 +226,65 @@ const PartnerLogin = () => {
           </CardContent>
         </Card>
       </main>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={showForgotDialog} onOpenChange={closeForgotDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {resetSent ? "Check Your Email" : "Forgot Password"}
+            </DialogTitle>
+            <DialogDescription>
+              {resetSent
+                ? "We've sent a password reset link to your email address."
+                : "Enter your email address and we'll send you a link to reset your password."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {resetSent ? (
+            <div className="py-6 flex flex-col items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+                <CheckCircle className="h-8 w-8 text-emerald-600" />
+              </div>
+              <p className="text-center text-muted-foreground">
+                A password reset email has been sent to <strong>{forgotEmail}</strong>. 
+                Please check your inbox and follow the instructions to reset your password.
+              </p>
+              <Button onClick={closeForgotDialog} className="w-full">
+                Back to Login
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="py-4">
+                <Label htmlFor="forgotEmail">Email Address</Label>
+                <div className="relative mt-2">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="forgotEmail"
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="partner@company.com"
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={closeForgotDialog}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleForgotPassword}
+                  disabled={isSendingReset || !forgotEmail.includes("@")}
+                >
+                  {isSendingReset ? "Sending..." : "Send Reset Link"}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

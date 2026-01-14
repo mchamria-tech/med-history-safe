@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, MoreVertical, Edit, Trash2, Power } from "lucide-react";
+import { Plus, Search, MoreVertical, Edit, Trash2, Power, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSuperAdminCheck } from "@/hooks/useSuperAdminCheck";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -10,7 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
-  DropdownMenuItem, 
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import {
@@ -42,6 +43,7 @@ const AdminPartners = () => {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [partnerToDelete, setPartnerToDelete] = useState<Partner | null>(null);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   useEffect(() => {
     if (isSuperAdmin) {
@@ -131,6 +133,36 @@ const AdminPartners = () => {
         description: "Failed to delete partner",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleResetPassword = async (partner: Partner) => {
+    setIsResettingPassword(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-reset-password", {
+        body: {
+          userEmail: partner.email,
+          userName: partner.name,
+          userType: "partner",
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Password Reset Email Sent",
+        description: `A password reset link has been sent to ${partner.email}`,
+      });
+    } catch (error: any) {
+      console.error("Error sending password reset:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send password reset email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -236,6 +268,14 @@ const AdminPartners = () => {
                             <Power className="h-4 w-4 mr-2" />
                             {partner.is_active ? "Deactivate" : "Activate"}
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleResetPassword(partner)}
+                            disabled={isResettingPassword}
+                          >
+                            <KeyRound className="h-4 w-4 mr-2" />
+                            {isResettingPassword ? "Sending..." : "Reset Password"}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => setPartnerToDelete(partner)}
                             className="text-destructive focus:text-destructive"
