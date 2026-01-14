@@ -74,6 +74,86 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_access: {
+        Row: {
+          created_at: string | null
+          doctor_id: string
+          expires_at: string
+          granted_by_user_id: string | null
+          id: string
+          is_revoked: boolean | null
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          doctor_id: string
+          expires_at: string
+          granted_by_user_id?: string | null
+          id?: string
+          is_revoked?: boolean | null
+          profile_id: string
+        }
+        Update: {
+          created_at?: string | null
+          doctor_id?: string
+          expires_at?: string
+          granted_by_user_id?: string | null
+          id?: string
+          is_revoked?: boolean | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_access_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctors: {
+        Row: {
+          created_at: string | null
+          email: string
+          global_id: string
+          hospital: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          phone: string | null
+          specialty: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          global_id: string
+          hospital?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          global_id?: string
+          hospital?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           ailment: string | null
@@ -442,8 +522,10 @@ export type Database = {
     }
     Functions: {
       generate_carebag_id: { Args: never; Returns: string }
+      generate_global_id: { Args: { role_type?: string }; Returns: string }
       generate_partner_code: { Args: never; Returns: string }
       generate_ticket_code: { Args: never; Returns: string }
+      get_doctor_id: { Args: { user_id: string }; Returns: string }
       get_partner_id: { Args: { user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -452,11 +534,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_doctor: { Args: { user_id: string }; Returns: boolean }
       is_partner: { Args: { user_id: string }; Returns: boolean }
       is_super_admin: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user" | "partner" | "super_admin"
+      app_role:
+        | "admin"
+        | "moderator"
+        | "user"
+        | "partner"
+        | "super_admin"
+        | "doctor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -584,7 +673,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user", "partner", "super_admin"],
+      app_role: [
+        "admin",
+        "moderator",
+        "user",
+        "partner",
+        "super_admin",
+        "doctor",
+      ],
     },
   },
 } as const
