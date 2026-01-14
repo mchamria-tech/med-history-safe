@@ -49,10 +49,12 @@ const PartnerDashboard = () => {
   const { toast } = useToast();
   const { partner } = usePartnerCheck();
   const [stats, setStats] = useState({
-    linkedUsers: 0,
+    linkedClients: 0,
     totalDocuments: 0,
     documentsThisMonth: 0,
-    criticalAlerts: 2,
+    pendingConsents: 0,
+    lastMonthClients: 0,
+    lastMonthDocs: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -89,31 +91,73 @@ const PartnerDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const { count: usersCount } = await supabase
+      // Current clients count
+      const { count: clientsCount } = await supabase
         .from("partner_users")
         .select("*", { count: "exact", head: true })
         .eq("partner_id", partner!.id);
 
+      // Total documents count
       const { count: docsCount } = await supabase
         .from("documents")
         .select("*", { count: "exact", head: true })
         .eq("partner_id", partner!.id);
 
+      // Current month start
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
+      // Last month start/end for comparison
+      const startOfLastMonth = new Date(startOfMonth);
+      startOfLastMonth.setMonth(startOfLastMonth.getMonth() - 1);
+      const endOfLastMonth = new Date(startOfMonth);
+      endOfLastMonth.setMilliseconds(-1);
+
+      // This month's documents
       const { count: monthlyDocsCount } = await supabase
         .from("documents")
         .select("*", { count: "exact", head: true })
         .eq("partner_id", partner!.id)
         .gte("created_at", startOfMonth.toISOString());
 
+      // Last month's documents (for trend comparison)
+      const { count: lastMonthDocsCount } = await supabase
+        .from("documents")
+        .select("*", { count: "exact", head: true })
+        .eq("partner_id", partner!.id)
+        .gte("created_at", startOfLastMonth.toISOString())
+        .lt("created_at", startOfMonth.toISOString());
+
+      // This month's new clients
+      const { count: thisMonthClients } = await supabase
+        .from("partner_users")
+        .select("*", { count: "exact", head: true })
+        .eq("partner_id", partner!.id)
+        .gte("linked_at", startOfMonth.toISOString());
+
+      // Last month's new clients
+      const { count: lastMonthClients } = await supabase
+        .from("partner_users")
+        .select("*", { count: "exact", head: true })
+        .eq("partner_id", partner!.id)
+        .gte("linked_at", startOfLastMonth.toISOString())
+        .lt("linked_at", startOfMonth.toISOString());
+
+      // Pending consents
+      const { count: pendingConsents } = await supabase
+        .from("partner_users")
+        .select("*", { count: "exact", head: true })
+        .eq("partner_id", partner!.id)
+        .eq("consent_given", false);
+
       setStats({
-        linkedUsers: usersCount || 0,
+        linkedClients: clientsCount || 0,
         totalDocuments: docsCount || 0,
         documentsThisMonth: monthlyDocsCount || 0,
-        criticalAlerts: 2, // Placeholder
+        pendingConsents: pendingConsents || 0,
+        lastMonthClients: lastMonthClients || 0,
+        lastMonthDocs: lastMonthDocsCount || 0,
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -157,7 +201,7 @@ const PartnerDashboard = () => {
         if (linkedUserIds.includes(data.id)) {
           toast({
             title: "Already Linked",
-            description: "This user is already linked to your account",
+            description: "This client is already linked to your account",
           });
         } else {
           setSearchResult(data);
@@ -337,8 +381,8 @@ const PartnerDashboard = () => {
       if (linkError) throw linkError;
 
       toast({
-        title: "User Linked",
-        description: "User has been successfully linked to your account",
+        title: "Client Linked",
+        description: "Client has been successfully linked to your account",
       });
 
       resetAllStates();
@@ -375,6 +419,20 @@ const PartnerDashboard = () => {
     return firstName;
   };
 
+  // Calculate real percentage trends
+  const calculateTrend = (current: number, previous: number): number | undefined => {
+    if (previous === 0) {
+      return current > 0 ? 100 : undefined;
+    }
+    return Math.round(((current - previous) / previous) * 100 * 10) / 10;
+  };
+
+  const clientsTrend = calculateTrend(stats.linkedClients, stats.lastMonthClients);
+  const docsTrend = calculateTrend(stats.documentsThisMonth, stats.lastMonthDocs);
+  const avgDocsPerClient = stats.linkedClients > 0 
+    ? Math.round((stats.totalDocuments / stats.linkedClients) * 10) / 10 
+    : 0;
+
   return (
     <PartnerLayout>
       <div className="space-y-6">
@@ -386,6 +444,7 @@ const PartnerDashboard = () => {
             setShowSearchSection(true);
             setShowForgotSection(false);
           }}
+          onNewClientClick={() => navigate("/partner/new-user")}
           logoUrl={partner?.logo_url}
         />
 
@@ -396,52 +455,68 @@ const PartnerDashboard = () => {
               Namaste, {getGreetingName()}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {partner?.name} has <span className="font-semibold text-foreground">{stats.linkedUsers} patients</span> and{" "}
-              <span className="font-semibold text-accent">{stats.criticalAlerts} urgent alerts</span> pending today.
+              {partner?.name} has <span className="font-semibold text-foreground">{stats.linkedClients} client{stats.linkedClients !== 1 ? 's' : ''}</span>
+              {stats.pendingConsents > 0 && (
+                <> and <span className="font-semibold text-accent">{stats.pendingConsents} pending consent{stats.pendingConsents !== 1 ? 's' : ''}</span></>
+              )}
+              .
             </p>
           </div>
           
-          {/* Action Button */}
-          <Button 
-            onClick={() => navigate("/partner/new-user")}
-            className="bg-accent hover:bg-accent/90 text-accent-foreground h-11 px-6 rounded-xl shadow-soft"
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            New Consult
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <Button 
+              variant="outline"
+              onClick={() => {
+                setShowSearchSection(true);
+                setShowForgotSection(false);
+              }}
+              className="h-11 px-5 rounded-xl"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Search Client
+            </Button>
+            <Button 
+              onClick={() => navigate("/partner/new-user")}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground h-11 px-6 rounded-xl shadow-soft"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              New Client
+            </Button>
+          </div>
         </div>
 
         {/* Stats Grid - 4 Cards */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <EnhancedStatCard
             icon={<Users className="h-5 w-5" />}
-            label="Active Patients"
-            value={isLoading ? "..." : stats.linkedUsers}
-            trend={12.5}
+            label="Active Clients"
+            value={isLoading ? "..." : stats.linkedClients}
+            trend={clientsTrend}
             iconBgColor="bg-slate-100"
             iconColor="text-slate-600"
           />
           <EnhancedStatCard
             icon={<Activity className="h-5 w-5" />}
             label="Avg. Documents"
-            value={isLoading ? "..." : `${stats.totalDocuments > 0 ? Math.round((stats.totalDocuments / Math.max(stats.linkedUsers, 1)) * 10) / 10 : 0}`}
-            trend={4.1}
+            value={isLoading ? "..." : avgDocsPerClient}
+            trend={undefined}
             iconBgColor="bg-accent/10"
             iconColor="text-accent"
           />
           <EnhancedStatCard
             icon={<AlertCircle className="h-5 w-5" />}
-            label="Critical Alerts"
-            value={isLoading ? "..." : `0${stats.criticalAlerts}`}
-            trend={-8.2}
-            iconBgColor="bg-red-50"
-            iconColor="text-red-500"
+            label="Pending Consents"
+            value={isLoading ? "..." : stats.pendingConsents}
+            trend={undefined}
+            iconBgColor="bg-amber-50"
+            iconColor="text-amber-500"
           />
           <EnhancedStatCard
             icon={<Clock className="h-5 w-5" />}
             label="Uploads This Month"
             value={isLoading ? "..." : stats.documentsThisMonth}
-            trend={2.3}
+            trend={docsTrend}
             iconBgColor="bg-blue-50"
             iconColor="text-blue-600"
           />
@@ -503,7 +578,7 @@ const PartnerDashboard = () => {
                     </div>
                     <Button onClick={() => handleRequestLink(searchResult.id)} disabled={isLinking}>
                       <UserPlus className="h-4 w-4 mr-2" />
-                      {isLinking ? "Sending OTP..." : "Add User"}
+                      {isLinking ? "Sending OTP..." : "Add Client"}
                     </Button>
                   </div>
                 </div>
@@ -517,12 +592,12 @@ const PartnerDashboard = () => {
                     <span className="font-medium text-orange-600">User Not Found</span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">
-                    No user exists with this CareBag ID. Would you like to create a new user?
+                    No client exists with this CareBag ID. Would you like to create a new client?
                   </p>
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={() => navigate("/partner/new-user")}>
                       <UserPlus className="h-4 w-4 mr-2" />
-                      Create New User
+                      Create New Client
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -638,7 +713,7 @@ const PartnerDashboard = () => {
                   </p>
                   <Button variant="outline" onClick={() => navigate("/partner/new-user")}>
                     <UserPlus className="h-4 w-4 mr-2" />
-                    Create New User
+                    Create New Client
                   </Button>
                 </div>
               )}
@@ -649,14 +724,14 @@ const PartnerDashboard = () => {
         {/* Bottom Section - Chart and Alerts */}
         {!showSearchSection && !showForgotSection && (
           <div className="grid gap-6 lg:grid-cols-3">
-            {/* Patient Trends Chart - Takes 2 columns */}
+            {/* Client Trends Chart - Takes 2 columns */}
             <div className="lg:col-span-2">
-              <PatientTrendsChart linkedUsers={stats.linkedUsers} />
+              <PatientTrendsChart linkedUsers={stats.linkedClients} />
             </div>
             
-            {/* Urgent Alerts Panel - Takes 1 column */}
+            {/* Recent Activity Panel - Takes 1 column */}
             <div className="lg:col-span-1">
-              <UrgentAlertsPanel />
+              <UrgentAlertsPanel partnerId={partner?.id} />
             </div>
           </div>
         )}
