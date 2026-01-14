@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { usePartnerCheck } from "@/hooks/usePartnerCheck";
 import { getSignedUrl } from "@/hooks/useSignedUrl";
@@ -11,6 +12,9 @@ import {
   LogOut,
   Menu,
   X,
+  MapPin,
+  Receipt,
+  Settings,
 } from "lucide-react";
 
 interface PartnerLayoutProps {
@@ -43,6 +47,7 @@ const PartnerLayout = ({ children }: PartnerLayoutProps) => {
     { path: "/partner/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/partner/users", label: "Linked Users", icon: Users },
     { path: "/partner/upload", label: "Upload Document", icon: Upload },
+    { path: "/partner/settings", label: "Settings", icon: Settings },
   ];
 
   if (isLoading) {
@@ -81,7 +86,7 @@ const PartnerLayout = ({ children }: PartnerLayoutProps) => {
         <aside
           className={`${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transition-transform duration-200 lg:transition-none`}
+          } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transition-transform duration-200 lg:transition-none flex flex-col`}
         >
           {/* Partner Branding */}
           <div className="p-4 border-b border-border">
@@ -95,15 +100,17 @@ const PartnerLayout = ({ children }: PartnerLayoutProps) => {
                   </span>
                 </div>
               )}
-              <div>
-                <h2 className="font-semibold text-foreground">{partner?.name}</h2>
-                <p className="text-xs text-muted-foreground">Partner Portal</p>
+              <div className="flex-1 min-w-0">
+                <h2 className="font-semibold text-foreground truncate">{partner?.name}</h2>
+                <Badge variant="secondary" className="font-mono text-xs">
+                  {partner?.partner_code}
+                </Badge>
               </div>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="p-4 space-y-2">
+          <nav className="p-4 space-y-2 flex-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path || 
@@ -127,8 +134,34 @@ const PartnerLayout = ({ children }: PartnerLayoutProps) => {
             })}
           </nav>
 
+          {/* Partner Info Panel */}
+          <div className="p-4 border-t border-border bg-muted/30">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+              Partner Info
+            </p>
+            <div className="space-y-2">
+              {partner?.address && (
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <p className="text-sm text-foreground leading-tight">{partner.address}</p>
+                </div>
+              )}
+              {partner?.gst_number && (
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <p className="text-sm text-foreground font-mono">{partner.gst_number}</p>
+                </div>
+              )}
+              {!partner?.address && !partner?.gst_number && (
+                <p className="text-sm text-muted-foreground italic">
+                  No additional info available
+                </p>
+              )}
+            </div>
+          </div>
+
           {/* Logout Button */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
+          <div className="p-4 border-t border-border">
             <Button
               variant="ghost"
               className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -153,14 +186,19 @@ const PartnerLayout = ({ children }: PartnerLayoutProps) => {
                 <p className="text-sm text-muted-foreground">Partner Dashboard</p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-5 w-5 mr-2" />
-              Logout
-            </Button>
+            <div className="flex items-center gap-3">
+              <Badge className={partner?.is_active ? "bg-emerald-500" : "bg-red-500"}>
+                {partner?.is_active ? "Active" : "Inactive"}
+              </Badge>
+              <Button
+                variant="ghost"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-5 w-5 mr-2" />
+                Logout
+              </Button>
+            </div>
           </header>
           
           <div className="p-4 lg:p-6">{children}</div>

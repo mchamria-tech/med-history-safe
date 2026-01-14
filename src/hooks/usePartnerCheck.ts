@@ -11,6 +11,8 @@ interface Partner {
   logo_url: string | null;
   email: string;
   is_active: boolean;
+  address: string | null;
+  gst_number: string | null;
 }
 
 export const usePartnerCheck = () => {
