@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { usePartnerCheck } from "@/hooks/usePartnerCheck";
 import { useToast } from "@/hooks/use-toast";
+import { getEdgeFunctionError } from "@/lib/utils";
 import PartnerLayout from "@/components/partner/PartnerLayout";
 import { Search, UserPlus, Users, Upload, Trash2 } from "lucide-react";
 import { format } from "date-fns";
@@ -170,7 +171,10 @@ const PartnerUserSearch = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        const message = await getEdgeFunctionError(error);
+        throw new Error(message);
+      }
       
       if (data?.error) {
         throw new Error(data.error);

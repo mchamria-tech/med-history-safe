@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { getEdgeFunctionError } from "@/lib/utils";
 
 const AdminPartnerForm = () => {
   const navigate = useNavigate();
@@ -204,7 +205,10 @@ const AdminPartnerForm = () => {
           },
         });
 
-        if (error) throw error;
+        if (error) {
+          const message = await getEdgeFunctionError(error);
+          throw new Error(message);
+        }
 
         if (data?.error) {
           throw new Error(data.error);

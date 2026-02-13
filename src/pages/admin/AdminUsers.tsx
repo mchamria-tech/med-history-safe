@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { getEdgeFunctionError } from "@/lib/utils";
 
 interface UserProfile {
   id: string;
@@ -147,7 +148,10 @@ const AdminUsers = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        const message = await getEdgeFunctionError(error);
+        throw new Error(message);
+      }
       if (data?.error) throw new Error(data.error);
 
       toast.success("User deleted successfully");
@@ -180,7 +184,10 @@ const AdminUsers = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        const message = await getEdgeFunctionError(error);
+        throw new Error(message);
+      }
       if (data?.error) throw new Error(data.error);
 
       toast.success(`Password reset email sent to ${user.email}`);

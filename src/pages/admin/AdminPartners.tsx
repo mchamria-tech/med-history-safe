@@ -34,6 +34,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { getEdgeFunctionError } from "@/lib/utils";
 
 interface Partner {
   id: string;
@@ -175,7 +176,10 @@ const AdminPartners = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        const message = await getEdgeFunctionError(error);
+        throw new Error(message);
+      }
       if (data?.error) throw new Error(data.error);
 
       toast({
@@ -227,7 +231,10 @@ const AdminPartners = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        const message = await getEdgeFunctionError(error);
+        throw new Error(message);
+      }
       if (data?.error) throw new Error(data.error);
 
       toast({
