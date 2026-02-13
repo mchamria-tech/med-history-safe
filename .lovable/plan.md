@@ -1,79 +1,111 @@
 
 
-## Plan: Improve Error Messages Across Edge Functions and Client Code
+## Plan: Country-Based Global ID for Partners
 
 ### Problem
-When backend functions return HTTP 400/500 errors, the Supabase client library wraps them in a `FunctionsHttpError` object. The actual error message (e.g., "This email address is already registered") is hidden inside the response body and not properly extracted on the client side. Users see generic or unhelpful error messages.
+1. The `generate_global_id` database function hardcodes `IND-` as the country prefix for all entities
+2. The `create-partner` edge function bypasses `generate_global_id` entirely and generates its own simple code
+3. There is no "country" field on the partner form or in the database
+4. Partners from different countries (e.g., USA) should get country-appropriate prefixes (e.g., `USA-X3CZ3T` instead of `IND-X3CZ3T`)
 
-### Solution Overview
-Two changes are needed:
-1. **Client-side**: Properly extract error messages from edge function responses by reading the response body from `FunctionsHttpError`
-2. **Edge function**: Ensure all error responses include clear, actionable messages with proper error codes
+### Solution
 
----
+#### 1. Add Country Field to Partners Table (Database Migration)
+- Add a `country` column to the `partners` table (default: `'IND'`)
+- Use a 3-letter ISO country code (IND, USA, GBR, etc.)
 
-### Changes
+#### 2. Update `generate_global_id` Database Function
+- Accept a new `country_code` parameter (default `'IND'`)
+- Replace the hardcoded `IND-` prefix with the provided country code
+- Format becomes: `{COUNTRY}-{ROLE_PREFIX}{5_CHARS}` (e.g., `USA-XA3F2B`, `IND-A1GTR3`)
 
-#### 1. AdminPartnerForm.tsx - Extract meaningful error from edge function responses
+#### 3. Update `create-partner` Edge Function
+- Accept `country` in the request body
+- Call the `generate_global_id('partner', country)` database function instead of generating a code inline
+- Store the country on the partner record
 
-Update the partner creation error handling (around lines 192-228) to properly parse the error body from `FunctionsHttpError`:
+#### 4. Update Partner Form (AdminPartnerForm.tsx)
+- Add a Country dropdown (India, USA, UK, etc.) to the form
+- Pass the selected country to the edge function
+- Default selection: India (IND)
 
-```typescript
-// After supabase.functions.invoke("create-partner", ...)
-if (error) {
-  // Extract the actual error message from the response body
-  const errorBody = await error.context?.json?.();
-  const message = errorBody?.error || error.message || "Failed to create partner";
-  throw new Error(message);
-}
-```
-
-This same pattern should be applied to all other `supabase.functions.invoke` calls across:
-- `src/pages/admin/AdminPartners.tsx` (password reset)
-- `src/pages/admin/AdminUsers.tsx` (delete user, password reset)
-- `src/pages/partner/PartnerDashboard.tsx` (send OTP)
-- `src/pages/partner/PartnerUserSearch.tsx` (send OTP)
-- `src/pages/ProfileView.tsx` (document metadata)
-
-#### 2. Create a shared utility for edge function error extraction
-
-Add a helper in `src/lib/utils.ts` to standardize error extraction:
-
-```typescript
-export async function getEdgeFunctionError(error: any): Promise<string> {
-  try {
-    if (error?.context?.json) {
-      const body = await error.context.json();
-      return body?.error || error.message || "An unexpected error occurred";
-    }
-  } catch {}
-  return error?.message || "An unexpected error occurred";
-}
-```
-
-#### 3. Improve edge function error messages in create-partner
-
-Update `supabase/functions/create-partner/index.ts` to return more specific, actionable error messages:
-
-| Current Message | Improved Message |
-|----------------|-----------------|
-| `"This email address is already registered..."` | `"This email address is already registered. If this partner already has an account, search for them in the Partners list instead."` |
-| `"Name, email, and password are required"` | `"Please provide all required fields: Business Name, Email, and Password."` |
-| `"Only super admins can create partners"` | `"You do not have permission to create partners. Only Super Admins can perform this action."` |
-| `"Missing authorization header"` | `"Your session has expired. Please log in again."` |
+#### 5. Update PartnerNewUser.tsx
+- When a partner creates a new user, pass the partner's country to `generate_global_id` so user IDs also reflect the correct country
 
 ---
 
-### Files to Modify
+### Technical Details
+
+**Database migration SQL:**
+```sql
+-- Add country column to partners
+ALTER TABLE public.partners 
+  ADD COLUMN country text NOT NULL DEFAULT 'IND';
+
+-- Update generate_global_id to accept country_code
+CREATE OR REPLACE FUNCTION public.generate_global_id(
+  role_type text DEFAULT 'user',
+  country_code text DEFAULT 'IND'
+)
+RETURNS text
+LANGUAGE plpgsql
+SET search_path TO 'public'
+AS $$
+DECLARE
+  prefix char;
+  new_id text;
+  exists_check boolean;
+BEGIN
+  prefix := CASE role_type
+    WHEN 'user' THEN 'A'
+    WHEN 'admin' THEN '0'
+    WHEN 'doctor' THEN 'D'
+    WHEN 'partner' THEN 'X'
+    ELSE 'A'
+  END;
+
+  LOOP
+    new_id := upper(country_code) || '-' || prefix 
+              || upper(substr(md5(random()::text), 1, 5));
+    IF role_type IN ('user', 'admin') THEN
+      SELECT EXISTS(SELECT 1 FROM profiles WHERE carebag_id = new_id) INTO exists_check;
+    ELSIF role_type = 'doctor' THEN
+      SELECT EXISTS(SELECT 1 FROM doctors WHERE global_id = new_id) INTO exists_check;
+    ELSIF role_type = 'partner' THEN
+      SELECT EXISTS(SELECT 1 FROM partners WHERE partner_code = new_id) INTO exists_check;
+    ELSE
+      exists_check := false;
+    END IF;
+    EXIT WHEN NOT exists_check;
+  END LOOP;
+
+  RETURN new_id;
+END;
+$$;
+```
+
+**Supported countries (initial set):**
+
+| Code | Display Name |
+|------|-------------|
+| IND | India |
+| USA | United States |
+| GBR | United Kingdom |
+| ARE | United Arab Emirates |
+| SGP | Singapore |
+
+**Files to modify:**
 
 | File | Change |
 |------|--------|
-| `src/lib/utils.ts` | Add `getEdgeFunctionError` helper |
-| `src/pages/admin/AdminPartnerForm.tsx` | Use helper to extract real error messages |
-| `src/pages/admin/AdminPartners.tsx` | Same pattern for password reset calls |
-| `src/pages/admin/AdminUsers.tsx` | Same pattern for delete-user and password reset |
-| `src/pages/partner/PartnerDashboard.tsx` | Same pattern for send-partner-otp |
-| `src/pages/partner/PartnerUserSearch.tsx` | Same pattern for send-partner-otp |
-| `src/pages/ProfileView.tsx` | Same pattern for extract-document-metadata |
-| `supabase/functions/create-partner/index.ts` | Improve error message wording |
+| Database migration | Add `country` column + update `generate_global_id` function |
+| `supabase/functions/create-partner/index.ts` | Accept `country`, use `generate_global_id` RPC instead of inline code generation |
+| `src/pages/admin/AdminPartnerForm.tsx` | Add Country dropdown field, pass to edge function |
+| `src/pages/partner/PartnerNewUser.tsx` | Pass partner's country when generating user global IDs |
+
+**Example IDs after this change:**
+- Indian partner: `IND-X8FGH2`
+- US partner: `USA-XK9M3P`
+- Indian user created by Indian partner: `IND-A7BCD4`
+- US user created by US partner: `USA-A2EF5G`
 
