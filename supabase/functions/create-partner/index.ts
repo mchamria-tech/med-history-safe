@@ -11,7 +11,6 @@ function getCorsHeaders(request: Request) {
     'http://localhost:3000',
   ];
   
-  // Allow Lovable preview URLs
   const isLovablePreview = origin.includes('.lovable.app') || origin.includes('.lovableproject.com');
   
   return {
@@ -24,7 +23,6 @@ function getCorsHeaders(request: Request) {
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -34,10 +32,9 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
-    // Create admin client with service role for creating users
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Create regular client to verify the requesting user is a super admin
+    // Verify auth
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
@@ -50,17 +47,15 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } }
     });
 
-    // Get the requesting user
     const { data: { user: requestingUser }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !requestingUser) {
-      console.error('Auth error:', userError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Verify requesting user is a super admin
+    // Verify super admin
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -69,7 +64,6 @@ serve(async (req) => {
       .single();
 
     if (roleError || !roleData) {
-      console.error('Role check error:', roleError);
       return new Response(
         JSON.stringify({ error: 'You do not have permission to create partners. Only Super Admins can perform this action.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -77,7 +71,7 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { name, email, password, is_active, logo_url, address, gst_number, govt_certification } = await req.json();
+    const { name, email, password, is_active, logo_url, address, gst_number, govt_certification, country } = await req.json();
 
     if (!name || !email || !password) {
       return new Response(
@@ -86,18 +80,18 @@ serve(async (req) => {
       );
     }
 
-    console.log('Creating partner auth user for:', email);
+    const partnerCountry = country || 'IND';
 
-    // Create auth user using admin client (doesn't affect requesting user's session)
+    console.log('Creating partner auth user for:', email, 'country:', partnerCountry);
+
+    // Create auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm email
+      email_confirm: true,
     });
 
     if (authError) {
-      console.error('Auth user creation error:', authError);
-      // Provide user-friendly error messages
       let userMessage = authError.message;
       if (authError.message?.includes('already been registered')) {
         userMessage = 'This email address is already registered. If this partner already has an account, search for them in the Partners list instead.';
@@ -117,13 +111,22 @@ serve(async (req) => {
 
     console.log('Auth user created:', authData.user.id);
 
-    // Generate cryptographically secure partner code
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Remove ambiguous chars (0, O, I, 1, L)
-    const array = new Uint8Array(5);
-    crypto.getRandomValues(array);
-    const generatedCode = 'X' + Array.from(array)
-      .map(byte => chars[byte % chars.length])
-      .join('');
+    // Generate partner code using the database function with country support
+    const { data: generatedCode, error: codeError } = await supabaseAdmin.rpc('generate_global_id', {
+      role_type: 'partner',
+      country_code: partnerCountry,
+    });
+
+    if (codeError || !generatedCode) {
+      console.error('Code generation error:', codeError);
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      return new Response(
+        JSON.stringify({ error: 'Failed to generate partner code' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Generated partner code:', generatedCode);
 
     // Create partner record
     const { data: partnerData, error: partnerError } = await supabaseAdmin
@@ -138,13 +141,13 @@ serve(async (req) => {
         address: address || null,
         gst_number: gst_number || null,
         govt_certification: govt_certification || null,
+        country: partnerCountry,
       })
       .select()
       .single();
 
     if (partnerError) {
       console.error('Partner creation error:', partnerError);
-      // Cleanup: delete the auth user if partner creation fails
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return new Response(
         JSON.stringify({ error: partnerError.message }),
@@ -164,7 +167,6 @@ serve(async (req) => {
 
     if (roleInsertError) {
       console.error('Role insertion error:', roleInsertError);
-      // Cleanup
       await supabaseAdmin.from('partners').delete().eq('id', partnerData.id);
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return new Response(
@@ -173,15 +175,13 @@ serve(async (req) => {
       );
     }
 
-    console.log('Partner role assigned');
-
     // Log the admin action
     await supabaseAdmin.from('admin_audit_logs').insert({
       admin_id: requestingUser.id,
       action: 'create_partner',
       target_type: 'partner',
       target_id: partnerData.id,
-      details: { partner_name: name, partner_code: generatedCode },
+      details: { partner_name: name, partner_code: generatedCode, country: partnerCountry },
     });
 
     console.log('Partner creation completed successfully');

@@ -429,6 +429,7 @@ export type Database = {
       partners: {
         Row: {
           address: string | null
+          country: string
           created_at: string | null
           email: string
           govt_certification: string | null
@@ -443,6 +444,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          country?: string
           created_at?: string | null
           email: string
           govt_certification?: string | null
@@ -457,6 +459,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          country?: string
           created_at?: string | null
           email?: string
           govt_certification?: string | null
@@ -597,7 +600,12 @@ export type Database = {
         Returns: boolean
       }
       generate_carebag_id: { Args: never; Returns: string }
-      generate_global_id: { Args: { role_type?: string }; Returns: string }
+      generate_global_id:
+        | { Args: { role_type?: string }; Returns: string }
+        | {
+            Args: { country_code?: string; role_type?: string }
+            Returns: string
+          }
       generate_partner_code: { Args: never; Returns: string }
       generate_ticket_code: { Args: never; Returns: string }
       get_doctor_id: { Args: { user_id: string }; Returns: string }
