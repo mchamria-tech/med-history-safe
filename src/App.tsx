@@ -19,6 +19,8 @@ import MyFeedback from "./pages/MyFeedback";
 import FeedbackHub from "./pages/FeedbackHub";
 import AdminFeedback from "./pages/AdminFeedback";
 import NotFound from "./pages/NotFound";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 // Super Admin Pages
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -65,6 +67,8 @@ const App = () => (
               <Route path="/feedback-hub" element={<FeedbackHub />} />
               <Route path="/feedback" element={<Feedback />} />
               <Route path="/my-feedback" element={<MyFeedback />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
               
               {/* Super Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />

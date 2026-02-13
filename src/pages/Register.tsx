@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import careBagLogo from "@/assets/carebag-logo-redesign.png";
@@ -15,6 +16,7 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +28,11 @@ const Register = () => {
 
     if (password.length < 6) {
       toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    if (!consentGiven) {
+      toast.error("Please accept the Privacy Policy and Terms of Service to continue");
       return;
     }
 
@@ -160,10 +167,39 @@ const Register = () => {
             </div>
           </div>
 
+          {/* Consent Checkbox */}
+          <div className="flex items-start gap-3 pt-2">
+            <Checkbox
+              id="consent"
+              checked={consentGiven}
+              onCheckedChange={(checked) => setConsentGiven(checked === true)}
+              className="mt-0.5"
+            />
+            <Label htmlFor="consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+              I agree to the{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/privacy-policy")}
+                className="text-primary font-medium underline hover:no-underline"
+              >
+                Privacy Policy
+              </button>{" "}
+              and{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/terms-of-service")}
+                className="text-primary font-medium underline hover:no-underline"
+              >
+                Terms of Service
+              </button>
+              . I consent to the collection and processing of my personal and health data as described.
+            </Label>
+          </div>
+
           <Button
             type="submit"
             className="w-full h-12 text-base font-semibold rounded-xl mt-2"
-            disabled={loading}
+            disabled={loading || !consentGiven}
           >
             {loading ? "Creating account..." : "Create Account"}
           </Button>
