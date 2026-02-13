@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { getEdgeFunctionError } from "@/lib/utils";
 
@@ -33,6 +34,7 @@ const AdminPartnerForm = () => {
     address: "",
     gst_number: "",
     govt_certification: "",
+    country: "IND",
   });
   const [partnerCode, setPartnerCode] = useState<string | null>(null);
 
@@ -64,6 +66,7 @@ const AdminPartnerForm = () => {
         address: data.address || "",
         gst_number: data.gst_number || "",
         govt_certification: data.govt_certification || "",
+        country: data.country || "IND",
       });
       setPartnerCode(data.partner_code);
     } catch (error) {
@@ -172,6 +175,7 @@ const AdminPartnerForm = () => {
             address: formData.address || null,
             gst_number: formData.gst_number || null,
             govt_certification: formData.govt_certification || null,
+            country: formData.country,
           })
           .eq("id", id);
 
@@ -202,6 +206,7 @@ const AdminPartnerForm = () => {
             address: formData.address || null,
             gst_number: formData.gst_number || null,
             govt_certification: formData.govt_certification || null,
+            country: formData.country,
           },
         });
 
@@ -305,6 +310,25 @@ const AdminPartnerForm = () => {
                   />
                 </div>
               )}
+
+              <div className="space-y-2">
+                <Label htmlFor="country">Country *</Label>
+                <Select
+                  value={formData.country}
+                  onValueChange={(value) => setFormData({ ...formData, country: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="IND">🇮🇳 India</SelectItem>
+                    <SelectItem value="USA">🇺🇸 United States</SelectItem>
+                    <SelectItem value="GBR">🇬🇧 United Kingdom</SelectItem>
+                    <SelectItem value="ARE">🇦🇪 United Arab Emirates</SelectItem>
+                    <SelectItem value="SGP">🇸🇬 Singapore</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="address">Business Address</Label>

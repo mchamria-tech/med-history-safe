@@ -13,6 +13,7 @@ interface Partner {
   is_active: boolean;
   address: string | null;
   gst_number: string | null;
+  country: string;
 }
 
 export const usePartnerCheck = () => {

@@ -82,8 +82,12 @@ const PartnerNewUser = () => {
         return;
       }
 
-      // Generate Global ID for new profile using the new format (IND-AXXXXX for users)
-      const { data: globalIdData } = await supabase.rpc('generate_global_id', { role_type: 'user' });
+      // Generate Global ID using the partner's country for the country prefix
+      const partnerCountry = (partner as any)?.country || 'IND';
+      const { data: globalIdData } = await supabase.rpc('generate_global_id', { 
+        role_type: 'user',
+        country_code: partnerCountry,
+      });
 
       // Create profile without user_id - partner-created profiles have null user_id
       // This prevents cascade deletion if partner is deleted, and allows patients to "claim" their profile later
