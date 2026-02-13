@@ -77,55 +77,39 @@ const AdminLogin = () => {
     setIsLoading(true);
 
     try {
-      // Validate Global ID format (IND-0XXXXX for admin)
-      const globalIdPattern = /^IND-0[A-Z0-9]{5}$/i;
+      // Validate Global ID format (XXX-0XXXXX for admin)
+      const globalIdPattern = /^[A-Z]{3}-0[A-Z0-9]{5}$/i;
       if (!globalIdPattern.test(globalId)) {
-        throw new Error("Invalid Admin Global ID format. Expected: IND-0XXXXX");
+        throw new Error("Invalid Admin Global ID format");
       }
 
-      // Look up admin profile by global_id using RPC (bypasses RLS for auth)
-      const { data: profile, error: profileError } = await supabase
-        .rpc('get_email_by_global_id', { global_id: globalId.toUpperCase() })
-        .single();
+      // Use secure edge function for global ID login (no client-side email exposure)
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-global-id-lookup`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            global_id: globalId.toUpperCase(),
+            password,
+          }),
+        }
+      );
 
-      if (profileError || !profile) {
-        throw new Error("Admin ID not found");
+      const result = await response.json();
+
+      if (!response.ok || !result.session) {
+        throw new Error(result.error || "Invalid credentials");
       }
 
-      if (!profile.email) {
-        throw new Error("No email associated with this Admin ID");
-      }
-
-      // Sign in with the email found
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: profile.email,
-        password,
+      // Set the session from the edge function response
+      await supabase.auth.setSession({
+        access_token: result.session.access_token,
+        refresh_token: result.session.refresh_token,
       });
-
-      if (authError) throw authError;
-
-      if (!authData.user) {
-        throw new Error("Authentication failed");
-      }
-
-      // Check if user has super_admin role
-      const { data: roles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", authData.user.id)
-        .eq("role", "super_admin");
-
-      if (rolesError) throw rolesError;
-
-      if (!roles || roles.length === 0) {
-        await supabase.auth.signOut();
-        toast({
-          title: "Access Denied",
-          description: "This ID is not associated with super admin privileges.",
-          variant: "destructive",
-        });
-        return;
-      }
 
       toast({
         title: "Welcome, Admin!",
@@ -244,7 +228,7 @@ const AdminLogin = () => {
                       className="font-mono"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Format: IND-0 followed by 5 characters
+                      Format: XXX-0 followed by 5 characters (e.g. IND-0XXXXX)
                     </p>
                   </div>
 
