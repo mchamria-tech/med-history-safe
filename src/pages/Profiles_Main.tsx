@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import careBagLogo from "@/assets/carebag-logo-redesign.png";
-import { Plus, User, Edit, Trash2, Search, LogOut, MessageSquare, Shield, FileText, Users, MoreVertical, ChevronRight } from "lucide-react";
+import { Plus, User, Edit, Trash2, Search, LogOut, MessageSquare, Shield, FileText, Users, MoreVertical, ChevronRight, UserX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays } from "date-fns";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { getSignedUrl } from "@/hooks/useSignedUrl";
+import { getEdgeFunctionError } from "@/lib/utils";
 import SplashOverlay from "@/components/SplashOverlay";
 import {
   DropdownMenu,
@@ -37,6 +38,8 @@ const Profiles_Main = () => {
   const [totalDocuments, setTotalDocuments] = useState(0);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
   const [showSplash, setShowSplash] = useState(false);
   const { isAdmin } = useAdminCheck();
@@ -181,6 +184,32 @@ const Profiles_Main = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-my-account");
+
+      if (error) {
+        const message = await getEdgeFunctionError(error);
+        throw new Error(message);
+      }
+      if (data?.error) throw new Error(data.error);
+
+      await supabase.auth.signOut();
+      navigate("/login");
+    } catch (error: any) {
+      console.error("Error deleting account:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete account",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingAccount(false);
+      setDeleteAccountDialogOpen(false);
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     if (!profileToDelete) return;
 
@@ -269,15 +298,26 @@ const Profiles_Main = () => {
             >
               <MessageSquare className="h-4 w-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLogout}
-              className="h-9 w-9 rounded-xl"
-              title="Logout"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" title="Account">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="rounded-xl">
+                <DropdownMenuItem onClick={handleLogout} className="rounded-lg">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log Out
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setDeleteAccountDialogOpen(true)}
+                  className="text-destructive rounded-lg"
+                >
+                  <UserX className="mr-2 h-4 w-4" />
+                  Delete My Account
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
@@ -455,6 +495,34 @@ const Profiles_Main = () => {
             <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Account Confirmation Dialog */}
+      <AlertDialog open={deleteAccountDialogOpen} onOpenChange={setDeleteAccountDialogOpen}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Your Account</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>This action is <strong>permanent and irreversible</strong>. Deleting your account will remove:</p>
+              <ul className="list-disc list-inside space-y-1 mt-2">
+                <li>All your profiles and health records</li>
+                <li>All uploaded documents</li>
+                <li>Your login credentials</li>
+              </ul>
+              <p className="font-medium text-destructive mt-3">You will not be able to recover any data after deletion.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl" disabled={isDeletingAccount}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeletingAccount}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
+            >
+              {isDeletingAccount ? "Deleting..." : "Delete My Account"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
