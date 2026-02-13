@@ -41,7 +41,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
+        JSON.stringify({ error: 'Your session has expired. Please log in again.' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -71,7 +71,7 @@ serve(async (req) => {
     if (roleError || !roleData) {
       console.error('Role check error:', roleError);
       return new Response(
-        JSON.stringify({ error: 'Only super admins can create partners' }),
+        JSON.stringify({ error: 'You do not have permission to create partners. Only Super Admins can perform this action.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -81,7 +81,7 @@ serve(async (req) => {
 
     if (!name || !email || !password) {
       return new Response(
-        JSON.stringify({ error: 'Name, email, and password are required' }),
+        JSON.stringify({ error: 'Please provide all required fields: Business Name, Email, and Password.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -100,7 +100,7 @@ serve(async (req) => {
       // Provide user-friendly error messages
       let userMessage = authError.message;
       if (authError.message?.includes('already been registered')) {
-        userMessage = 'This email address is already registered. Please use a different email.';
+        userMessage = 'This email address is already registered. If this partner already has an account, search for them in the Partners list instead.';
       }
       return new Response(
         JSON.stringify({ error: userMessage }),

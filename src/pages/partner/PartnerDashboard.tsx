@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { usePartnerCheck } from "@/hooks/usePartnerCheck";
 import { useToast } from "@/hooks/use-toast";
+import { getEdgeFunctionError } from "@/lib/utils";
 import PartnerLayout from "@/components/partner/PartnerLayout";
 import { DashboardHeader } from "@/components/partner/DashboardHeader";
 import { EnhancedStatCard } from "@/components/partner/EnhancedStatCard";
@@ -233,7 +234,10 @@ const PartnerDashboard = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        const message = await getEdgeFunctionError(error);
+        throw new Error(message);
+      }
 
       if (data?.error) {
         throw new Error(data.error);
@@ -313,7 +317,10 @@ const PartnerDashboard = () => {
         }
       });
 
-      if (otpError) throw otpError;
+      if (otpError) {
+        const message = await getEdgeFunctionError(otpError);
+        throw new Error(message);
+      }
       
       if (otpData?.error) {
         throw new Error(otpData.error);
