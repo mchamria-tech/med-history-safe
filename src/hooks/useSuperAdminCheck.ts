@@ -16,6 +16,23 @@ export const useSuperAdminCheck = () => {
 
   const checkSuperAdminAccess = async () => {
     try {
+      // Check session cache first
+      const cached = sessionStorage.getItem("isSuperAdmin");
+      const cachedUserId = sessionStorage.getItem("superAdminUserId");
+      
+      if (cached === "true" && cachedUserId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && user.id === cachedUserId) {
+          setUser(user);
+          setIsSuperAdmin(true);
+          setIsLoading(false);
+          return;
+        }
+        // Cache is stale, clear it
+        sessionStorage.removeItem("isSuperAdmin");
+        sessionStorage.removeItem("superAdminUserId");
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -25,7 +42,6 @@ export const useSuperAdminCheck = () => {
 
       setUser(user);
 
-      // Check if user has super_admin role
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("role")
@@ -45,6 +61,8 @@ export const useSuperAdminCheck = () => {
       }
 
       setIsSuperAdmin(true);
+      sessionStorage.setItem("isSuperAdmin", "true");
+      sessionStorage.setItem("superAdminUserId", user.id);
     } catch (error) {
       console.error("Error checking super admin access:", error);
       navigate("/dashboard");

@@ -32,32 +32,18 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      // Fetch total profiles (users)
-      const { count: usersCount } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true });
-
-      // Fetch total partners
-      const { count: partnersCount } = await supabase
-        .from("partners")
-        .select("*", { count: "exact", head: true });
-
-      // Fetch active partners
-      const { count: activePartnersCount } = await supabase
-        .from("partners")
-        .select("*", { count: "exact", head: true })
-        .eq("is_active", true);
-
-      // Fetch total documents
-      const { count: documentsCount } = await supabase
-        .from("documents")
-        .select("*", { count: "exact", head: true });
+      const [usersResult, partnersResult, activePartnersResult, documentsResult] = await Promise.all([
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase.from("partners").select("*", { count: "exact", head: true }),
+        supabase.from("partners").select("*", { count: "exact", head: true }).eq("is_active", true),
+        supabase.from("documents").select("*", { count: "exact", head: true }),
+      ]);
 
       setStats({
-        totalUsers: usersCount || 0,
-        totalPartners: partnersCount || 0,
-        totalDocuments: documentsCount || 0,
-        activePartners: activePartnersCount || 0,
+        totalUsers: usersResult.count || 0,
+        totalPartners: partnersResult.count || 0,
+        totalDocuments: documentsResult.count || 0,
+        activePartners: activePartnersResult.count || 0,
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
