@@ -21,9 +21,9 @@ export const useSuperAdminCheck = () => {
       const cachedUserId = sessionStorage.getItem("superAdminUserId");
       
       if (cached === "true" && cachedUserId) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && user.id === cachedUserId) {
-          setUser(user);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && session.user.id === cachedUserId) {
+          setUser(session.user);
           setIsSuperAdmin(true);
           setIsLoading(false);
           return;
