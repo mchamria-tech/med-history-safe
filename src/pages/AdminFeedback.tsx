@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useSuperAdminCheck } from "@/hooks/useSuperAdminCheck";
 
 interface Feedback {
   id: string;
@@ -36,9 +37,9 @@ interface Feedback {
 const AdminFeedback = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSuperAdmin, isLoading: isAuthLoading } = useSuperAdminCheck();
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [statusUpdates, setStatusUpdates] = useState<Record<string, string>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -46,44 +47,10 @@ const AdminFeedback = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    checkAdminAccess();
-  }, []);
-
-  const checkAdminAccess = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        navigate("/login");
-        return;
-      }
-
-      // Check if user has super_admin role
-      const { data: roles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "super_admin");
-
-      if (rolesError) throw rolesError;
-
-      if (!roles || roles.length === 0) {
-        toast({
-          title: "Access Denied",
-          description: "You don't have super admin privileges",
-          variant: "destructive",
-        });
-        navigate("/admin");
-        return;
-      }
-
-      setIsSuperAdmin(true);
+    if (isSuperAdmin) {
       fetchAllFeedback();
-    } catch (error) {
-      console.error("Error checking admin access:", error);
-      navigate("/admin");
     }
-  };
+  }, [isSuperAdmin]);
 
   const fetchAllFeedback = async () => {
     try {
@@ -237,6 +204,14 @@ const AdminFeedback = () => {
         return null;
     }
   };
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   if (!isSuperAdmin) {
     return null;

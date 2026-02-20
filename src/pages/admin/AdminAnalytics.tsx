@@ -21,66 +21,56 @@ const AdminAnalytics = () => {
 
   const fetchAnalytics = async () => {
     try {
-      // Fetch documents by type
-      const { data: docs } = await supabase
-        .from("documents")
-        .select("document_type");
+      // Run all queries in parallel
+      const [docsResult, profilesResult, partnersResult, allPartnerDocsResult] = await Promise.all([
+        supabase.from("documents").select("document_type"),
+        supabase.from("profiles").select("created_at"),
+        supabase.from("partners").select("id, name"),
+        supabase.from("documents").select("partner_id").not("partner_id", "is", null),
+      ]);
 
+      // Process documents by type
       const typeCount: Record<string, number> = {};
-      docs?.forEach((doc) => {
+      docsResult.data?.forEach((doc) => {
         const type = doc.document_type || "Unknown";
         typeCount[type] = (typeCount[type] || 0) + 1;
       });
-
       setDocumentsByType(
         Object.entries(typeCount).map(([name, value]) => ({ name, value }))
       );
 
-      // Fetch user growth (last 6 months simulation)
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("created_at");
-
+      // Process user growth (last 6 months)
       const monthlyCount: Record<string, number> = {};
       const now = new Date();
-      
       for (let i = 5; i >= 0; i--) {
         const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const monthKey = month.toLocaleDateString("en-US", { month: "short" });
         monthlyCount[monthKey] = 0;
       }
-
-      profiles?.forEach((profile) => {
+      profilesResult.data?.forEach((profile) => {
         const date = new Date(profile.created_at);
         const monthKey = date.toLocaleDateString("en-US", { month: "short" });
         if (monthlyCount.hasOwnProperty(monthKey)) {
           monthlyCount[monthKey]++;
         }
       });
-
       setUserGrowth(
         Object.entries(monthlyCount).map(([month, users]) => ({ month, users }))
       );
 
-      // Fetch partner document stats
-      const { data: partners } = await supabase
-        .from("partners")
-        .select("id, name");
+      // Process partner document stats (count client-side instead of N+1 queries)
+      const partnerDocCount: Record<string, number> = {};
+      allPartnerDocsResult.data?.forEach((doc) => {
+        partnerDocCount[doc.partner_id] = (partnerDocCount[doc.partner_id] || 0) + 1;
+      });
 
-      const partnerDocs: any[] = [];
-      for (const partner of partners || []) {
-        const { count } = await supabase
-          .from("documents")
-          .select("*", { count: "exact", head: true })
-          .eq("partner_id", partner.id);
+      const partnerNameMap = new Map(partnersResult.data?.map(p => [p.id, p.name]) || []);
+      const partnerDocs = Object.entries(partnerDocCount)
+        .map(([id, documents]) => ({ name: partnerNameMap.get(id) || "Unknown", documents }))
+        .sort((a, b) => b.documents - a.documents)
+        .slice(0, 5);
 
-        partnerDocs.push({
-          name: partner.name,
-          documents: count || 0,
-        });
-      }
-
-      setPartnerStats(partnerDocs.sort((a, b) => b.documents - a.documents).slice(0, 5));
+      setPartnerStats(partnerDocs);
     } catch (error) {
       console.error("Error fetching analytics:", error);
     }

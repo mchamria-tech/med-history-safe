@@ -66,23 +66,25 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      // Get all profiles with user_id
-      const { data: profiles, error } = await supabase
-        .from("profiles")
-        .select("id, user_id, name, email, phone, carebag_id, created_at, relation")
-        .order("created_at", { ascending: false });
+      // Run all three queries in parallel
+      const [profilesResult, rolesResult, partnersResult] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, user_id, name, email, phone, carebag_id, created_at, relation")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("user_roles")
+          .select("user_id, role"),
+        supabase
+          .from("partners")
+          .select("user_id"),
+      ]);
 
-      if (error) throw error;
+      if (profilesResult.error) throw profilesResult.error;
 
-      // Get all user roles
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
-
-      // Get all partner user_ids to exclude them
-      const { data: partners } = await supabase
-        .from("partners")
-        .select("user_id");
+      const profiles = profilesResult.data;
+      const roles = rolesResult.data;
+      const partners = partnersResult.data;
       
       const partnerUserIds = new Set(partners?.map(p => p.user_id) || []);
 
