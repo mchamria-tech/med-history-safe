@@ -1,34 +1,27 @@
 
 
-## Plan: Fix Slow Admin Dashboard Loading
+## Plan: Fix Slow Admin Page Navigation
 
 ### Problem
-The admin dashboard takes ~70+ seconds to load after login due to:
-1. Redundant auth verification (edge function already verified, then `useSuperAdminCheck` re-checks)
-2. Sequential database queries in `fetchStats` (4 separate count queries run one after another)
-3. No loading optimization or parallelization
+Every admin page takes a long time to load because:
+- The admin role check still makes a network call even when cached (uses `getUser()` instead of the local `getSession()`)
+- The Feedback page has its own separate admin check that bypasses the cache entirely
+- Users page runs 3 database queries one after another instead of simultaneously
+- Analytics page runs queries one after another, including a loop that queries the database once per partner
 
 ### Solution
 
-#### 1. Parallelize Dashboard Queries
-Run all 5 database queries simultaneously using `Promise.all` instead of sequentially in `AdminDashboard.tsx`.
+#### 1. Fix useSuperAdminCheck - Use Local Session Instead of Network Call
+When the cache says you're already verified, use `getSession()` (instant, no network) instead of `getUser()` (network round-trip). This alone will cut the loading delay on every page navigation.
 
-**Before (sequential):**
-```
-profiles count → wait → partners count → wait → active partners count → wait → documents count → wait → recent partners
-```
+#### 2. Fix AdminFeedback - Use Shared Hook
+Replace the duplicate admin check in `AdminFeedback.tsx` with the shared `useSuperAdminCheck` hook so it benefits from caching too.
 
-**After (parallel):**
-```
-All 5 queries start at once → all resolve together
-```
+#### 3. Fix AdminUsers - Parallelize Queries
+Run the profiles, user_roles, and partners queries simultaneously using `Promise.all`.
 
-#### 2. Optimize `useSuperAdminCheck` Hook
-- Cache the admin check result in session storage so repeated navigations between admin pages don't re-verify
-- Add a timeout fallback to prevent indefinite loading states
-
-#### 3. Reduce Redundant Auth Calls
-After the Global ID login flow, the edge function already verifies the user is a super admin. The dashboard then re-checks this unnecessarily. Streamline by passing a flag or caching the verification result.
+#### 4. Fix AdminAnalytics - Parallelize and Remove Loop
+Run document types, profiles, and partners queries simultaneously. Remove the per-partner loop that queries documents individually -- instead, fetch all documents with partner_id in a single query and count client-side.
 
 ---
 
@@ -38,54 +31,48 @@ After the Global ID login flow, the edge function already verifies the user is a
 
 | File | Change |
 |------|--------|
-| `src/pages/admin/AdminDashboard.tsx` | Wrap all 5 queries in `Promise.all` to run in parallel |
-| `src/hooks/useSuperAdminCheck.ts` | Add session-level caching of admin status to avoid redundant DB calls on every page navigation |
+| `src/hooks/useSuperAdminCheck.ts` | Use `getSession()` (local/instant) instead of `getUser()` (network) in the cached path |
+| `src/pages/AdminFeedback.tsx` | Replace custom admin check with `useSuperAdminCheck` hook + use `AdminLayout` wrapper |
+| `src/pages/admin/AdminUsers.tsx` | Wrap profiles, user_roles, and partners queries in `Promise.all` |
+| `src/pages/admin/AdminAnalytics.tsx` | Wrap queries in `Promise.all`; replace per-partner document loop with single query |
 
-**AdminDashboard.tsx - Parallel queries:**
+**useSuperAdminCheck.ts - Key change:**
 ```typescript
-const fetchStats = async () => {
-  try {
-    const [usersResult, partnersResult, activePartnersResult, documentsResult] = await Promise.all([
-      supabase.from("profiles").select("*", { count: "exact", head: true }),
-      supabase.from("partners").select("*", { count: "exact", head: true }),
-      supabase.from("partners").select("*", { count: "exact", head: true }).eq("is_active", true),
-      supabase.from("documents").select("*", { count: "exact", head: true }),
-    ]);
+// BEFORE (slow - network call even when cached):
+const { data: { user } } = await supabase.auth.getUser();
 
-    setStats({
-      totalUsers: usersResult.count || 0,
-      totalPartners: partnersResult.count || 0,
-      totalDocuments: documentsResult.count || 0,
-      activePartners: activePartnersResult.count || 0,
-    });
-  } catch (error) {
-    console.error("Error fetching stats:", error);
-  }
-};
+// AFTER (fast - local session, no network):
+const { data: { session } } = await supabase.auth.getSession();
+if (session?.user && session.user.id === cachedUserId) {
+  setUser(session.user);
+  setIsSuperAdmin(true);
+  setIsLoading(false);
+  return;
+}
 ```
 
-**useSuperAdminCheck.ts - Session caching:**
+**AdminUsers.tsx - Parallel queries:**
 ```typescript
-const checkSuperAdminAccess = async () => {
-  // Check session cache first
-  const cached = sessionStorage.getItem("isSuperAdmin");
-  if (cached === "true") {
-    setIsSuperAdmin(true);
-    setIsLoading(false);
-    return;
-  }
-
-  // ... existing check logic ...
-
-  // Cache result on success
-  sessionStorage.setItem("isSuperAdmin", "true");
-};
+const [profilesResult, rolesResult, partnersResult] = await Promise.all([
+  supabase.from("profiles").select("id, user_id, name, email, phone, carebag_id, created_at, relation").order("created_at", { ascending: false }),
+  supabase.from("user_roles").select("user_id, role"),
+  supabase.from("partners").select("user_id"),
+]);
 ```
 
-Also clear the cache on sign-out to prevent stale state.
+**AdminAnalytics.tsx - Remove per-partner loop:**
+```typescript
+// BEFORE (N+1 queries - one per partner):
+for (const partner of partners) {
+  const { count } = await supabase.from("documents").select("*", { count: "exact", head: true }).eq("partner_id", partner.id);
+}
+
+// AFTER (single query):
+const { data: partnerDocs } = await supabase.from("documents").select("partner_id");
+// Count client-side by grouping
+```
 
 ### Expected Impact
-- Dashboard load time reduced from ~70s to under 5s
-- Subsequent admin page navigations will skip redundant role checks
-- All stat queries run in parallel instead of waiting for each other
-
+- Page navigation between admin sections: under 1-2 seconds (down from 10+ seconds)
+- Cached admin check: instant (no network call)
+- Analytics page: 1 parallel batch instead of N+1 sequential queries
