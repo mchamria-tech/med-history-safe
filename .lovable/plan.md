@@ -1,78 +1,98 @@
 
 
-## Plan: Fix Slow Admin Page Navigation
+## Plan: Global ID System, Gender Dropdown, Country Selection, and Uniqueness Checks
 
-### Problem
-Every admin page takes a long time to load because:
-- The admin role check still makes a network call even when cached (uses `getUser()` instead of the local `getSession()`)
-- The Feedback page has its own separate admin check that bypasses the cache entirely
-- Users page runs 3 database queries one after another instead of simultaneously
-- Analytics page runs queries one after another, including a loop that queries the database once per partner
+### Overview
+Five areas of changes: gender dropdown, country selection with Global ID assignment for patients, Global ID display everywhere, admin panel enhancements, and uniqueness verification for both patient and partner IDs.
 
-### Solution
+---
 
-#### 1. Fix useSuperAdminCheck - Use Local Session Instead of Network Call
-When the cache says you're already verified, use `getSession()` (instant, no network) instead of `getUser()` (network round-trip). This alone will cut the loading delay on every page navigation.
+### Change 1: Gender Dropdown
+**File:** `src/pages/NewProfile.tsx`
+- Replace free-text gender input with a `<Select>` dropdown: Male, Female, Other
 
-#### 2. Fix AdminFeedback - Use Shared Hook
-Replace the duplicate admin check in `AdminFeedback.tsx` with the shared `useSuperAdminCheck` hook so it benefits from caching too.
+---
 
-#### 3. Fix AdminUsers - Parallelize Queries
-Run the profiles, user_roles, and partners queries simultaneously using `Promise.all`.
+### Change 2: Country Selection + Global ID for Patients
+**File:** `src/pages/NewProfile.tsx`
 
-#### 4. Fix AdminAnalytics - Parallelize and Remove Loop
-Run document types, profiles, and partners queries simultaneously. Remove the per-partner loop that queries documents individually -- instead, fetch all documents with partner_id in a single query and count client-side.
+Add a searchable "Country of Origin" dropdown containing ALL countries worldwide (using a comprehensive ISO 3166-1 alpha-3 list -- approximately 249 countries). The dropdown will support type-to-search filtering so users can quickly find their country.
+
+Country list includes all recognized ISO countries, for example: Afghanistan (AFG), Albania (ALB), ... India (IND), ... United States (USA), ... Zimbabwe (ZWE) -- the full set.
+
+On save, call `generate_global_id('user', selectedCountry)` instead of the old `generate_carebag_id`.
+
+**Database migration:**
+- `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS country text DEFAULT 'IND';`
+
+---
+
+### Change 3: Uniqueness Verification
+
+The `generate_global_id` DB function already loops to ensure uniqueness. However, uniqueness is scoped by the full ID string (e.g., `IND-A30012` and `USA-A30012` are two different IDs and both can exist). The DB function already guarantees this since it checks the full string including the country prefix.
+
+An additional application-level verification will be added as defense-in-depth:
+
+**File:** `src/pages/NewProfile.tsx`
+- After generating, query `profiles` for the exact `carebag_id`. If found (extremely unlikely race condition), regenerate once.
+
+**File:** `supabase/functions/create-partner/index.ts`
+- After generating, query `partners` for the exact `partner_code`. If found, regenerate once.
+
+---
+
+### Change 4: Display Global ID Alongside Username
+
+**File:** `src/pages/Profiles_Main.tsx`
+- Show `carebag_id` below profile name in each card, styled in small monospace text
+
+**File:** `src/pages/ProfileView.tsx`
+- Show `carebag_id` below profile name in header
+- Add `carebag_id` to the Profile interface
+
+---
+
+### Change 5: Admin Panel Enhancements
+
+**File:** `src/pages/admin/AdminUsers.tsx`
+- Display Global ID and country per user row
+- Allow super-admin to edit `carebag_id` and `country` inline
+
+**File:** `src/pages/admin/AdminUserAnalytics.tsx`
+- Display country alongside Global ID
+- Add edit controls for super-admin
+
+---
+
+### Change 6: Partner Global ID Uniqueness in Edge Function
+
+**File:** `supabase/functions/create-partner/index.ts`
+- After `generate_global_id('partner', country)` returns, verify the code does not exist in the `partners` table before inserting. If collision, regenerate once.
 
 ---
 
 ### Technical Details
 
-**Files to modify:**
+| Area | File(s) | Change |
+|------|---------|--------|
+| DB Migration | new migration | `ALTER TABLE profiles ADD COLUMN IF NOT EXISTS country text DEFAULT 'IND';` |
+| Gender dropdown | `NewProfile.tsx` | Replace Input with Select (Male/Female/Other) |
+| Country dropdown | `NewProfile.tsx` | Full ISO 3166-1 alpha-3 country list (~249 countries) with search filtering |
+| Global ID generation | `NewProfile.tsx` | Replace `generate_carebag_id` with `generate_global_id('user', country)` + uniqueness check |
+| Partner ID uniqueness | `create-partner/index.ts` | Post-generation uniqueness check before insert |
+| ID display - dashboard | `Profiles_Main.tsx` | Show carebag_id under profile name |
+| ID display - profile view | `ProfileView.tsx` | Show carebag_id under profile name |
+| Admin users list | `AdminUsers.tsx` | Show Global ID + country; inline edit for super-admin |
+| Admin user analytics | `AdminUserAnalytics.tsx` | Show country; edit controls |
 
-| File | Change |
-|------|--------|
-| `src/hooks/useSuperAdminCheck.ts` | Use `getSession()` (local/instant) instead of `getUser()` (network) in the cached path |
-| `src/pages/AdminFeedback.tsx` | Replace custom admin check with `useSuperAdminCheck` hook + use `AdminLayout` wrapper |
-| `src/pages/admin/AdminUsers.tsx` | Wrap profiles, user_roles, and partners queries in `Promise.all` |
-| `src/pages/admin/AdminAnalytics.tsx` | Wrap queries in `Promise.all`; replace per-partner document loop with single query |
+### Uniqueness Model
+- `IND-A30012` and `USA-A30012` are distinct valid IDs (different country prefix = different ID)
+- The DB function checks the complete string including prefix, so cross-country collisions are not collisions
+- App-level checks query by exact full ID string, preserving this behavior
 
-**useSuperAdminCheck.ts - Key change:**
-```typescript
-// BEFORE (slow - network call even when cached):
-const { data: { user } } = await supabase.auth.getUser();
+### Country Dropdown Implementation
+- Uses the existing `cmdk` (Command) component already installed in the project for searchable selection
+- Full list of ~249 ISO 3166-1 alpha-3 countries stored as a constant array
+- User types to filter (e.g., typing "Ind" shows "India (IND)")
+- Default selection: India (IND)
 
-// AFTER (fast - local session, no network):
-const { data: { session } } = await supabase.auth.getSession();
-if (session?.user && session.user.id === cachedUserId) {
-  setUser(session.user);
-  setIsSuperAdmin(true);
-  setIsLoading(false);
-  return;
-}
-```
-
-**AdminUsers.tsx - Parallel queries:**
-```typescript
-const [profilesResult, rolesResult, partnersResult] = await Promise.all([
-  supabase.from("profiles").select("id, user_id, name, email, phone, carebag_id, created_at, relation").order("created_at", { ascending: false }),
-  supabase.from("user_roles").select("user_id, role"),
-  supabase.from("partners").select("user_id"),
-]);
-```
-
-**AdminAnalytics.tsx - Remove per-partner loop:**
-```typescript
-// BEFORE (N+1 queries - one per partner):
-for (const partner of partners) {
-  const { count } = await supabase.from("documents").select("*", { count: "exact", head: true }).eq("partner_id", partner.id);
-}
-
-// AFTER (single query):
-const { data: partnerDocs } = await supabase.from("documents").select("partner_id");
-// Count client-side by grouping
-```
-
-### Expected Impact
-- Page navigation between admin sections: under 1-2 seconds (down from 10+ seconds)
-- Cached admin check: instant (no network call)
-- Analytics page: 1 parallel batch instead of N+1 sequential queries
