@@ -403,7 +403,7 @@ const Profiles_Main = () => {
                     
                     {/* Profile Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-0.5">
                         <h4 className="font-semibold text-foreground truncate">{profile.name}</h4>
                         {isPrimary && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
@@ -411,6 +411,9 @@ const Profiles_Main = () => {
                           </span>
                         )}
                       </div>
+                      {profile.carebag_id && (
+                        <p className="text-[11px] font-mono text-muted-foreground">{profile.carebag_id}</p>
+                      )}
                       
                       <div className="flex items-center gap-2 flex-wrap">
                         {profile.insurer && (

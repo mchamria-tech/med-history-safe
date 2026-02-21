@@ -112,18 +112,45 @@ serve(async (req) => {
     console.log('Auth user created:', authData.user.id);
 
     // Generate partner code using the database function with country support
-    const { data: generatedCode, error: codeError } = await supabaseAdmin.rpc('generate_global_id', {
+    let generatedCode: string | null = null;
+    
+    const { data: firstCode, error: codeError } = await supabaseAdmin.rpc('generate_global_id', {
       role_type: 'partner',
       country_code: partnerCountry,
     });
 
-    if (codeError || !generatedCode) {
+    if (codeError || !firstCode) {
       console.error('Code generation error:', codeError);
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return new Response(
         JSON.stringify({ error: 'Failed to generate partner code' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // App-level uniqueness verification (defense-in-depth)
+    const { count: existingCount } = await supabaseAdmin
+      .from('partners')
+      .select('*', { count: 'exact', head: true })
+      .eq('partner_code', firstCode);
+
+    if (existingCount && existingCount > 0) {
+      // Collision detected, regenerate once
+      const { data: retryCode, error: retryError } = await supabaseAdmin.rpc('generate_global_id', {
+        role_type: 'partner',
+        country_code: partnerCountry,
+      });
+      if (retryError || !retryCode) {
+        console.error('Retry code generation error:', retryError);
+        await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+        return new Response(
+          JSON.stringify({ error: 'Failed to generate unique partner code' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      generatedCode = retryCode;
+    } else {
+      generatedCode = firstCode;
     }
 
     console.log('Generated partner code:', generatedCode);
