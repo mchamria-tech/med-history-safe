@@ -1,38 +1,54 @@
 
 
-## Fix: Make the Header Search Bar Functional
+## Fix: Partner Client Search Blocked by Security Policies
 
 ### Problem
-The "Search client or record..." input in the dashboard header has `readOnly` applied, so it looks like a text field but doesn't accept any typing. It's currently designed as a clickable button that scrolls down to reveal the search section -- but this is confusing because it looks like a regular input.
+When a partner searches for an existing user by Global ID or email/phone, the database security policies only allow partners to see profiles they **already own or have linked**. This creates a catch-22: you can't find a user to link them, because you can only see users already linked.
+
+Both the "Search by Global ID" and "Search by Phone/Email" flows are affected.
 
 ### Solution
-**File:** `src/components/partner/DashboardHeader.tsx`
+Create a secure backend function that performs the search with elevated privileges, returning only the minimal information needed (name, Global ID, profile ID) -- never exposing sensitive data like full email or phone.
 
-Convert the header search bar from a read-only clickable trigger into a real input that accepts typing and triggers search navigation:
+### Changes
 
-- Remove the `readOnly` attribute
-- Remove the `cursor-pointer` class
-- Add local state to capture the typed value
-- When the user types and presses Enter, navigate to the search page with their query pre-filled
-- Keep the click-to-navigate behavior as a fallback
+**1. New backend function: `partner-search-user`**
+- Accepts a search query (Global ID, email, or phone) and the partner ID
+- Validates that the caller is an authenticated partner
+- Searches the profiles table using service role (bypasses security restrictions)
+- Returns only: `id`, `name`, `carebag_id`, and a masked email (e.g., `m***@me.com`)
+- Does NOT expose full email, phone, or other personal data
 
-Alternatively (simpler approach): Make it visually obvious that clicking it opens the search panel by keeping `readOnly` but styling it more like a button, and ensuring the click reliably opens the search section below and auto-focuses the real input.
+**2. Update `src/pages/partner/PartnerDashboard.tsx`**
+- Replace the direct database query in `handleSearchByCode` with a call to the new backend function
+- Replace the direct database query in `handleSendForgotCodeOtp` with the same backend function
+- The rest of the flow (OTP, linking) remains unchanged
 
-### Recommended Approach (Simpler)
-Keep the header bar as a trigger but improve the UX:
+**3. Register the function in `supabase/config.toml`**
+- Add `[functions.partner-search-user]` with `verify_jwt = true`
 
-1. In `DashboardHeader.tsx`: Keep `readOnly` but ensure clicking it works reliably
-2. In `PartnerDashboard.tsx`: When `onSearchClick` fires, scroll to the search section and auto-focus the actual input field using a ref
+### How It Works (After Fix)
 
-This requires:
-- Adding a `ref` to the Global ID search input in `PartnerDashboard.tsx`
-- After `setShowSearchSection(true)`, use `setTimeout` + `ref.current?.focus()` to auto-focus the real input
-- This way clicking the header bar immediately puts the cursor in the working search field
+```text
+Partner types Global ID or email
+        |
+        v
+Frontend calls partner-search-user function
+        |
+        v
+Function validates partner auth --> searches ALL profiles
+        |
+        v
+Returns minimal info (name, masked email, profile ID)
+        |
+        v
+Partner sees result --> clicks "Add Client" --> OTP flow begins
+```
 
-### Technical Details
-
-| File | Change |
-|------|--------|
-| `src/pages/partner/PartnerDashboard.tsx` | Add a `useRef` for the search input, auto-focus it when search section opens, scroll into view |
-| `src/components/partner/DashboardHeader.tsx` | No changes needed (current behavior is fine as a trigger) |
+### Security Considerations
+- The function only returns minimal, non-sensitive fields
+- Email is masked (first letter + *** + domain)
+- Phone is masked (last 4 digits only)
+- The function verifies the caller has a valid partner role before searching
+- No changes to existing database security policies needed
 
