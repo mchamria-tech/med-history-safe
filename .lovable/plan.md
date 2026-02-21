@@ -1,23 +1,38 @@
 
 
-## Fix: Update Partner Dashboard Search to Use New Global ID Format
+## Fix: Make the Header Search Bar Functional
 
 ### Problem
-The "Search by CareBag ID" section on the partner dashboard still shows the old ID format placeholder (`1ABC12`). The search functionality itself works correctly (it queries `carebag_id` in the database), but the placeholder text needs to match the new Global ID format (`IND-A38484`).
+The "Search client or record..." input in the dashboard header has `readOnly` applied, so it looks like a text field but doesn't accept any typing. It's currently designed as a clickable button that scrolls down to reveal the search section -- but this is confusing because it looks like a regular input.
 
 ### Solution
-**File:** `src/pages/partner/PartnerDashboard.tsx`
+**File:** `src/components/partner/DashboardHeader.tsx`
 
-- Update the search input placeholder from `"Enter CareBag ID (e.g., 1ABC12)"` to `"Enter Global ID (e.g., IND-A38484)"` (line 557)
-- Update the section heading from `"Search by CareBag ID"` to `"Search by Global ID"` (line 539)
-- Update the "Don't have CareBag ID?" fallback text to `"Don't have Global ID? Search by Phone or Email"` (line 756)
-- Update "not found" message from `"No client exists with this CareBag ID"` to `"No client exists with this Global ID"` (line 602)
+Convert the header search bar from a read-only clickable trigger into a real input that accepts typing and triggers search navigation:
 
-**File:** `src/pages/partner/PartnerUserSearch.tsx`
+- Remove the `readOnly` attribute
+- Remove the `cursor-pointer` class
+- Add local state to capture the typed value
+- When the user types and presses Enter, navigate to the search page with their query pre-filled
+- Keep the click-to-navigate behavior as a fallback
 
-- Update the search placeholder from `"Enter CareBag ID, email, or phone..."` to `"Enter Global ID, email, or phone..."` (line 316)
-- Update the page description text accordingly (line 300)
-- Update "CareBag ID:" labels to "Global ID:" in search results and linked user cards
+Alternatively (simpler approach): Make it visually obvious that clicking it opens the search panel by keeping `readOnly` but styling it more like a button, and ensuring the click reliably opens the search section below and auto-focuses the real input.
 
-All changes are text/label updates only -- no logic changes needed since the underlying query already searches the correct `carebag_id` column.
+### Recommended Approach (Simpler)
+Keep the header bar as a trigger but improve the UX:
+
+1. In `DashboardHeader.tsx`: Keep `readOnly` but ensure clicking it works reliably
+2. In `PartnerDashboard.tsx`: When `onSearchClick` fires, scroll to the search section and auto-focus the actual input field using a ref
+
+This requires:
+- Adding a `ref` to the Global ID search input in `PartnerDashboard.tsx`
+- After `setShowSearchSection(true)`, use `setTimeout` + `ref.current?.focus()` to auto-focus the real input
+- This way clicking the header bar immediately puts the cursor in the working search field
+
+### Technical Details
+
+| File | Change |
+|------|--------|
+| `src/pages/partner/PartnerDashboard.tsx` | Add a `useRef` for the search input, auto-focus it when search section opens, scroll into view |
+| `src/components/partner/DashboardHeader.tsx` | No changes needed (current behavior is fine as a trigger) |
 
