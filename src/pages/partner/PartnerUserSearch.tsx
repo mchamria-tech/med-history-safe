@@ -116,7 +116,7 @@ const PartnerUserSearch = () => {
     setSearchResult(null);
 
     try {
-      // Search by CareBag ID, email, or phone
+      // Search by Global ID, email, or phone
       const query = searchQuery.trim().toUpperCase();
       
       const { data, error } = await supabase
@@ -142,7 +142,7 @@ const PartnerUserSearch = () => {
       } else {
         toast({
           title: "User Not Found",
-          description: "No user found with the provided CareBag ID, email, or phone",
+          description: "No user found with the provided Global ID, email, or phone",
           variant: "destructive",
         });
       }
@@ -297,7 +297,7 @@ const PartnerUserSearch = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Linked Users</h1>
           <p className="text-muted-foreground">
-            Search and link users by CareBag ID, email, or phone number
+            Search and link users by Global ID, email, or phone number
           </p>
         </div>
 
@@ -313,7 +313,7 @@ const PartnerUserSearch = () => {
             <div className="flex gap-3">
               <div className="flex-1">
                 <Input
-                  placeholder="Enter CareBag ID, email, or phone..."
+                  placeholder="Enter Global ID, email, or phone..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -332,7 +332,7 @@ const PartnerUserSearch = () => {
                   <div>
                     <p className="font-medium text-foreground">{searchResult.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      CareBag ID: {searchResult.carebag_id || "N/A"}
+                      Global ID: {searchResult.carebag_id || "N/A"}
                     </p>
                     {searchResult.email && (
                       <p className="text-sm text-muted-foreground">{searchResult.email}</p>
@@ -376,7 +376,7 @@ const PartnerUserSearch = () => {
                     <div>
                       <p className="font-medium text-foreground">{user.profile.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        CareBag ID: {user.profile.carebag_id || "N/A"}
+                        Global ID: {user.profile.carebag_id || "N/A"}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Linked: {format(new Date(user.linked_at), "PP")}
