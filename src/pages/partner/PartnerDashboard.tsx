@@ -232,36 +232,29 @@ const PartnerDashboard = () => {
     try {
       setIsLinking(true);
 
-      const { data, error } = await supabase.functions.invoke('send-partner-otp', {
-        body: {
-          partnerId: partner!.id,
-          profileId: profileId,
-          method: 'email'
-        }
+      // Bypass OTP — directly link the client
+      const { error: linkError } = await supabase.from("partner_users").insert({
+        partner_id: partner!.id,
+        profile_id: profileId,
+        consent_given: true,
+        consent_timestamp: new Date().toISOString(),
       });
 
-      if (error) {
-        const message = await getEdgeFunctionError(error);
-        throw new Error(message);
-      }
+      if (linkError) throw linkError;
 
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      const maskedEmail = data?.maskedEmail || "user's email";
       toast({
-        title: "OTP Sent",
-        description: `Verification code sent to ${maskedEmail}`,
+        title: "Client Linked",
+        description: "Client has been successfully linked to your account",
       });
 
-      setPendingProfileId(profileId);
-      setShowOtpDialog(true);
+      resetAllStates();
+      fetchStats();
+      fetchLinkedUserIds();
     } catch (error: any) {
-      console.error("Error requesting link:", error);
+      console.error("Error linking client:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to send OTP",
+        description: error.message || "Failed to link client",
         variant: "destructive",
       });
     } finally {
@@ -324,33 +317,33 @@ const PartnerDashboard = () => {
         carebag_id: searchData.profile.carebag_id,
       };
 
-      const { data: otpData, error: otpError } = await supabase.functions.invoke('send-partner-otp', {
-        body: {
-          partnerId: partner!.id,
-          profileId: data.id,
-          method: forgotCodeTab
-        }
+      // Check if already linked
+      if (linkedUserIds.includes(data.id)) {
+        toast({
+          title: "Already Linked",
+          description: "This client is already linked to your account",
+        });
+        return;
+      }
+
+      // Bypass OTP — directly link the client
+      const { error: linkError } = await supabase.from("partner_users").insert({
+        partner_id: partner!.id,
+        profile_id: data.id,
+        consent_given: true,
+        consent_timestamp: new Date().toISOString(),
       });
 
-      if (otpError) {
-        const message = await getEdgeFunctionError(otpError);
-        throw new Error(message);
-      }
-      
-      if (otpData?.error) {
-        throw new Error(otpData.error);
-      }
+      if (linkError) throw linkError;
 
-      setPendingProfileId(data.id);
-      setSearchResult(data);
-
-      const maskedEmail = otpData?.maskedEmail || "user's email";
       toast({
-        title: "OTP Sent",
-        description: `Verification code sent to ${maskedEmail}`,
+        title: "Client Linked",
+        description: `${data.name} has been successfully linked to your account`,
       });
 
-      setShowOtpDialog(true);
+      resetAllStates();
+      fetchStats();
+      fetchLinkedUserIds();
     } catch (error: any) {
       console.error("Error sending OTP:", error);
       toast({
@@ -609,7 +602,7 @@ const PartnerDashboard = () => {
                     </div>
                     <Button onClick={() => handleRequestLink(searchResult.id)} disabled={isLinking}>
                       <UserPlus className="h-4 w-4 mr-2" />
-                      {isLinking ? "Sending OTP..." : "Add Client"}
+                      {isLinking ? "Linking..." : "Add Client"}
                     </Button>
                   </div>
                 </div>
@@ -704,7 +697,7 @@ const PartnerDashboard = () => {
                       disabled={isSendingOtp || phoneNumber.length !== 10}
                     >
                       <Send className="h-4 w-4 mr-2" />
-                      {isSendingOtp ? "Sending..." : "Send OTP"}
+                      {isSendingOtp ? "Linking..." : "Add Client"}
                     </Button>
                   </div>
                 </TabsContent>
@@ -726,7 +719,7 @@ const PartnerDashboard = () => {
                       disabled={isSendingOtp || !emailAddress.includes("@")}
                     >
                       <Send className="h-4 w-4 mr-2" />
-                      {isSendingOtp ? "Sending..." : "Send OTP"}
+                      {isSendingOtp ? "Linking..." : "Add Client"}
                     </Button>
                   </div>
                 </TabsContent>
