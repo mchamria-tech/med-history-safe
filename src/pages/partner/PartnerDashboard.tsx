@@ -536,7 +536,7 @@ const PartnerDashboard = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Search className="h-5 w-5 text-accent" />
-                  <h3 className="text-lg font-semibold">Search by CareBag ID</h3>
+                  <h3 className="text-lg font-semibold">Search by Global ID</h3>
                 </div>
                 <Button 
                   variant="ghost" 
@@ -554,7 +554,7 @@ const PartnerDashboard = () => {
               
               <div className="flex gap-3">
                 <Input
-                  placeholder="Enter CareBag ID (e.g., 1ABC12)"
+                  placeholder="Enter Global ID (e.g., IND-A38484)"
                   value={searchCode}
                   onChange={(e) => {
                     setSearchCode(e.target.value.toUpperCase());
@@ -580,7 +580,7 @@ const PartnerDashboard = () => {
                     <div>
                       <p className="font-medium text-foreground">{searchResult.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        CareBag ID: {searchResult.carebag_id}
+                        Global ID: {searchResult.carebag_id}
                       </p>
                     </div>
                     <Button onClick={() => handleRequestLink(searchResult.id)} disabled={isLinking}>
@@ -599,7 +599,7 @@ const PartnerDashboard = () => {
                     <span className="font-medium text-orange-600">User Not Found</span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">
-                    No client exists with this CareBag ID. Would you like to create a new client?
+                    No client exists with this Global ID. Would you like to create a new client?
                   </p>
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={() => navigate("/partner/new-user")}>
@@ -753,7 +753,7 @@ const PartnerDashboard = () => {
               setShowForgotSection(true);
             }}
           >
-            Don't have CareBag ID? Search by Phone or Email
+            Don't have Global ID? Search by Phone or Email
           </Button>
         )}
       </div>
