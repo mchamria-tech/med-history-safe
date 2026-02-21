@@ -189,24 +189,29 @@ const PartnerDashboard = () => {
     setSearchNotFound(false);
 
     try {
-      const code = searchCode.trim().toUpperCase();
-      
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, name, email, phone, carebag_id")
-        .eq("carebag_id", code)
-        .maybeSingle();
+      const { data, error } = await supabase.functions.invoke('partner-search-user', {
+        body: { query: searchCode.trim(), search_type: 'global_id' }
+      });
 
-      if (error) throw error;
+      if (error) {
+        const message = await getEdgeFunctionError(error);
+        throw new Error(message);
+      }
 
-      if (data) {
-        if (linkedUserIds.includes(data.id)) {
+      if (data?.found && data.profile) {
+        if (linkedUserIds.includes(data.profile.id)) {
           toast({
             title: "Already Linked",
             description: "This client is already linked to your account",
           });
         } else {
-          setSearchResult(data);
+          setSearchResult({
+            id: data.profile.id,
+            name: data.profile.name,
+            email: data.profile.masked_email,
+            phone: data.profile.masked_phone,
+            carebag_id: data.profile.carebag_id,
+          });
         }
       } else {
         setSearchNotFound(true);
@@ -294,21 +299,30 @@ const PartnerDashboard = () => {
         searchValue = emailAddress.trim().toLowerCase();
       }
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, name, email, phone, carebag_id")
-        .or(forgotCodeTab === "phone" 
-          ? `phone.eq.${searchValue},phone.eq.${phoneNumber}` 
-          : `email.ilike.${searchValue}`)
-        .limit(1)
-        .maybeSingle();
+      const { data: searchData, error: searchError } = await supabase.functions.invoke('partner-search-user', {
+        body: {
+          query: forgotCodeTab === "phone" ? phoneNumber : searchValue,
+          search_type: forgotCodeTab,
+        }
+      });
 
-      if (error) throw error;
+      if (searchError) {
+        const message = await getEdgeFunctionError(searchError);
+        throw new Error(message);
+      }
 
-      if (!data) {
+      if (!searchData?.found || !searchData.profile) {
         setUserNotFound(true);
         return;
       }
+
+      const data = {
+        id: searchData.profile.id,
+        name: searchData.profile.name,
+        email: searchData.profile.masked_email,
+        phone: searchData.profile.masked_phone,
+        carebag_id: searchData.profile.carebag_id,
+      };
 
       const { data: otpData, error: otpError } = await supabase.functions.invoke('send-partner-otp', {
         body: {
