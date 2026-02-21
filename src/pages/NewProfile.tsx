@@ -11,6 +11,11 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { getSignedUrl } from "@/hooks/useSignedUrl";
 import DateDropdowns from "@/components/DateDropdowns";
+import { countries } from "@/lib/countries";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Validation schema
 const profileSchema = z.object({
@@ -48,6 +53,8 @@ const NewProfile = () => {
   const [typeOfPlan, setTypeOfPlan] = useState("");
   const [rmName, setRmName] = useState("");
   const [rmNo, setRmNo] = useState("");
+  const [country, setCountry] = useState("IND");
+  const [countryOpen, setCountryOpen] = useState(false);
 
   // Load profile data if editing
   useEffect(() => {
@@ -83,6 +90,7 @@ const NewProfile = () => {
         setTypeOfPlan(data.type_of_plan || "");
         setRmName(data.rm_name || "");
         setRmNo(data.rm_no || "");
+        setCountry((data as any).country || "IND");
         
         if (data.date_of_birth) {
           setDateOfBirth(new Date(data.date_of_birth));
@@ -157,6 +165,8 @@ const NewProfile = () => {
     setTypeOfPlan("");
     setRmName("");
     setRmNo("");
+    setCountry("IND");
+    setCountryOpen(false);
   };
 
   const handleSave = async () => {
@@ -229,18 +239,39 @@ const NewProfile = () => {
         // Update existing profile
         const { error: updateError } = await supabase
           .from('profiles')
-          .update(profileData)
+          .update({ ...profileData, country })
           .eq('id', editProfileId);
 
         if (updateError) throw updateError;
       } else {
-        // Generate CareBag ID for new profile
-        const { data: carebagIdData } = await supabase.rpc('generate_carebag_id');
-        
-        // Insert new profile with CareBag ID
+        // Generate Global ID for new profile with country
+        const { data: globalIdData } = await supabase.rpc('generate_global_id', {
+          role_type: 'user',
+          country_code: country,
+        });
+
+        // App-level uniqueness check (defense-in-depth)
+        let finalId = globalIdData;
+        if (finalId) {
+          const { count } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('carebag_id', finalId);
+
+          if (count && count > 0) {
+            // Regenerate once on collision
+            const { data: retryId } = await supabase.rpc('generate_global_id', {
+              role_type: 'user',
+              country_code: country,
+            });
+            finalId = retryId;
+          }
+        }
+
+        // Insert new profile with Global ID
         const { error: insertError } = await supabase
           .from('profiles')
-          .insert({ ...profileData, carebag_id: carebagIdData });
+          .insert({ ...profileData, carebag_id: finalId, country });
 
         if (insertError) throw insertError;
       }
@@ -329,12 +360,63 @@ const NewProfile = () => {
 
             <div className="space-y-1">
               <Label htmlFor="gender" className="text-sm font-medium text-foreground">Gender</Label>
-              <Input 
-                id="gender" 
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-                className="bg-muted border-border" 
-              />
+              <Select value={gender} onValueChange={setGender}>
+                <SelectTrigger className="bg-muted border-border">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-sm font-medium text-foreground">Country of Origin</Label>
+              <Popover open={countryOpen} onOpenChange={setCountryOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={countryOpen}
+                    className="w-full justify-between bg-muted border-border font-normal"
+                  >
+                    {country
+                      ? `${countries.find((c) => c.code === country)?.name} (${country})`
+                      : "Select country..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 z-50" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search country..." />
+                    <CommandList>
+                      <CommandEmpty>No country found.</CommandEmpty>
+                      <CommandGroup className="max-h-[200px] overflow-y-auto">
+                        {countries.map((c) => (
+                          <CommandItem
+                            key={c.code}
+                            value={`${c.name} ${c.code}`}
+                            onSelect={() => {
+                              setCountry(c.code);
+                              setCountryOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                country === c.code ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {c.name} ({c.code})
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-1">

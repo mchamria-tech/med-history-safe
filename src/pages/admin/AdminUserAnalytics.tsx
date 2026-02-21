@@ -18,6 +18,7 @@ interface UserAnalytics {
     id: string;
     name: string;
     carebag_id: string | null;
+    country: string | null;
     documentCount: number;
   }[];
 }
@@ -42,7 +43,7 @@ const AdminUserAnalytics = () => {
       // Get all profiles for this user
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, name, email, carebag_id, created_at")
+        .select("id, name, email, carebag_id, country, created_at")
         .eq("user_id", userId)
         .order("created_at", { ascending: true });
 
@@ -88,6 +89,7 @@ const AdminUserAnalytics = () => {
           id: p.id,
           name: p.name,
           carebag_id: p.carebag_id,
+          country: (p as any).country || null,
           documentCount: p.documentCount,
         })),
       });
@@ -223,6 +225,11 @@ const AdminUserAnalytics = () => {
                           {profile.carebag_id && (
                             <p className="text-xs text-muted-foreground font-mono">
                               {profile.carebag_id}
+                            </p>
+                          )}
+                          {profile.country && (
+                            <p className="text-xs text-muted-foreground">
+                              Country: {profile.country}
                             </p>
                           )}
                         </div>

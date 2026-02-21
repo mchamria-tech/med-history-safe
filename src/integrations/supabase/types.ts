@@ -480,6 +480,7 @@ export type Database = {
           blood_glucose: string | null
           blood_pressure: string | null
           carebag_id: string | null
+          country: string | null
           created_at: string
           created_by_partner_id: string | null
           date_of_birth: string | null
@@ -506,6 +507,7 @@ export type Database = {
           blood_glucose?: string | null
           blood_pressure?: string | null
           carebag_id?: string | null
+          country?: string | null
           created_at?: string
           created_by_partner_id?: string | null
           date_of_birth?: string | null
@@ -532,6 +534,7 @@ export type Database = {
           blood_glucose?: string | null
           blood_pressure?: string | null
           carebag_id?: string | null
+          country?: string | null
           created_at?: string
           created_by_partner_id?: string | null
           date_of_birth?: string | null

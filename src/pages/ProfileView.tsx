@@ -38,6 +38,7 @@ interface Profile {
   rm_name: string | null;
   rm_no: string | null;
   profile_photo_url: string | null;
+  carebag_id: string | null;
 }
 
 const ProfileView = () => {
@@ -493,6 +494,9 @@ const ProfileView = () => {
             </AvatarFallback>
           </Avatar>
           <h2 className="text-xl font-semibold text-foreground">{profile.name}</h2>
+          {profile.carebag_id && (
+            <p className="text-xs font-mono text-muted-foreground">{profile.carebag_id}</p>
+          )}
           {profile.relation && (
             <p className="text-sm text-muted-foreground">Relation: {profile.relation}</p>
           )}

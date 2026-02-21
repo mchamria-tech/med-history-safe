@@ -43,6 +43,8 @@ interface GroupedUser {
   user_id: string;
   email: string | null;
   name: string;
+  carebag_id: string | null;
+  country: string | null;
   profileCount: number;
   roles: string[];
   created_at: string;
@@ -70,7 +72,7 @@ const AdminUsers = () => {
       const [profilesResult, rolesResult, partnersResult] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id, user_id, name, email, phone, carebag_id, created_at, relation")
+          .select("id, user_id, name, email, phone, carebag_id, country, created_at, relation")
           .order("created_at", { ascending: false }),
         supabase
           .from("user_roles")
@@ -108,7 +110,9 @@ const AdminUsers = () => {
           userMap.set(profile.user_id, {
             user_id: profile.user_id,
             email: profile.email,
-            name: profile.name || "User", // Default to "User" if name is missing
+            name: profile.name || "User",
+            carebag_id: (profile as any).carebag_id || null,
+            country: (profile as any).country || null,
             profileCount: 1,
             roles: userRoles.length > 0 ? userRoles : ["user"],
             created_at: profile.created_at,
@@ -205,6 +209,7 @@ const AdminUsers = () => {
     (u) =>
       u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.carebag_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.roles.some(r => r.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -263,10 +268,13 @@ const AdminUsers = () => {
                           {user.name?.charAt(0).toUpperCase() || "U"}
                         </span>
                       </div>
-                      <div>
+                       <div>
                         <p className="font-medium text-foreground">{user.name}</p>
+                        {user.carebag_id && (
+                          <p className="text-xs font-mono text-muted-foreground">{user.carebag_id}</p>
+                        )}
                         <p className="text-xs text-muted-foreground">
-                          {user.email || "No email"}
+                          {user.email || "No email"}{user.country ? ` • ${user.country}` : ""}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {user.profileCount} profile{user.profileCount !== 1 ? "s" : ""} • Joined: {new Date(user.created_at).toLocaleDateString()}
