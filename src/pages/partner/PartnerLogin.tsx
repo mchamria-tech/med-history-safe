@@ -213,10 +213,9 @@ const PartnerLogin = () => {
                   type="text"
                   value={partnerCode}
                   onChange={(e) => setPartnerCode(e.target.value.toUpperCase())}
-                  placeholder="X3CZ3T"
+                  placeholder="IND-X38484"
                   required
-                  maxLength={6}
-                  className="bg-muted uppercase tracking-widest"
+                  className="bg-muted uppercase tracking-wide"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
