@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -82,6 +82,7 @@ const PartnerDashboard = () => {
 
   // Linked users for checking
   const [linkedUserIds, setLinkedUserIds] = useState<string[]>([]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (partner?.id) {
@@ -450,6 +451,10 @@ const PartnerDashboard = () => {
           onSearchClick={() => {
             setShowSearchSection(true);
             setShowForgotSection(false);
+            setTimeout(() => {
+              searchInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+              searchInputRef.current?.focus();
+            }, 100);
           }}
           onNewClientClick={() => navigate("/partner/new-user")}
           logoUrl={partner?.logo_url}
@@ -477,6 +482,10 @@ const PartnerDashboard = () => {
               onClick={() => {
                 setShowSearchSection(true);
                 setShowForgotSection(false);
+                setTimeout(() => {
+                  searchInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  searchInputRef.current?.focus();
+                }, 100);
               }}
               className="h-11 px-5 rounded-xl"
             >
@@ -554,6 +563,7 @@ const PartnerDashboard = () => {
               
               <div className="flex gap-3">
                 <Input
+                  ref={searchInputRef}
                   placeholder="Enter Global ID (e.g., IND-A38484)"
                   value={searchCode}
                   onChange={(e) => {
