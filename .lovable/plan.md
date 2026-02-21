@@ -1,24 +1,47 @@
 
 
-## Bypass OTP Verification for Testing
+## Fix: Partner Document Upload Blocked by Storage RLS
 
-### What Changes
-Temporarily skip the email OTP step so that when a partner finds a user and clicks "Add Client", the user is linked directly without sending or verifying an OTP code.
+### Problem
+When a partner tries to upload a document for a linked client, the storage bucket's RLS policy blocks the upload because the partner is not the owner of that storage path (`{user_id}/{profile_id}/...`). The `documents` table insert may also fail for the same reason since `user_id` won't match `auth.uid()` for partner uploads.
 
-### Files to Modify
+### Solution
+Create a new backend function `partner-upload-document` that:
+1. Accepts the file (as base64) and metadata from the frontend
+2. Validates the partner is authenticated and the profile is linked to them with consent
+3. Uploads the file to storage using service role (bypasses storage RLS)
+4. Inserts the document record using service role (bypasses documents table RLS for partner-uploaded docs)
+5. Returns success/failure
 
-**`src/pages/partner/PartnerDashboard.tsx`**
+### Changes
 
-1. **`handleRequestLink` (line 231-270)**: Instead of calling `send-partner-otp` and opening the OTP dialog, directly insert into `partner_users` to link the client immediately. Show a success toast and refresh stats.
+**1. New file: `supabase/functions/partner-upload-document/index.ts`**
+- Receives: base64 file data, file name, profile ID, and all document metadata (name, date, type, doctor, ailment, medicine, tags)
+- Validates: caller has partner role, profile is linked with consent in `partner_users`
+- Uploads file to `profile-documents` bucket at path `{user_id}/{profile_id}/{timestamp}.{ext}`
+- Inserts into `documents` table with `partner_id` and `partner_source_name` set
+- Returns the created document ID on success
 
-2. **`handleSendForgotCodeOtp` (line 272-363)**: After finding the user via `partner-search-user`, instead of calling `send-partner-otp` and opening the OTP dialog, directly link the user the same way.
+**2. Update: `supabase/config.toml`**
+- Register `[functions.partner-upload-document]` with `verify_jwt = false` (validate in code)
 
-3. **Button labels**: Change "Sending OTP..." to "Linking..." and "Send OTP" to "Add Client" in the phone/email search section to reflect the simplified flow.
+**3. Update: `src/pages/partner/PartnerDocumentUpload.tsx`**
+- Replace the direct `supabase.storage.upload()` + `supabase.from("documents").insert()` calls in `handleUpload` with a single call to `supabase.functions.invoke('partner-upload-document', ...)`
+- Convert the selected file to base64 before sending
+- Remove the intermediate `profiles` query for `user_id` (the function handles that server-side)
 
-4. The OTP dialog, OTP state variables, and `handleVerifyOtp` function will remain in the code (unused) so they can be re-enabled easily later when the Resend API key is sorted out.
+### Technical Details
 
-### What Stays the Same
-- The search flow (Global ID and phone/email search via `partner-search-user`) is unchanged
-- The `send-partner-otp` edge function is untouched (ready for when email is fixed)
-- All OTP-related code stays in the file, just temporarily bypassed
+| File | Action |
+|------|--------|
+| `supabase/functions/partner-upload-document/index.ts` | Create -- secure upload handler |
+| `supabase/config.toml` | Add function registration |
+| `src/pages/partner/PartnerDocumentUpload.tsx` | Update `handleUpload` to call edge function |
+
+### Security
+- Function verifies JWT token and partner role before proceeding
+- Confirms the target profile is linked to the calling partner with `consent_given = true`
+- Uses service role only for storage and document insertion -- no broader access
+- File size validated server-side (max 10MB)
+- No changes to existing RLS policies needed
 
