@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.partner-search-user]
 verify_jwt = false
+
+[functions.partner-upload-document]
+verify_jwt = false

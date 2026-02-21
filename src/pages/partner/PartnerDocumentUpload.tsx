@@ -16,6 +16,7 @@ import PartnerLayout from "@/components/partner/PartnerLayout";
 import { Upload, Calendar as CalendarIcon, FileText, User, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { getEdgeFunctionError } from "@/lib/utils";
 
 interface Profile {
   id: string;
@@ -109,6 +110,20 @@ const PartnerDocumentUpload = () => {
     }
   };
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+        const base64 = result.split(",")[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleUpload = async () => {
     if (!file || !selectedProfileId || !documentName || !documentDate || !consentGiven) {
       toast({
@@ -119,45 +134,39 @@ const PartnerDocumentUpload = () => {
       return;
     }
 
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Maximum file size is 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsUploading(true);
 
     try {
-      // Get the user_id of the profile owner
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .eq("id", selectedProfileId)
-        .single();
+      const fileBase64 = await fileToBase64(file);
 
-      if (profileError) throw profileError;
-
-      // Upload file to storage
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${profileData.user_id}/${selectedProfileId}/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("profile-documents")
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      // Create document record
-      const { error: dbError } = await supabase.from("documents").insert({
-        user_id: profileData.user_id,
-        profile_id: selectedProfileId,
-        document_name: documentName.trim(),
-        document_url: fileName,
-        document_date: format(documentDate, "yyyy-MM-dd"),
-        document_type: documentType || null,
-        doctor_name: doctorName.trim() || null,
-        ailment: ailment.trim() || null,
-        medicine: medicine.trim() || null,
-        other_tags: otherTags.trim() || null,
-        partner_id: partner!.id,
-        partner_source_name: partner!.name,
+      const { data, error } = await supabase.functions.invoke("partner-upload-document", {
+        body: {
+          profile_id: selectedProfileId,
+          file_base64: fileBase64,
+          file_name: file.name,
+          document_name: documentName.trim(),
+          document_date: format(documentDate, "yyyy-MM-dd"),
+          document_type: documentType || null,
+          doctor_name: doctorName.trim() || null,
+          ailment: ailment.trim() || null,
+          medicine: medicine.trim() || null,
+          other_tags: otherTags.trim() || null,
+        },
       });
 
-      if (dbError) throw dbError;
+      if (error) {
+        const msg = await getEdgeFunctionError(error);
+        throw new Error(msg);
+      }
 
       toast({
         title: "Document Uploaded",
@@ -175,7 +184,6 @@ const PartnerDocumentUpload = () => {
       setOtherTags("");
       setConsentGiven(false);
 
-      // Navigate back to users list
       navigate("/partner/users");
     } catch (error: any) {
       console.error("Upload error:", error);
