@@ -78,8 +78,28 @@ const Profiles_Main = () => {
 
       if (error) throw error;
 
+      // Auto-assign Global IDs for any profiles missing one
+      const profilesWithIds = await Promise.all(
+        (data || []).map(async (profile) => {
+          if (!profile.carebag_id) {
+            const { data: newId } = await supabase.rpc('generate_global_id', {
+              role_type: 'user',
+              country_code: profile.country || 'IND',
+            });
+            if (newId) {
+              await supabase
+                .from('profiles')
+                .update({ carebag_id: newId })
+                .eq('id', profile.id);
+              return { ...profile, carebag_id: newId };
+            }
+          }
+          return profile;
+        })
+      );
+
       // Sort profiles to always show primary account holder first (relation = "Self")
-      const sortedProfiles = (data || []).sort((a, b) => {
+      const sortedProfiles = profilesWithIds.sort((a, b) => {
         const aIsPrimary = a.relation?.toLowerCase() === 'self';
         const bIsPrimary = b.relation?.toLowerCase() === 'self';
         if (aIsPrimary && !bIsPrimary) return -1;
