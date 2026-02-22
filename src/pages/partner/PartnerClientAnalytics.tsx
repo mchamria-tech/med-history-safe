@@ -94,9 +94,19 @@ const PartnerClientAnalytics = () => {
       }
     } catch (err: any) {
       console.error("Analysis error:", err);
+      // Extract detailed error from edge function response body
+      let errorMsg = "Failed to analyze lab report";
+      try {
+        if (err?.context?.body) {
+          const body = await err.context.body.json?.() || JSON.parse(await err.context.body.text?.());
+          if (body?.error) errorMsg = body.error;
+        } else if (err?.message) {
+          errorMsg = err.message;
+        }
+      } catch { /* use default */ }
       toast({
         title: "Analysis Failed",
-        description: err.message || "Failed to analyze lab report",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
