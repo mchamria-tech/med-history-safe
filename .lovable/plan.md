@@ -1,47 +1,39 @@
 
 
-## Fix: Partner Document Upload Blocked by Storage RLS
+## Add Partner Label and Editable Search Tags to Documents
 
-### Problem
-When a partner tries to upload a document for a linked client, the storage bucket's RLS policy blocks the upload because the partner is not the owner of that storage path (`{user_id}/{profile_id}/...`). The `documents` table insert may also fail for the same reason since `user_id` won't match `auth.uid()` for partner uploads.
+### What Changes
 
-### Solution
-Create a new backend function `partner-upload-document` that:
-1. Accepts the file (as base64) and metadata from the frontend
-2. Validates the partner is authenticated and the profile is linked to them with consent
-3. Uploads the file to storage using service role (bypasses storage RLS)
-4. Inserts the document record using service role (bypasses documents table RLS for partner-uploaded docs)
-5. Returns success/failure
+**1. Enhanced partner badge on document cards (`src/pages/ViewDocuments.tsx`)**
+- Replace the subtle accent badge with a more visible "Uploaded by [Partner Name]" label styled distinctly (e.g., blue/indigo badge with a building icon) so patients clearly see which documents came from a partner
 
-### Changes
+**2. Add "Edit Tags" option to the document dropdown menu**
+- Add a new "Edit Tags" menu item (with a pencil/tag icon) in the existing dropdown for each document
+- Opens a dialog where the patient can edit: `document_type`, `ailment`, `medicine`, and `other_tags`
+- On save, updates the document record via `supabase.from('documents').update()`
+- This works because the RLS policy "Users can view documents pushed to their profile" allows SELECT, but UPDATE requires `user_id = auth.uid()`. Since partner-uploaded docs have the partner's context in `user_id`, we need to check whether the existing "Users can manage self-uploaded documents" policy covers this or if an update will need to go through the profile ownership path.
 
-**1. New file: `supabase/functions/partner-upload-document/index.ts`**
-- Receives: base64 file data, file name, profile ID, and all document metadata (name, date, type, doctor, ailment, medicine, tags)
-- Validates: caller has partner role, profile is linked with consent in `partner_users`
-- Uploads file to `profile-documents` bucket at path `{user_id}/{profile_id}/{timestamp}.{ext}`
-- Inserts into `documents` table with `partner_id` and `partner_source_name` set
-- Returns the created document ID on success
+**3. RLS consideration**
+- The current RLS lets users UPDATE only documents where `user_id = auth.uid()`. Partner-uploaded documents set `user_id` to the profile's `user_id` (the patient), so the patient CAN update their own partner-uploaded docs directly -- no edge function needed.
 
-**2. Update: `supabase/config.toml`**
-- Register `[functions.partner-upload-document]` with `verify_jwt = false` (validate in code)
+### Files to Modify
 
-**3. Update: `src/pages/partner/PartnerDocumentUpload.tsx`**
-- Replace the direct `supabase.storage.upload()` + `supabase.from("documents").insert()` calls in `handleUpload` with a single call to `supabase.functions.invoke('partner-upload-document', ...)`
-- Convert the selected file to base64 before sending
-- Remove the intermediate `profiles` query for `user_id` (the function handles that server-side)
+**`src/pages/ViewDocuments.tsx`**
+- Expand the `Document` interface to include `ailment`, `medicine`, `other_tags`, `doctor_name`
+- Add state for edit dialog: `editDoc` (the document being edited), and form fields for the four tag fields
+- Add `handleEditTags` to open the edit dialog pre-filled with existing values
+- Add `handleSaveEdit` to update the document record in the database
+- Add an "Edit Tags" item in the dropdown menu (with `Tag` or `Edit` icon)
+- Improve the partner source badge: use a more prominent style with a building icon and "Uploaded by" prefix
+- Add the edit dialog UI with four input fields (Search Keywords, Ailment, Medicine, Other Tags)
 
 ### Technical Details
 
-| File | Action |
-|------|--------|
-| `supabase/functions/partner-upload-document/index.ts` | Create -- secure upload handler |
-| `supabase/config.toml` | Add function registration |
-| `src/pages/partner/PartnerDocumentUpload.tsx` | Update `handleUpload` to call edge function |
-
-### Security
-- Function verifies JWT token and partner role before proceeding
-- Confirms the target profile is linked to the calling partner with `consent_given = true`
-- Uses service role only for storage and document insertion -- no broader access
-- File size validated server-side (max 10MB)
-- No changes to existing RLS policies needed
+| Component | Change |
+|-----------|--------|
+| Document interface | Add `ailment`, `medicine`, `other_tags`, `doctor_name` fields |
+| Partner badge | Restyle with building icon + "Uploaded by" prefix, more visible color |
+| Dropdown menu | Add "Edit Tags" item between View and Download |
+| Edit dialog | Dialog with 4 input fields, Save/Cancel buttons |
+| Database update | Direct `supabase.from('documents').update()` -- allowed by existing RLS |
 
