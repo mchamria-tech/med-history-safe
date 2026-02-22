@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { MoreVertical, Download, Trash2, ArrowLeft, Eye, Printer, Share2 } from "lucide-react";
+import { MoreVertical, Download, Trash2, ArrowLeft, Eye, Printer, Share2, Tag, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -18,6 +20,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -32,6 +42,10 @@ interface Document {
   document_type: string | null;
   uploaded_at: string;
   partner_source_name: string | null;
+  ailment: string | null;
+  medicine: string | null;
+  other_tags: string | null;
+  doctor_name: string | null;
 }
 
 const ViewDocuments = () => {
@@ -41,6 +55,14 @@ const ViewDocuments = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDocId, setDeleteDocId] = useState<string | null>(null);
+
+  // Edit tags state
+  const [editDoc, setEditDoc] = useState<Document | null>(null);
+  const [editType, setEditType] = useState("");
+  const [editAilment, setEditAilment] = useState("");
+  const [editMedicine, setEditMedicine] = useState("");
+  const [editOtherTags, setEditOtherTags] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (profileId) {
@@ -61,13 +83,43 @@ const ViewDocuments = () => {
       setDocuments(data || []);
     } catch (error: any) {
       console.error('Error fetching documents:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load documents",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to load documents", variant: "destructive" });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleEditTags = (doc: Document) => {
+    setEditDoc(doc);
+    setEditType(doc.document_type || "");
+    setEditAilment(doc.ailment || "");
+    setEditMedicine(doc.medicine || "");
+    setEditOtherTags(doc.other_tags || "");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editDoc) return;
+    try {
+      setIsSaving(true);
+      const { error } = await supabase
+        .from('documents')
+        .update({
+          document_type: editType.trim() || null,
+          ailment: editAilment.trim() || null,
+          medicine: editMedicine.trim() || null,
+          other_tags: editOtherTags.trim() || null,
+        })
+        .eq('id', editDoc.id);
+
+      if (error) throw error;
+      toast({ title: "Success", description: "Tags updated successfully" });
+      setEditDoc(null);
+      fetchDocuments();
+    } catch (error: any) {
+      console.error('Error updating tags:', error);
+      toast({ title: "Error", description: "Failed to update tags", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -78,11 +130,7 @@ const ViewDocuments = () => {
       window.open(url, '_blank');
     } catch (error) {
       console.error('Error viewing document:', error);
-      toast({
-        title: "Error",
-        description: "Failed to view document",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to view document", variant: "destructive" });
     }
   };
 
@@ -90,7 +138,6 @@ const ViewDocuments = () => {
     try {
       const { url, error } = await getSignedUrl('profile-documents', documentUrl);
       if (error || !url) throw new Error(error || 'Failed to get URL');
-      
       const response = await fetch(url);
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
@@ -103,11 +150,7 @@ const ViewDocuments = () => {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Error downloading document:', error);
-      toast({
-        title: "Error",
-        description: "Failed to download document",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to download document", variant: "destructive" });
     }
   };
 
@@ -115,107 +158,57 @@ const ViewDocuments = () => {
     try {
       const { url, error } = await getSignedUrl('profile-documents', documentUrl);
       if (error || !url) throw new Error(error || 'Failed to get URL');
-      
       const printWindow = window.open(url, '_blank');
       if (printWindow) {
-        printWindow.onload = () => {
-          printWindow.print();
-        };
+        printWindow.onload = () => { printWindow.print(); };
       }
     } catch (error) {
       console.error('Error printing document:', error);
-      toast({
-        title: "Error",
-        description: "Failed to print document",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to print document", variant: "destructive" });
     }
   };
 
   const handleShare = async (documentUrl: string, documentName: string) => {
     try {
-      const { url, error } = await getSignedUrl('profile-documents', documentUrl, 86400); // 24h for sharing
+      const { url, error } = await getSignedUrl('profile-documents', documentUrl, 86400);
       if (error || !url) throw new Error(error || 'Failed to get URL');
-      
-      // Check if Web Share API is available
       if (navigator.share) {
-        await navigator.share({
-          title: documentName,
-          text: `Check out this document: ${documentName}`,
-          url: url,
-        });
+        await navigator.share({ title: documentName, text: `Check out this document: ${documentName}`, url });
       } else {
-        // Fallback: Copy link to clipboard
         await navigator.clipboard.writeText(url);
-        toast({
-          title: "Link Copied",
-          description: "Document link copied to clipboard (valid for 24 hours).",
-        });
+        toast({ title: "Link Copied", description: "Document link copied to clipboard (valid for 24 hours)." });
       }
     } catch (error: any) {
       if (error.name !== 'AbortError') {
         console.error('Error sharing document:', error);
-        toast({
-          title: "Error",
-          description: "Failed to share document",
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: "Failed to share document", variant: "destructive" });
       }
     }
   };
 
   const handleDelete = async () => {
     if (!deleteDocId) return;
-
     try {
-      // Get document details before deleting
       const doc = documents.find(d => d.id === deleteDocId);
       if (!doc) return;
-
-      // Extract file path using utility
       const filePath = extractFilePath(doc.document_url, 'profile-documents');
-      
-      // Delete from storage
-      await supabase.storage
-        .from('profile-documents')
-        .remove([filePath]);
-
-      // Delete from database
-      const { error } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', deleteDocId);
-
+      await supabase.storage.from('profile-documents').remove([filePath]);
+      const { error } = await supabase.from('documents').delete().eq('id', deleteDocId);
       if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Document deleted successfully",
-      });
-
+      toast({ title: "Success", description: "Document deleted successfully" });
       fetchDocuments();
       setDeleteDocId(null);
     } catch (error: any) {
       console.error('Error deleting document:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete document",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to delete document", variant: "destructive" });
     }
   };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Compact Header */}
       <header className="flex w-full items-center justify-between bg-primary px-4 py-3">
         <div className="flex items-center">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="text-primary-foreground hover:bg-primary/80 mr-2"
-            onClick={() => navigate(`/profile/${profileId}`)}
-          >
+          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80 mr-2" onClick={() => navigate(`/profile/${profileId}`)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-xl font-bold text-primary-foreground">Documents</h1>
@@ -225,30 +218,24 @@ const ViewDocuments = () => {
         </Button>
       </header>
 
-      {/* Main Content */}
       <div className="p-4 space-y-3 max-w-4xl mx-auto pb-24">
         {isLoading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading documents...</p>
-          </div>
+          <div className="text-center py-12"><p className="text-muted-foreground">Loading documents...</p></div>
         ) : documents.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No documents uploaded yet</p>
-          </div>
+          <div className="text-center py-12"><p className="text-muted-foreground">No documents uploaded yet</p></div>
         ) : (
           documents.map((doc) => (
             <Card key={doc.id} className="border">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-foreground text-sm truncate">{doc.document_name}</h3>
-                      {doc.partner_source_name && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-accent/20 text-accent shrink-0">
-                          {doc.partner_source_name}
-                        </span>
-                      )}
-                    </div>
+                    <h3 className="font-semibold text-foreground text-sm truncate">{doc.document_name}</h3>
+                    {doc.partner_source_name && (
+                      <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary">
+                        <Building2 className="h-3 w-3" />
+                        Uploaded by {doc.partner_source_name}
+                      </span>
+                    )}
                     <div className="flex flex-wrap gap-x-3 mt-1 text-xs text-muted-foreground">
                       <span>Date: {format(new Date(doc.document_date), 'PP')}</span>
                       {doc.document_type && <span>Type: {doc.document_type}</span>}
@@ -265,27 +252,22 @@ const ViewDocuments = () => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-44 bg-background z-50">
                       <DropdownMenuItem onClick={() => handleView(doc.document_url)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View
+                        <Eye className="mr-2 h-4 w-4" />View
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditTags(doc)}>
+                        <Tag className="mr-2 h-4 w-4" />Edit Tags
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleDownload(doc.document_url, doc.document_name)}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Download
+                        <Download className="mr-2 h-4 w-4" />Download
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handlePrint(doc.document_url)}>
-                        <Printer className="mr-2 h-4 w-4" />
-                        Print
+                        <Printer className="mr-2 h-4 w-4" />Print
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleShare(doc.document_url, doc.document_name)}>
-                        <Share2 className="mr-2 h-4 w-4" />
-                        Share
+                        <Share2 className="mr-2 h-4 w-4" />Share
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => setDeleteDocId(doc.id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                      <DropdownMenuItem onClick={() => setDeleteDocId(doc.id)} className="text-destructive focus:text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -296,13 +278,8 @@ const ViewDocuments = () => {
         )}
       </div>
 
-      {/* Sticky Back Button */}
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 pb-6">
-        <Button
-          onClick={() => navigate(`/profile/${profileId}`)}
-          variant="outline"
-          className="w-full h-12"
-        >
+        <Button onClick={() => navigate(`/profile/${profileId}`)} variant="outline" className="w-full h-12">
           Back to Profile
         </Button>
       </div>
@@ -312,9 +289,7 @@ const ViewDocuments = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Document</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this document? This action cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Are you sure you want to delete this document? This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -322,6 +297,38 @@ const ViewDocuments = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Tags Dialog */}
+      <Dialog open={!!editDoc} onOpenChange={(open) => { if (!open) setEditDoc(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Search Tags</DialogTitle>
+            <DialogDescription>Update tags to make this document easier to find.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-type">Document Type</Label>
+              <Input id="edit-type" placeholder="e.g. Lab Report, Prescription" value={editType} onChange={(e) => setEditType(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-ailment">Ailment</Label>
+              <Input id="edit-ailment" placeholder="e.g. Diabetes, Hypertension" value={editAilment} onChange={(e) => setEditAilment(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-medicine">Medicine</Label>
+              <Input id="edit-medicine" placeholder="e.g. Metformin, Aspirin" value={editMedicine} onChange={(e) => setEditMedicine(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-other-tags">Other Tags</Label>
+              <Input id="edit-other-tags" placeholder="e.g. annual checkup, follow-up" value={editOtherTags} onChange={(e) => setEditOtherTags(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDoc(null)}>Cancel</Button>
+            <Button onClick={handleSaveEdit} disabled={isSaving}>{isSaving ? "Saving..." : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
