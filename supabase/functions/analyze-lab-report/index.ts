@@ -129,6 +129,27 @@ serve(async (req) => {
     else if (ext === "pdf") mimeType = "application/pdf";
     else if (ext === "webp") mimeType = "image/webp";
 
+    console.log("Document extension:", ext, "MIME type:", mimeType);
+
+    // Build content block based on file type
+    let fileContentBlock: any;
+    if (mimeType === "application/pdf") {
+      fileContentBlock = {
+        type: "file",
+        file: {
+          filename: doc.document_name,
+          file_data: `data:application/pdf;base64,${base64}`,
+        },
+      };
+    } else {
+      fileContentBlock = {
+        type: "image_url",
+        image_url: {
+          url: `data:${mimeType};base64,${base64}`,
+        },
+      };
+    }
+
     // Call Lovable AI Gateway with tool calling
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -153,12 +174,7 @@ serve(async (req) => {
                   type: "text",
                   text: "Analyze this lab report. Extract every lab parameter with its value, unit, reference range, and whether it is out of range. Return structured data using the provided tool.",
                 },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: `data:${mimeType};base64,${base64}`,
-                  },
-                },
+                fileContentBlock,
               ],
             },
           ],
@@ -235,7 +251,27 @@ serve(async (req) => {
       }
       const errText = await aiResponse.text();
       console.error("AI gateway error:", aiResponse.status, errText);
-      throw new Error("AI analysis failed");
+      
+      // Surface specific error details
+      let errorMessage = "AI analysis failed";
+      try {
+        const errJson = JSON.parse(errText);
+        if (errJson?.error?.metadata?.raw) {
+          const raw = JSON.parse(errJson.error.metadata.raw);
+          if (raw?.error?.message?.includes("Unable to process input image")) {
+            errorMessage = "The document format could not be processed by the AI. Please try uploading a JPEG, PNG, or WebP image of the report instead.";
+          } else {
+            errorMessage = raw?.error?.message || errorMessage;
+          }
+        } else if (errJson?.error?.message) {
+          errorMessage = errJson.error.message;
+        }
+      } catch { /* use default message */ }
+      
+      return new Response(
+        JSON.stringify({ error: errorMessage }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const aiData = await aiResponse.json();
