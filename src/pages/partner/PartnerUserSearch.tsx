@@ -9,8 +9,17 @@ import { usePartnerCheck } from "@/hooks/usePartnerCheck";
 import { useToast } from "@/hooks/use-toast";
 import { getEdgeFunctionError } from "@/lib/utils";
 import PartnerLayout from "@/components/partner/PartnerLayout";
-import { Search, UserPlus, Users, Upload, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { Search, UserPlus, Users, Upload, Trash2, BarChart3 } from "lucide-react";
+import { format, differenceInYears, differenceInDays } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,7 +49,9 @@ interface LinkedUser {
     email: string | null;
     phone: string | null;
     carebag_id: string | null;
+    date_of_birth: string | null;
   };
+  lastReportDate: string | null;
 }
 
 interface SearchResult {
@@ -50,6 +61,35 @@ interface SearchResult {
   phone: string | null;
   carebag_id: string | null;
 }
+
+type FollowUpStatus = "NO_FOLLOWUP" | "UPCOMING" | "PAST_DUE";
+
+const getFollowUpStatus = (lastReportDate: string | null): FollowUpStatus => {
+  if (!lastReportDate) return "NO_FOLLOWUP";
+  const days = differenceInDays(new Date(), new Date(lastReportDate));
+  if (days <= 30) return "UPCOMING";
+  return "PAST_DUE";
+};
+
+const statusConfig: Record<FollowUpStatus, { label: string; className: string }> = {
+  NO_FOLLOWUP: {
+    label: "No Follow-up",
+    className: "bg-muted text-muted-foreground border-border",
+  },
+  UPCOMING: {
+    label: "Follow-up Upcoming",
+    className: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  },
+  PAST_DUE: {
+    label: "Follow-up Past Due",
+    className: "bg-red-100 text-red-700 border-red-200",
+  },
+};
+
+const getAge = (dob: string | null): string => {
+  if (!dob) return "—";
+  return String(differenceInYears(new Date(), new Date(dob)));
+};
 
 const PartnerUserSearch = () => {
   const navigate = useNavigate();
@@ -85,7 +125,8 @@ const PartnerUserSearch = () => {
             name,
             email,
             phone,
-            carebag_id
+            carebag_id,
+            date_of_birth
           )
         `)
         .eq("partner_id", partner!.id)
@@ -99,7 +140,31 @@ const PartnerUserSearch = () => {
         consent_given: item.consent_given,
         linked_at: item.linked_at,
         profile: item.profiles,
+        lastReportDate: null as string | null,
       })) || [];
+
+      // Fetch latest document dates for all linked profiles
+      if (formattedData.length > 0) {
+        const profileIds = formattedData.map((u) => u.profile_id);
+        const { data: docs } = await supabase
+          .from("documents")
+          .select("profile_id, document_date")
+          .eq("partner_id", partner!.id)
+          .in("profile_id", profileIds)
+          .order("document_date", { ascending: false });
+
+        if (docs) {
+          const latestByProfile: Record<string, string> = {};
+          for (const doc of docs) {
+            if (!latestByProfile[doc.profile_id]) {
+              latestByProfile[doc.profile_id] = doc.document_date;
+            }
+          }
+          for (const user of formattedData) {
+            user.lastReportDate = latestByProfile[user.profile_id] || null;
+          }
+        }
+      }
 
       setLinkedUsers(formattedData);
     } catch (error) {
@@ -116,7 +181,6 @@ const PartnerUserSearch = () => {
     setSearchResult(null);
 
     try {
-      // Search by Global ID, email, or phone
       const query = searchQuery.trim().toUpperCase();
       
       const { data, error } = await supabase
@@ -129,7 +193,6 @@ const PartnerUserSearch = () => {
       if (error) throw error;
 
       if (data) {
-        // Check if already linked
         const isLinked = linkedUsers.some((u) => u.profile_id === data.id);
         if (isLinked) {
           toast({
@@ -162,7 +225,6 @@ const PartnerUserSearch = () => {
     try {
       setIsLinking(true);
 
-      // Call the secure edge function to generate and send OTP
       const { data, error } = await supabase.functions.invoke('send-partner-otp', {
         body: {
           partnerId: partner!.id,
@@ -204,7 +266,6 @@ const PartnerUserSearch = () => {
     if (!otpCode || !pendingProfileId) return;
 
     try {
-      // Verify OTP
       const { data: otpRequest, error: otpError } = await supabase
         .from("partner_otp_requests")
         .select("*")
@@ -226,13 +287,11 @@ const PartnerUserSearch = () => {
         return;
       }
 
-      // Mark OTP as verified
       await supabase
         .from("partner_otp_requests")
         .update({ verified: true })
         .eq("id", otpRequest.id);
 
-      // Create partner-user link
       const { error: linkError } = await supabase.from("partner_users").insert({
         partner_id: partner!.id,
         profile_id: pendingProfileId,
@@ -295,7 +354,7 @@ const PartnerUserSearch = () => {
     <PartnerLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Linked Users</h1>
+          <h1 className="text-2xl font-bold text-foreground">Patient List</h1>
           <p className="text-muted-foreground">
             Search and link users by Global ID, email, or phone number
           </p>
@@ -325,7 +384,6 @@ const PartnerUserSearch = () => {
               </Button>
             </div>
 
-            {/* Search Result */}
             {searchResult && (
               <div className="mt-4 p-4 border border-border rounded-lg bg-muted/50">
                 <div className="flex items-center justify-between">
@@ -351,12 +409,12 @@ const PartnerUserSearch = () => {
           </CardContent>
         </Card>
 
-        {/* Linked Users List */}
+        {/* Patient List Table */}
         <Card className="shadow-soft">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Linked Users ({linkedUsers.length})
+              Linked Patients ({linkedUsers.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -364,45 +422,162 @@ const PartnerUserSearch = () => {
               <p className="text-muted-foreground text-center py-8">Loading...</p>
             ) : linkedUsers.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
-                No users linked yet. Search for users above to link them.
+                No patients linked yet. Search for users above to link them.
               </p>
             ) : (
-              <div className="space-y-3">
-                {linkedUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium text-foreground">{user.profile.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Global ID: {user.profile.carebag_id || "N/A"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Linked: {format(new Date(user.linked_at), "PP")}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/partner/upload/${user.profile_id}`)}
+              <>
+                {/* Desktop Table */}
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Age</TableHead>
+                        <TableHead>Global ID</TableHead>
+                        <TableHead>Last Report</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {linkedUsers.map((user) => {
+                        const status = getFollowUpStatus(user.lastReportDate);
+                        const config = statusConfig[status];
+                        return (
+                          <TableRow key={user.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
+                                  {user.profile.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="font-medium">{user.profile.name}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>{getAge(user.profile.date_of_birth)}</TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {user.profile.carebag_id || "N/A"}
+                            </TableCell>
+                            <TableCell>
+                              {user.lastReportDate
+                                ? format(new Date(user.lastReportDate), "dd MMM yyyy")
+                                : "—"}
+                            </TableCell>
+                            <TableCell>
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${config.className}`}
+                              >
+                                {config.label}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    navigate(`/partner/client-analytics/${user.profile_id}`)
+                                  }
+                                >
+                                  <BarChart3 className="h-4 w-4 mr-1" />
+                                  Analytics
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    navigate(`/partner/upload/${user.profile_id}`)
+                                  }
+                                >
+                                  <Upload className="h-4 w-4 mr-1" />
+                                  Upload
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => setUnlinkId(user.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden space-y-3">
+                  {linkedUsers.map((user) => {
+                    const status = getFollowUpStatus(user.lastReportDate);
+                    const config = statusConfig[status];
+                    return (
+                      <div
+                        key={user.id}
+                        className="p-4 border border-border rounded-lg space-y-3"
                       >
-                        <Upload className="h-4 w-4 mr-1" />
-                        Upload
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setUnlinkId(user.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
+                              {user.profile.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-medium text-foreground">{user.profile.name}</p>
+                              <p className="text-xs text-muted-foreground font-mono">
+                                {user.profile.carebag_id || "N/A"}
+                              </p>
+                            </div>
+                          </div>
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${config.className}`}
+                          >
+                            {config.label}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>Age: {getAge(user.profile.date_of_birth)}</span>
+                          <span>
+                            Last Report:{" "}
+                            {user.lastReportDate
+                              ? format(new Date(user.lastReportDate), "dd MMM yyyy")
+                              : "—"}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() =>
+                              navigate(`/partner/client-analytics/${user.profile_id}`)
+                            }
+                          >
+                            <BarChart3 className="h-4 w-4 mr-1" />
+                            Analytics
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/partner/upload/${user.profile_id}`)}
+                          >
+                            <Upload className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setUnlinkId(user.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

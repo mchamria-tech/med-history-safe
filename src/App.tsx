@@ -39,6 +39,7 @@ import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import PartnerUserSearch from "./pages/partner/PartnerUserSearch";
 import PartnerDocumentUpload from "./pages/partner/PartnerDocumentUpload";
 import PartnerNewUser from "./pages/partner/PartnerNewUser";
+import PartnerClientAnalytics from "./pages/partner/PartnerClientAnalytics";
 
 // Doctor Pages
 import DoctorLogin from "./pages/doctor/DoctorLogin";
@@ -90,6 +91,7 @@ const App = () => (
               <Route path="/partner/upload" element={<PartnerDocumentUpload />} />
               <Route path="/partner/upload/:profileId" element={<PartnerDocumentUpload />} />
               <Route path="/partner/new-user" element={<PartnerNewUser />} />
+              <Route path="/partner/client-analytics/:profileId" element={<PartnerClientAnalytics />} />
               
               {/* Doctor Routes */}
               <Route path="/doctor/login" element={<DoctorLogin />} />
