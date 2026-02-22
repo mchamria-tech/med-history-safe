@@ -1,46 +1,47 @@
 
-## Fix: AI Lab Report Analysis Failing
+
+## Fix: MIME Type Detection from File Content Instead of Filename
 
 ### Root Cause
-The edge function logs show Google Gemini returning a **400 error**: `"Unable to process input image"`. This happens because:
+The document is named `"dummy_lab"` (no file extension). The current code splits on `.` to get the extension, resulting in `ext = "dummy_lab"`, which doesn't match any known type and defaults to `image/jpeg`. The actual file is likely a PDF, so Gemini rejects it with "Unable to process input image".
 
-1. The document is likely a **PDF file**, but the code sends it as an `image_url` content type to the AI model. Gemini's `image_url` only supports JPEG, PNG, and WebP -- not PDFs.
-2. For PDFs, the Gemini API requires using an `inline_data` block with the correct MIME type instead of `image_url`.
-
-### Fix
+### Solution
 
 **File: `supabase/functions/analyze-lab-report/index.ts`**
 
-Change how the document content is sent to the AI model:
-
-- For **images** (JPEG, PNG, WebP): continue using `image_url` with base64 data URI
-- For **PDFs**: use `inline_data` with `mime_type: "application/pdf"` and base64 content, which is the correct Gemini API format for PDF files
-
-Replace the single `image_url` message content block with conditional logic:
-
-```text
-If PDF:
-  { type: "file", file: { filename: "report.pdf", file_data: "data:application/pdf;base64,..." } }
-  -- OR use inline_data format depending on gateway support
-
-If Image:
-  { type: "image_url", image_url: { url: "data:image/jpeg;base64,..." } }
-```
-
-Additionally, add better error handling to surface the actual AI gateway error message to the frontend instead of a generic "AI analysis failed" message.
+1. **Detect MIME type from the HTTP response Content-Type header** when downloading the file via signed URL (primary method)
+2. **Fall back to magic bytes detection** -- check the first few bytes of the file buffer:
+   - `%PDF` (hex `25 50 44 46`) = PDF
+   - `\xFF\xD8\xFF` = JPEG
+   - `\x89PNG` = PNG
+   - `RIFF...WEBP` = WebP
+3. **Fall back to filename extension** as last resort
+4. **Use `image_url` with data URI for ALL types** (including PDFs) since the Lovable AI Gateway translates `data:application/pdf;base64,...` to the native Gemini format. Remove the `type: "file"` block which may not be supported.
+5. **Also fix the frontend** (`PartnerClientAnalytics.tsx`) to properly surface error messages from the edge function response body instead of showing the generic "Edge Function returned a non-2xx status code".
 
 ### Changes
 
 | File | Change |
 |------|--------|
-| `supabase/functions/analyze-lab-report/index.ts` | Fix content format for PDFs vs images; improve error messages |
+| `supabase/functions/analyze-lab-report/index.ts` | Use Content-Type header + magic bytes for MIME detection; use `image_url` for all file types |
+| `src/pages/partner/PartnerClientAnalytics.tsx` | Extract and display the actual error message from the response body |
 
 ### Technical Details
 
-The OpenAI-compatible API format used by the Lovable AI Gateway supports sending PDFs to Gemini models using the `image_url` type with a `data:application/pdf;base64,...` data URI. The fix will:
+**MIME detection priority:**
+1. Response `Content-Type` header from the signed URL download
+2. File magic bytes (first 4-8 bytes of the buffer)
+3. Filename extension (existing logic, as fallback)
 
-1. Keep the existing base64 encoding and MIME type detection
-2. Always use `image_url` with the correct MIME type (including `application/pdf`) since the gateway translates this to the native Gemini format
-3. Add a fallback: if the AI returns a 400 error for image processing, return a user-friendly message suggesting the document format may not be supported
-4. Surface the actual error detail from the AI gateway in the response so the frontend can display it
-5. Add logging of the document extension and MIME type for debugging
+**Content block format (unified for all types):**
+```text
+{
+  type: "image_url",
+  image_url: {
+    url: "data:<detected-mime>;base64,<content>"
+  }
+}
+```
+
+**Frontend error handling fix:**
+The `supabase.functions.invoke()` call throws a `FunctionsHttpError` on non-2xx responses. The fix will read the response body from the error context to extract the actual error message (e.g., "The document format could not be processed...") instead of showing the generic HTTP error.
