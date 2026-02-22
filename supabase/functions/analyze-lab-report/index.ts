@@ -118,37 +118,46 @@ serve(async (req) => {
     if (!fileResp.ok) throw new Error("Failed to download document file");
 
     const fileBuffer = await fileResp.arrayBuffer();
-    const base64 = btoa(
-      new Uint8Array(fileBuffer).reduce((s, b) => s + String.fromCharCode(b), "")
-    );
+    const bytes = new Uint8Array(fileBuffer);
+    const base64 = btoa(bytes.reduce((s, b) => s + String.fromCharCode(b), ""));
 
-    // Determine MIME type
-    const ext = doc.document_name.split(".").pop()?.toLowerCase() || "";
-    let mimeType = "image/jpeg";
-    if (ext === "png") mimeType = "image/png";
-    else if (ext === "pdf") mimeType = "application/pdf";
-    else if (ext === "webp") mimeType = "image/webp";
+    // Detect MIME type: 1) Content-Type header, 2) magic bytes, 3) filename extension
+    const contentTypeHeader = fileResp.headers.get("content-type")?.split(";")[0]?.trim()?.toLowerCase();
+    
+    const detectFromMagicBytes = (buf: Uint8Array): string | null => {
+      if (buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) return "application/pdf";
+      if (buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) return "image/jpeg";
+      if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) return "image/png";
+      if (buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 && buf.length > 11 &&
+          buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50) return "image/webp";
+      return null;
+    };
 
-    console.log("Document extension:", ext, "MIME type:", mimeType);
+    const detectFromExtension = (name: string): string | null => {
+      const ext = name.split(".").pop()?.toLowerCase() || "";
+      if (ext === "pdf") return "application/pdf";
+      if (ext === "png") return "image/png";
+      if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+      if (ext === "webp") return "image/webp";
+      return null;
+    };
 
-    // Build content block based on file type
-    let fileContentBlock: any;
-    if (mimeType === "application/pdf") {
-      fileContentBlock = {
-        type: "file",
-        file: {
-          filename: doc.document_name,
-          file_data: `data:application/pdf;base64,${base64}`,
-        },
-      };
-    } else {
-      fileContentBlock = {
-        type: "image_url",
-        image_url: {
-          url: `data:${mimeType};base64,${base64}`,
-        },
-      };
-    }
+    const knownTypes = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+    const mimeType = 
+      (contentTypeHeader && knownTypes.includes(contentTypeHeader) ? contentTypeHeader : null)
+      || detectFromMagicBytes(bytes)
+      || detectFromExtension(doc.document_name)
+      || "image/jpeg";
+
+    console.log("MIME detection — Content-Type header:", contentTypeHeader, "| Magic bytes:", detectFromMagicBytes(bytes), "| Final:", mimeType);
+
+    // Unified: use image_url with data URI for all types (gateway translates PDFs to native Gemini format)
+    const fileContentBlock = {
+      type: "image_url",
+      image_url: {
+        url: `data:${mimeType};base64,${base64}`,
+      },
+    };
 
     // Call Lovable AI Gateway with tool calling
     const aiResponse = await fetch(
