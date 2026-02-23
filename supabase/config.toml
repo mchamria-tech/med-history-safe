@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.analyze-lab-report]
 verify_jwt = false
+
+[functions.analyze-lab-report-user]
+verify_jwt = false

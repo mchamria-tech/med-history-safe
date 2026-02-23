@@ -42,8 +42,12 @@ import PartnerNewUser from "./pages/partner/PartnerNewUser";
 import PartnerClientAnalytics from "./pages/partner/PartnerClientAnalytics";
 
 // Doctor Pages
+// Doctor Pages
 import DoctorLogin from "./pages/doctor/DoctorLogin";
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
+
+// Patient Pages
+import PatientLabAnalytics from "./pages/PatientLabAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +70,7 @@ const App = () => (
               <Route path="/view-documents/:profileId" element={<ViewDocuments />} />
               <Route path="/document-search" element={<DocumentSearch />} />
               <Route path="/feedback-hub" element={<FeedbackHub />} />
+              <Route path="/patient-analytics/:profileId" element={<PatientLabAnalytics />} />
               <Route path="/feedback" element={<Feedback />} />
               <Route path="/my-feedback" element={<MyFeedback />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
