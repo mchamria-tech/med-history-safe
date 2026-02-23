@@ -265,11 +265,58 @@ serve(async (req) => {
       }
     }
 
+    // Generate educational insights for out-of-range parameters
+    let insights: string | undefined;
+    const outOfRange = parameters.filter((p: any) => p.is_out_of_range);
+    if (outOfRange.length > 0) {
+      try {
+        const outOfRangeText = outOfRange
+          .map((p: any) => `- ${p.name}: ${p.value} ${p.unit} (Reference: ${p.reference_range}, Status: ${p.status})`)
+          .join("\n");
+
+        const insightsResponse = await fetch(
+          "https://ai.gateway.lovable.dev/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${lovableApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-3-flash-preview",
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "You are a medical education assistant. Given a list of out-of-range lab parameters, provide brief educational context about what each parameter measures and what abnormal values may commonly be associated with. Do NOT diagnose. Do NOT recommend treatment. Use phrases like 'commonly associated with', 'may indicate', 'often seen in'. Always remind that only a qualified healthcare provider can interpret results in clinical context. Keep your response concise and well-structured with one paragraph per parameter.",
+                },
+                {
+                  role: "user",
+                  content: `The following lab parameters were found to be out of range:\n\n${outOfRangeText}\n\nPlease provide brief educational context for each out-of-range parameter.`,
+                },
+              ],
+            }),
+          }
+        );
+
+        if (insightsResponse.ok) {
+          const insightsData = await insightsResponse.json();
+          insights = insightsData.choices?.[0]?.message?.content || undefined;
+        } else {
+          console.error("Insights AI call failed:", insightsResponse.status);
+        }
+      } catch (insightsErr) {
+        console.error("Insights generation error:", insightsErr);
+        // Graceful degradation — return parameters without insights
+      }
+    }
+
     return new Response(
       JSON.stringify({
         document_name: doc.document_name,
         document_date: doc.document_date,
         parameters,
+        ...(insights ? { insights } : {}),
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
