@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Menu, MoreVertical, Plus, ArrowLeft, Edit, Trash2, Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { Menu, MoreVertical, Plus, ArrowLeft, Edit, Trash2, Sparkles, Loader2, AlertCircle, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -620,6 +620,26 @@ const ProfileView = () => {
                   <p className="text-foreground">{profile.rm_no}</p>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Analyze Lab Report */}
+        {documents.length > 0 && (
+          <div className="bg-card rounded-lg p-4 border">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-foreground">Lab Analytics</h3>
+                <p className="text-xs text-muted-foreground">AI-powered lab report analysis</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/patient-analytics/${profileId}`)}
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                Analyze
+              </Button>
             </div>
           </div>
         )}
