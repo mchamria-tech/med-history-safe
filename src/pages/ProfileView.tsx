@@ -691,10 +691,12 @@ const ProfileView = () => {
                       const popupPermission = localStorage.getItem('popup-permission');
                       
                       const openDocument = async (docUrl: string) => {
+                        const newWindow = window.open('', '_blank');
                         const { url, error } = await getSignedUrl('profile-documents', docUrl);
-                        if (url && !error) {
-                          window.open(url, '_blank');
+                        if (url && !error && newWindow) {
+                          newWindow.location.href = url;
                         } else {
+                          newWindow?.close();
                           toast({
                             title: "Error",
                             description: "Failed to open document",
@@ -965,9 +967,17 @@ const ProfileView = () => {
               onClick={async () => {
                 localStorage.setItem('popup-permission', 'granted');
                 if (pendingDocUrl) {
+                  const newWindow = window.open('', '_blank');
                   const { url, error } = await getSignedUrl('profile-documents', pendingDocUrl);
-                  if (url && !error) {
-                    window.open(url, '_blank');
+                  if (url && !error && newWindow) {
+                    newWindow.location.href = url;
+                  } else {
+                    newWindow?.close();
+                    toast({
+                      title: "Error",
+                      description: "Failed to open document",
+                      variant: "destructive",
+                    });
                   }
                   setPendingDocUrl(null);
                 }

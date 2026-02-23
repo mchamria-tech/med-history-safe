@@ -124,11 +124,15 @@ const ViewDocuments = () => {
   };
 
   const handleView = async (documentUrl: string) => {
+    const newWindow = window.open('', '_blank');
     try {
       const { url, error } = await getSignedUrl('profile-documents', documentUrl);
       if (error || !url) throw new Error(error || 'Failed to get URL');
-      window.open(url, '_blank');
+      if (newWindow) {
+        newWindow.location.href = url;
+      }
     } catch (error) {
+      newWindow?.close();
       console.error('Error viewing document:', error);
       toast({ title: "Error", description: "Failed to view document", variant: "destructive" });
     }
