@@ -15,6 +15,8 @@ import {
   MapPin,
   Receipt,
   Settings,
+  Stethoscope,
+  BarChart3,
 } from "lucide-react";
 
 interface PartnerLayoutProps {
@@ -47,6 +49,8 @@ const PartnerLayout = ({ children }: PartnerLayoutProps) => {
     { path: "/partner/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/partner/users", label: "Linked Users", icon: Users },
     { path: "/partner/upload", label: "Upload Document", icon: Upload },
+    { path: "/partner/analytics", label: "Analytics", icon: BarChart3 },
+    { path: "/partner/doctors", label: "Empanelled Doctors", icon: Stethoscope },
     { path: "/partner/settings", label: "Settings", icon: Settings },
   ];
 

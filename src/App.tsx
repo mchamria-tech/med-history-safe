@@ -40,6 +40,9 @@ import PartnerUserSearch from "./pages/partner/PartnerUserSearch";
 import PartnerDocumentUpload from "./pages/partner/PartnerDocumentUpload";
 import PartnerNewUser from "./pages/partner/PartnerNewUser";
 import PartnerClientAnalytics from "./pages/partner/PartnerClientAnalytics";
+import PartnerAnalytics from "./pages/partner/PartnerAnalytics";
+import PartnerDoctors from "./pages/partner/PartnerDoctors";
+import PartnerSettings from "./pages/partner/PartnerSettings";
 
 // Doctor Pages
 // Doctor Pages
@@ -97,6 +100,9 @@ const App = () => (
               <Route path="/partner/upload/:profileId" element={<PartnerDocumentUpload />} />
               <Route path="/partner/new-user" element={<PartnerNewUser />} />
               <Route path="/partner/client-analytics/:profileId" element={<PartnerClientAnalytics />} />
+              <Route path="/partner/analytics" element={<PartnerAnalytics />} />
+              <Route path="/partner/doctors" element={<PartnerDoctors />} />
+              <Route path="/partner/settings" element={<PartnerSettings />} />
               
               {/* Doctor Routes */}
               <Route path="/doctor/login" element={<DoctorLogin />} />
