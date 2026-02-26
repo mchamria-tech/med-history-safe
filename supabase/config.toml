@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.analyze-lab-report-user]
 verify_jwt = false
+
+[functions.create-doctor]
+verify_jwt = false

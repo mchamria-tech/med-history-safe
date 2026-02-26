@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Building2, Mail, Phone, MapPin, Shield, Bell, Save } from "lucide-react";
+import { Building2, Mail, Phone, MapPin, Shield, Bell, Save, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,12 +40,27 @@ const PartnerSettings = () => {
     }
   }, [partner]);
 
-  const handleSave = () => {
-    // In production, this would save to the database
-    toast({
-      title: "Settings Saved",
-      description: "Your settings have been updated successfully.",
-    });
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!partner) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("partners")
+      .update({
+        name: formData.name,
+        email: formData.email,
+        address: formData.address || null,
+        gst_number: formData.gstNumber || null,
+      })
+      .eq("id", partner.id);
+
+    if (error) {
+      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Settings Saved", description: "Your settings have been updated successfully." });
+    }
+    setSaving(false);
   };
 
   return (
@@ -251,9 +267,9 @@ const PartnerSettings = () => {
 
         {/* Save Button */}
         <div className="flex justify-end">
-          <Button onClick={handleSave} className="gap-2">
-            <Save className="h-4 w-4" />
-            Save Changes
+          <Button onClick={handleSave} disabled={saving} className="gap-2">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {saving ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </div>
