@@ -1060,6 +1060,89 @@ const ProfileView = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Share with Doctor Dialog */}
+      <Dialog open={showDoctorDialog} onOpenChange={setShowDoctorDialog}>
+        <DialogContent className="bg-background">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Stethoscope className="h-5 w-5 text-emerald-600" />
+              Share with Doctor
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="doctor-global-id">Doctor's Global ID</Label>
+              <Input
+                id="doctor-global-id"
+                value={doctorGlobalId}
+                onChange={(e) => setDoctorGlobalId(e.target.value.toUpperCase())}
+                placeholder="e.g., IND-D1A2B3"
+                className="mt-1 font-mono"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Ask your doctor for their CareBag Global ID
+              </p>
+            </div>
+
+            <div>
+              <Label className="mb-2 block">Access Type</Label>
+              <RadioGroup
+                value={accessType}
+                onValueChange={(v) => setAccessType(v as "temporary" | "persistent")}
+                className="space-y-3"
+              >
+                <div className="flex items-start gap-3 p-3 rounded-lg border bg-background">
+                  <RadioGroupItem value="temporary" id="access-temp" className="mt-0.5" />
+                  <div>
+                    <Label htmlFor="access-temp" className="font-medium cursor-pointer flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-amber-600" />
+                      Quick Access (1 hour)
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Grant temporary access for a consultation. Access expires automatically after 1 hour.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-lg border bg-background">
+                  <RadioGroupItem value="persistent" id="access-persist" className="mt-0.5" />
+                  <div>
+                    <Label htmlFor="access-persist" className="font-medium cursor-pointer flex items-center gap-2">
+                      <UserPlus className="h-4 w-4 text-emerald-600" />
+                      Add to Care Team
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Add this doctor to your ongoing care team. You can revoke access anytime. Only available for independent doctors.
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDoctorDialog(false);
+                setDoctorGlobalId("");
+                setAccessType("temporary");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleGrantDoctorAccess} disabled={isGranting}>
+              {isGranting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Granting...
+                </>
+              ) : (
+                "Grant Access"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
