@@ -48,6 +48,7 @@ import PartnerSettings from "./pages/partner/PartnerSettings";
 // Doctor Pages
 import DoctorLogin from "./pages/doctor/DoctorLogin";
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
+import DoctorPatientView from "./pages/doctor/DoctorPatientView";
 
 // Patient Pages
 import PatientLabAnalytics from "./pages/PatientLabAnalytics";
