@@ -108,6 +108,7 @@ const App = () => (
               {/* Doctor Routes */}
               <Route path="/doctor/login" element={<DoctorLogin />} />
               <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+              <Route path="/doctor/patient/:profileId" element={<DoctorPatientView />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
