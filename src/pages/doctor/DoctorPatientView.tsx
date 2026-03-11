@@ -194,7 +194,7 @@ const DoctorPatientView = () => {
     setIsAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke("analyze-lab-report-doctor", {
-        body: { profileId },
+        body: { profileId, documentId: selectedDocId || undefined },
       });
 
       if (error) throw error;
