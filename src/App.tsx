@@ -48,6 +48,7 @@ import PartnerSettings from "./pages/partner/PartnerSettings";
 // Doctor Pages
 import DoctorLogin from "./pages/doctor/DoctorLogin";
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
+import DoctorPatientView from "./pages/doctor/DoctorPatientView";
 
 // Patient Pages
 import PatientLabAnalytics from "./pages/PatientLabAnalytics";
@@ -107,6 +108,7 @@ const App = () => (
               {/* Doctor Routes */}
               <Route path="/doctor/login" element={<DoctorLogin />} />
               <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+              <Route path="/doctor/patient/:profileId" element={<DoctorPatientView />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
