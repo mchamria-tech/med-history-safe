@@ -41,6 +41,7 @@ const Profiles_Main = () => {
   const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [showSplash, setShowSplash] = useState(false);
   const { isAdmin } = useAdminCheck();
 
@@ -506,18 +507,52 @@ const Profiles_Main = () => {
       </div>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) { setDeleteConfirmText(""); setProfileToDelete(null); } }}>
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Profile</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this profile? This will remove all saved data except your login credentials.
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  You are about to permanently delete{" "}
+                  <span className="font-semibold text-foreground">
+                    {profiles.find(p => p.id === profileToDelete)?.name}
+                  </span>
+                  . This will remove:
+                </p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>All profile information and health data</li>
+                  <li>All linked documents and prescriptions</li>
+                  <li>All doctor and partner access grants</li>
+                </ul>
+                <p className="font-medium text-destructive">This action cannot be undone.</p>
+                <div className="pt-1">
+                  <p className="text-xs mb-2">
+                    Type{" "}
+                    <span className="font-mono font-semibold text-foreground">
+                      Delete {profiles.find(p => p.id === profileToDelete)?.name}
+                    </span>{" "}
+                    to confirm:
+                  </p>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder={`Delete ${profiles.find(p => p.id === profileToDelete)?.name}`}
+                    className="flex h-10 w-full rounded-xl border border-border bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 focus-visible:border-primary/50 transition-all duration-150"
+                  />
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
-              Delete
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleteConfirmText !== `Delete ${profiles.find(p => p.id === profileToDelete)?.name}`}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl disabled:opacity-50 disabled:pointer-events-none"
+            >
+              Delete Profile
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
