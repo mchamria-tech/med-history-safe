@@ -41,6 +41,7 @@ const Profiles_Main = () => {
   const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [showSplash, setShowSplash] = useState(false);
   const { isAdmin } = useAdminCheck();
 
