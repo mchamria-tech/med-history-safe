@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Menu, MoreVertical, Plus, ArrowLeft, Edit, Trash2, Sparkles, Loader2, AlertCircle, Activity } from "lucide-react";
+import { Menu, MoreVertical, Plus, ArrowLeft, Edit, Trash2, Sparkles, Loader2, AlertCircle, Activity, Stethoscope, Clock, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "lucide-react";
 import { cn, getEdgeFunctionError } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -69,6 +70,12 @@ const ProfileView = () => {
   const [showMetadataReview, setShowMetadataReview] = useState(false);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const [pendingDocUrl, setPendingDocUrl] = useState<string | null>(null);
+
+  // Share with Doctor state
+  const [showDoctorDialog, setShowDoctorDialog] = useState(false);
+  const [doctorGlobalId, setDoctorGlobalId] = useState("");
+  const [accessType, setAccessType] = useState<"temporary" | "persistent">("temporary");
+  const [isGranting, setIsGranting] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
@@ -420,6 +427,54 @@ const ProfileView = () => {
     }
   };
 
+  const handleGrantDoctorAccess = async () => {
+    if (!doctorGlobalId.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter the doctor's Global ID",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGranting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("grant-doctor-access", {
+        body: {
+          doctor_global_id: doctorGlobalId.trim(),
+          profile_id: profileId,
+          access_type: accessType,
+        },
+      });
+
+      if (error) {
+        const message = await getEdgeFunctionError(error);
+        throw new Error(message);
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Access Granted",
+        description: data.message,
+      });
+
+      setShowDoctorDialog(false);
+      setDoctorGlobalId("");
+      setAccessType("temporary");
+    } catch (err: any) {
+      toast({
+        title: "Failed",
+        description: err.message || "Could not grant doctor access",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGranting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -644,7 +699,24 @@ const ProfileView = () => {
           </div>
         )}
 
-        {/* Upload Document Button */}
+        {/* Share with Doctor */}
+        <div className="bg-card rounded-lg p-4 border">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-semibold text-foreground">Share with Doctor</h3>
+              <p className="text-xs text-muted-foreground">Grant a doctor access to this profile's records</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDoctorDialog(true)}
+            >
+              <Stethoscope className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+          </div>
+        </div>
+
         <div className="flex flex-col items-center gap-1">
           <Button
             onClick={() => setShowUploadDialog(true)}
@@ -988,6 +1060,89 @@ const ProfileView = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Share with Doctor Dialog */}
+      <Dialog open={showDoctorDialog} onOpenChange={setShowDoctorDialog}>
+        <DialogContent className="bg-background">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Stethoscope className="h-5 w-5 text-emerald-600" />
+              Share with Doctor
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="doctor-global-id">Doctor's Global ID</Label>
+              <Input
+                id="doctor-global-id"
+                value={doctorGlobalId}
+                onChange={(e) => setDoctorGlobalId(e.target.value.toUpperCase())}
+                placeholder="e.g., IND-D1A2B3"
+                className="mt-1 font-mono"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Ask your doctor for their CareBag Global ID
+              </p>
+            </div>
+
+            <div>
+              <Label className="mb-2 block">Access Type</Label>
+              <RadioGroup
+                value={accessType}
+                onValueChange={(v) => setAccessType(v as "temporary" | "persistent")}
+                className="space-y-3"
+              >
+                <div className="flex items-start gap-3 p-3 rounded-lg border bg-background">
+                  <RadioGroupItem value="temporary" id="access-temp" className="mt-0.5" />
+                  <div>
+                    <Label htmlFor="access-temp" className="font-medium cursor-pointer flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-amber-600" />
+                      Quick Access (1 hour)
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Grant temporary access for a consultation. Access expires automatically after 1 hour.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-lg border bg-background">
+                  <RadioGroupItem value="persistent" id="access-persist" className="mt-0.5" />
+                  <div>
+                    <Label htmlFor="access-persist" className="font-medium cursor-pointer flex items-center gap-2">
+                      <UserPlus className="h-4 w-4 text-emerald-600" />
+                      Add to Care Team
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Add this doctor to your ongoing care team. You can revoke access anytime. Only available for independent doctors.
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDoctorDialog(false);
+                setDoctorGlobalId("");
+                setAccessType("temporary");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleGrantDoctorAccess} disabled={isGranting}>
+              {isGranting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Granting...
+                </>
+              ) : (
+                "Grant Access"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

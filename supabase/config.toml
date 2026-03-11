@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.analyze-lab-report-doctor]
 verify_jwt = false
+
+[functions.grant-doctor-access]
+verify_jwt = false

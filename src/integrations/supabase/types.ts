@@ -112,6 +112,48 @@ export type Database = {
           },
         ]
       }
+      doctor_patients: {
+        Row: {
+          created_at: string | null
+          doctor_id: string
+          granted_by_user_id: string
+          id: string
+          is_active: boolean | null
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          doctor_id: string
+          granted_by_user_id: string
+          id?: string
+          is_active?: boolean | null
+          profile_id: string
+        }
+        Update: {
+          created_at?: string | null
+          doctor_id?: string
+          granted_by_user_id?: string
+          id?: string
+          is_active?: boolean | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_patients_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_patients_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doctors: {
         Row: {
           created_at: string | null
