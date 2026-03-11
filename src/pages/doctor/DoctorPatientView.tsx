@@ -109,6 +109,7 @@ const DoctorPatientView = () => {
   };
 
   const fetchAccessExpiry = async () => {
+    // Check time-limited access
     const { data } = await supabase
       .from("doctor_access")
       .select("expires_at")
@@ -120,6 +121,22 @@ const DoctorPatientView = () => {
       .maybeSingle();
     if (data) {
       setExpiresAt(data.expires_at);
+      return;
+    }
+
+    // Check persistent access (doctor_patients)
+    try {
+      const { data: persistent } = await supabase
+        .from("doctor_patients")
+        .select("id")
+        .eq("profile_id", profileId!)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (persistent) {
+        setIsPersistentAccess(true);
+      }
+    } catch {
+      // Table might not exist yet
     }
   };
 
