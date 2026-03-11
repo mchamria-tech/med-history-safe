@@ -699,7 +699,24 @@ const ProfileView = () => {
           </div>
         )}
 
-        {/* Upload Document Button */}
+        {/* Share with Doctor */}
+        <div className="bg-card rounded-lg p-4 border">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-semibold text-foreground">Share with Doctor</h3>
+              <p className="text-xs text-muted-foreground">Grant a doctor access to this profile's records</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDoctorDialog(true)}
+            >
+              <Stethoscope className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+          </div>
+        </div>
+
         <div className="flex flex-col items-center gap-1">
           <Button
             onClick={() => setShowUploadDialog(true)}
