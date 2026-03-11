@@ -407,26 +407,44 @@ const DoctorPatientView = () => {
             {/* AI Analysis Card */}
             <Card className="shadow-soft">
               <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium text-foreground">AI Lab Report Analysis</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Analyze the most recent lab report with AI to highlight out-of-range parameters
-                    </p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium text-foreground">AI Lab Report Analysis</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedDocId && documents.find(d => d.id === selectedDocId)
+                          ? `${documents.find(d => d.id === selectedDocId)!.document_type || "Report"} | Uploaded on ${new Date(documents.find(d => d.id === selectedDocId)!.document_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`
+                          : "No documents available"}
+                      </p>
+                    </div>
+                    <Button onClick={handleAnalyze} disabled={isAnalyzing || documents.length === 0}>
+                      {isAnalyzing ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Activity className="h-4 w-4 mr-2" />
+                          Analyze
+                        </>
+                      )}
+                    </Button>
                   </div>
-                  <Button onClick={handleAnalyze} disabled={isAnalyzing}>
-                    {isAnalyzing ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <Activity className="h-4 w-4 mr-2" />
-                        Analyze
-                      </>
-                    )}
-                  </Button>
+                  {documents.length > 1 && (
+                    <Select value={selectedDocId} onValueChange={setSelectedDocId}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a document" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {documents.map((doc) => (
+                          <SelectItem key={doc.id} value={doc.id}>
+                            {doc.document_type || "Report"} — {doc.document_name} ({new Date(doc.document_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </CardContent>
             </Card>
