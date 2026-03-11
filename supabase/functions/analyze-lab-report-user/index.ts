@@ -45,7 +45,7 @@ serve(async (req) => {
     }
     const userId = claimsData.claims.sub;
 
-    const { profileId } = await req.json();
+    const { profileId, documentId } = await req.json();
     if (!profileId) {
       return new Response(JSON.stringify({ error: "profileId is required" }), {
         status: 400,
@@ -70,24 +70,39 @@ serve(async (req) => {
 
     // TODO: Check payment/credits before proceeding (future paywall hook)
 
-    // Fetch the most recent document for this profile (user-uploaded or partner-uploaded)
-    const { data: docs, error: docsError } = await adminClient
-      .from("documents")
-      .select("id, document_name, document_url, document_date")
-      .eq("profile_id", profileId)
-      .order("document_date", { ascending: false })
-      .limit(1);
-
-    if (docsError) throw docsError;
-
-    if (!docs || docs.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "No documents found for this profile", parameters: [] }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Fetch document: specific one if documentId provided, otherwise most recent
+    let doc: any;
+    if (documentId) {
+      const { data: specificDoc, error: specificErr } = await adminClient
+        .from("documents")
+        .select("id, document_name, document_url, document_date")
+        .eq("id", documentId)
+        .eq("profile_id", profileId)
+        .maybeSingle();
+      if (specificErr) throw specificErr;
+      if (!specificDoc) {
+        return new Response(
+          JSON.stringify({ error: "Document not found or does not belong to this profile" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      doc = specificDoc;
+    } else {
+      const { data: docs, error: docsError } = await adminClient
+        .from("documents")
+        .select("id, document_name, document_url, document_date")
+        .eq("profile_id", profileId)
+        .order("document_date", { ascending: false })
+        .limit(1);
+      if (docsError) throw docsError;
+      if (!docs || docs.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "No documents found for this profile", parameters: [] }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      doc = docs[0];
     }
-
-    const doc = docs[0];
 
     // Generate signed URL and download file
     const filePath = doc.document_url.replace(/^.*profile-documents\//, "");
