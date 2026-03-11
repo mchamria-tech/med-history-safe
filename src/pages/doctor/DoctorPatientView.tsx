@@ -73,6 +73,7 @@ const DoctorPatientView = () => {
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [openingDocId, setOpeningDocId] = useState<string | null>(null);
+  const [selectedDocId, setSelectedDocId] = useState<string>("");
 
   useEffect(() => {
     if (!checkingDoctor && isDoctor && doctor && profileId) {
