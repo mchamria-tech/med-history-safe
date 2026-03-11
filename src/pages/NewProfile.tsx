@@ -431,13 +431,22 @@ const NewProfile = () => {
 
             <div className="space-y-1">
               <Label htmlFor="relation" className="text-sm font-medium text-foreground">Relation</Label>
-              <Input 
-                id="relation" 
-                value={relation}
-                onChange={(e) => setRelation(e.target.value)}
-                placeholder="If Primary, write Self" 
-                className="bg-muted border-border" 
-              />
+              {editProfileId && relation.toLowerCase() === 'self' ? (
+                <Input 
+                  id="relation" 
+                  value={relation}
+                  disabled
+                  className="bg-muted border-border opacity-60 cursor-not-allowed" 
+                />
+              ) : (
+                <Input 
+                  id="relation" 
+                  value={relation}
+                  onChange={(e) => setRelation(e.target.value)}
+                  placeholder="If Primary, write Self" 
+                  className="bg-muted border-border" 
+                />
+              )}
             </div>
           </div>
         </div>
