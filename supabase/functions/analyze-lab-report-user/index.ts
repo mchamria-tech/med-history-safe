@@ -45,7 +45,7 @@ serve(async (req) => {
     }
     const userId = claimsData.claims.sub;
 
-    const { profileId } = await req.json();
+    const { profileId, documentId } = await req.json();
     if (!profileId) {
       return new Response(JSON.stringify({ error: "profileId is required" }), {
         status: 400,
