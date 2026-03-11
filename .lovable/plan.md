@@ -1,157 +1,196 @@
+# CareBag — System Architecture
 
+## Overview
 
-## Partner Portal Enhancements: Settings, Empanelled Doctors, Analytics
+CareBag is a mobile-first health records platform enabling families to securely store, organize, and share medical documents. It serves four distinct user segments through separate portals:
 
-### Overview
-Three major additions to the partner sidebar navigation:
-1. **Settings** -- make the existing page actually persist changes to the database
-2. **Empanelled Doctors** -- manage doctors attached to the partner (link existing + create new)
-3. **Analytics** -- real-time analytics using actual database data
-
----
-
-### 1. Settings Page (Persist to Database)
-
-**File: `src/pages/partner/PartnerSettings.tsx`** -- Modify existing
-
-- Update `handleSave` to call `supabase.from("partners").update({...}).eq("id", partner.id)` with the form fields (name, email, address, gst_number)
-- Add loading state on save button
-- Show success/error toast based on result
-- No schema changes needed -- the `partners` table already has an RLS policy "Partners can view their own record" for SELECT but no UPDATE policy for partners themselves
-
-**Database migration needed:**
-```sql
-CREATE POLICY "Partners can update their own record"
-ON public.partners
-FOR UPDATE
-TO authenticated
-USING (user_id = auth.uid())
-WITH CHECK (user_id = auth.uid());
-```
+- **B2C User App** — Individuals managing family health records
+- **B2B Partner Portal** — Healthcare organizations (hospitals, insurers) managing linked clients
+- **Doctor Portal** — Medical professionals accessing patient records via time-limited or persistent grants
+- **Super Admin Panel** — Platform operators managing partners, users, and system analytics
 
 ---
 
-### 2. Empanelled Doctors Page
+## User Roles
 
-**New file: `src/pages/partner/PartnerDoctors.tsx`**
+Stored in `user_roles` table with enum `app_role`:
 
-A page where the partner can:
-- **View** all doctors attached to their organization (query `doctors` table where `partner_id = partner.id`)
-- **Search & Link** existing independent doctors by Global ID or email
-- **Create new** doctor accounts (calls a new edge function)
-- **Revoke access** (set doctor's `partner_id` to null / deactivate)
+| Role | Description |
+|------|-------------|
+| `user` | Standard end user — creates profiles, uploads documents |
+| `partner` | Healthcare organization — manages linked clients, uploads on their behalf |
+| `doctor` | Medical professional — views patient records (independent or partner-attached) |
+| `admin` | Reserved/moderator role |
+| `super_admin` | Full platform access — manages all entities |
 
-**UI layout:**
-- Header: "Empanelled Doctors" with "Add Doctor" button
-- Table/list of attached doctors showing: Name, Specialty, Hospital, Global ID, Status, Actions (Revoke)
-- "Add Doctor" dialog with two tabs:
-  - "Link Existing" -- search by Global ID or email
-  - "Create New" -- form with name, email, password, specialty, hospital, phone
-
-**New edge function: `supabase/functions/create-doctor/index.ts`**
-
-Called by the partner to create a new doctor account:
-- Verify the caller has the `partner` role
-- Create auth user via `admin.createUser`
-- Generate doctor Global ID via `generate_global_id('doctor', country)`
-- Insert into `doctors` table with `partner_id` set to the calling partner's ID
-- Insert `doctor` role into `user_roles`
-- Return doctor data
-
-**Database migration needed:**
-
-The `doctors` table currently only allows super_admins to insert/update. Partners need policies to manage their attached doctors:
-
-```sql
--- Partners can view their attached doctors
-CREATE POLICY "Partners can view attached doctors"
-ON public.doctors
-FOR SELECT
-TO authenticated
-USING (partner_id = get_partner_id(auth.uid()));
-
--- Partners can update their attached doctors
-CREATE POLICY "Partners can update attached doctors"
-ON public.doctors
-FOR UPDATE
-TO authenticated
-USING (partner_id = get_partner_id(auth.uid()));
-```
+Role checks use the `has_role(_user_id, _role)` security definer function to avoid RLS recursion.
 
 ---
 
-### 3. Analytics Page (Real Data)
+## Global ID System
 
-**New file: `src/pages/partner/PartnerAnalyticsReal.tsx`** (replaces the mock PartnerAnalytics)
+Format: `{COUNTRY}-{PREFIX}{5chars}`
 
-Panels pulling real data from the database:
+| Prefix | Role | Example |
+|--------|------|---------|
+| `A` | User | `IND-A1B2C3` |
+| `D` | Doctor | `IND-D1A2B3` |
+| `X` | Partner | `USA-X9F4E2` |
+| `0` | Admin | `IND-0K8M2N` |
 
-1. **Overview Stats Row** -- Linked Clients, Total Documents, Documents This Month, Pending Consents (same queries as dashboard but displayed as stat cards)
-2. **Client Growth Chart** -- Monthly new client linkages over the past 6 months (query `partner_users` grouped by month)
-3. **Document Upload Trends** -- Monthly document uploads over the past 6 months (query `documents` grouped by month)
-4. **Top Clients by Documents** -- Bar chart showing clients with most documents
-5. **Document Type Distribution** -- Donut chart showing breakdown by `document_type`
-6. **Consent Status** -- Pie chart of consent_given true vs false from `partner_users`
-
-Uses `recharts` (already installed) for charts. All data fetched via standard Supabase client queries -- no edge functions needed since existing RLS policies already scope data to the partner.
+Generated by `generate_global_id(role_type, country_code)` database function.
 
 ---
 
-### 4. Navigation Updates
+## Database Tables
 
-**File: `src/components/partner/PartnerLayout.tsx`**
-
-Add two new nav items to the `navItems` array:
-```typescript
-{ path: "/partner/doctors", label: "Empanelled Doctors", icon: Stethoscope },
-{ path: "/partner/analytics", label: "Analytics", icon: BarChart3 },
-```
-
-Order: Dashboard, Linked Users, Upload Document, **Analytics**, **Empanelled Doctors**, Settings
-
----
-
-### 5. Route Registration
-
-**File: `src/App.tsx`**
-
-Add three new routes:
-```
-/partner/settings → PartnerSettings (already exists but not routed)
-/partner/doctors → PartnerDoctors
-/partner/analytics → PartnerAnalyticsReal
-```
+| Table | Purpose |
+|-------|---------|
+| `profiles` | User/family member health profiles (linked to `auth.users` via `user_id`) |
+| `documents` | Medical documents with metadata (ailment, doctor, medicine, tags) |
+| `partners` | Healthcare organizations with partner codes and branding |
+| `partner_users` | Many-to-many link between partners and profiles (with consent tracking) |
+| `partner_otp_requests` | OTP verification for partner-user linking |
+| `doctors` | Doctor records with optional `partner_id` for attached doctors |
+| `doctor_access` | Time-limited access grants (1-hour windows) |
+| `doctor_patients` | Persistent care team relationships (independent doctors only) |
+| `document_access_grants` | Fine-grained document-level access for partners/doctors |
+| `user_roles` | Role assignments per user |
+| `admin_profiles` | Super admin profile details |
+| `admin_audit_logs` | Audit trail for admin actions |
+| `feedback` | User feedback with admin responses and ticket codes |
 
 ---
 
-### Files Summary
+## Doctor Access Model (Hybrid)
 
-| File | Action |
-|------|--------|
-| `src/pages/partner/PartnerSettings.tsx` | Modify -- add real save to database |
-| `src/pages/partner/PartnerDoctors.tsx` | **New** -- empanelled doctors management |
-| `src/pages/partner/PartnerAnalytics.tsx` | **Rewrite** -- replace mock data with real database queries |
-| `supabase/functions/create-doctor/index.ts` | **New** -- edge function for partner to create doctor accounts |
-| `src/components/partner/PartnerLayout.tsx` | Modify -- add Analytics + Empanelled Doctors nav items |
-| `src/App.tsx` | Modify -- add `/partner/doctors`, `/partner/analytics`, `/partner/settings` routes |
-| Database migration | Add RLS policies for partners to update own record + view/update attached doctors |
-| `supabase/config.toml` | Register `create-doctor` function |
+Patients grant doctor access via the "Share with Doctor" dialog on their profile page, using the doctor's Global ID.
 
-### Technical Details
+### Time-Limited Access
+- Stored in `doctor_access` table
+- 1-hour expiry window (`expires_at`)
+- Available to all doctors (independent and partner-attached)
+- Doctor sees countdown timer on patient view
 
-**Edge function `create-doctor`:**
-- Authenticates caller via JWT, verifies partner role
-- Uses service role client to: create auth user, generate global ID, insert doctor record with `partner_id`, insert user_role
-- Rolls back (deletes auth user) on any failure
-- Same CORS pattern as `create-partner`
+### Persistent Care Team
+- Stored in `doctor_patients` table
+- No expiry — remains active until revoked (`is_active = false`)
+- **Independent doctors only** (where `partner_id IS NULL`)
+- Doctor sees "Care Team" badge instead of timer
 
-**RLS policies added (3 total):**
-1. `Partners can update their own record` on `partners` (UPDATE)
-2. `Partners can view attached doctors` on `doctors` (SELECT)
-3. `Partners can update attached doctors` on `doctors` (UPDATE)
+### Edge Function: `grant-doctor-access`
+- Resolves doctor Global ID → internal UUID
+- `temporary` mode → inserts into `doctor_access` (1-hour)
+- `persistent` mode → inserts into `doctor_patients` (independent doctors only)
 
-**Analytics data queries:**
-- All use the existing Supabase client with partner-scoped RLS
-- Monthly grouping done client-side after fetching records with date filters (last 6 months)
-- No new tables or functions needed -- leverages existing `partner_users` and `documents` tables
+---
 
+## Edge Functions (16)
+
+| Function | Purpose |
+|----------|---------|
+| `admin-global-id-lookup` | Admin lookup of any entity by Global ID |
+| `admin-reset-password` | Admin-initiated password reset |
+| `analyze-lab-report` | AI lab report analysis (partner context) |
+| `analyze-lab-report-user` | AI lab report analysis (user context) |
+| `analyze-lab-report-doctor` | AI lab report analysis (doctor context) |
+| `create-doctor` | Partner creates a new doctor account |
+| `create-partner` | Super admin creates a new partner organization |
+| `delete-my-account` | User self-service account deletion |
+| `delete-user` | Admin deletes a user account |
+| `extract-document-metadata` | AI extraction of metadata from uploaded documents |
+| `grant-doctor-access` | Patient grants doctor access (temporary or persistent) |
+| `partner-search-user` | Partner searches for users by Global ID or email |
+| `partner-upload-document` | Partner uploads document on behalf of a linked user |
+| `send-changelog-email` | Sends changelog/update emails |
+| `send-partner-otp` | Sends OTP for partner-user consent verification |
+| `send-password-reset` | Sends password reset email |
+
+---
+
+## Route Map
+
+### User Portal
+| Route | Page |
+|-------|------|
+| `/` | Landing page |
+| `/login` | Login |
+| `/register` | Registration |
+| `/reset-password` | Password reset |
+| `/dashboard` | Profiles list |
+| `/new-profile` | Create profile |
+| `/profile/:profileId` | Profile view (with "Share with Doctor" dialog) |
+| `/view-documents/:profileId` | Document gallery |
+| `/document-search` | Cross-profile document search |
+| `/patient-analytics/:profileId` | AI lab report analytics |
+| `/feedback-hub` | Feedback center |
+| `/feedback` | Submit feedback |
+| `/my-feedback` | View own feedback |
+| `/privacy-policy` | Privacy policy |
+| `/terms-of-service` | Terms of service |
+
+### Super Admin Portal (`/admin/*`)
+| Route | Page |
+|-------|------|
+| `/admin/login` | Admin login |
+| `/admin` | Dashboard |
+| `/admin/partners` | Partner management |
+| `/admin/partners/new` | Create partner |
+| `/admin/partners/:id` | Edit partner |
+| `/admin/users` | User management |
+| `/admin/users/:userId/analytics` | User analytics |
+| `/admin/analytics` | Platform analytics |
+| `/admin/feedback` | Feedback management |
+| `/admin/audit-logs` | Audit logs |
+| `/admin/profile` | Admin profile |
+
+### Partner Portal (`/partner/*`)
+| Route | Page |
+|-------|------|
+| `/partner/login` | Partner login |
+| `/partner/dashboard` | Dashboard |
+| `/partner/users` | Linked user search |
+| `/partner/upload` | Document upload |
+| `/partner/upload/:profileId` | Upload for specific user |
+| `/partner/new-user` | Onboard new user |
+| `/partner/client-analytics/:profileId` | Client analytics |
+| `/partner/analytics` | Partner analytics |
+| `/partner/doctors` | Empanelled doctors management |
+| `/partner/settings` | Organization settings |
+
+### Doctor Portal (`/doctor/*`)
+| Route | Page |
+|-------|------|
+| `/doctor/login` | Doctor login |
+| `/doctor/dashboard` | Dashboard (tabs: Active Access / My Patients) |
+| `/doctor/patient/:profileId` | Patient record view |
+
+---
+
+## Storage Buckets
+
+| Bucket | Purpose |
+|--------|---------|
+| `profile-photos` | User profile photos |
+| `profile-documents` | Medical documents (PDFs, images) |
+| `partner-logos` | Partner organization logos |
+
+---
+
+## RLS Policy Patterns
+
+- **Users**: Own their profiles and documents via `user_id = auth.uid()`
+- **Partners**: Access linked users via `partner_users` join; scoped by `get_partner_id(auth.uid())`
+- **Doctors**: Access patients via `doctor_access` (time-limited) or `doctor_patients` (persistent); scoped by `get_doctor_id(auth.uid())`
+- **Super Admins**: Full access via `is_super_admin(auth.uid())`
+- **Role checks**: Use `has_role()` security definer function to avoid RLS recursion
+
+---
+
+## Tech Stack
+
+- **Frontend**: React + Vite + TypeScript + Tailwind CSS + shadcn/ui
+- **Backend**: Lovable Cloud (Supabase) — Postgres, Auth, Edge Functions, Storage
+- **Charts**: Recharts
+- **AI**: Lovable AI (Gemini/GPT models) for lab report analysis and document metadata extraction
+- **Design**: Mobile-first, deep slate blue primary (#3d4a5c), soft coral accent (#e08a6b)
