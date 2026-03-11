@@ -14,6 +14,7 @@ interface Doctor {
   email: string;
   phone: string | null;
   is_active: boolean;
+  partner_id: string | null;
 }
 
 export const useDoctorCheck = () => {

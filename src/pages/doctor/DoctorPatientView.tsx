@@ -26,6 +26,7 @@ import {
   FileText,
   AlertTriangle,
   Stethoscope,
+  Heart,
 } from "lucide-react";
 import carebagLogo from "@/assets/carebag-logo-redesign.png";
 
@@ -54,6 +55,7 @@ const DoctorPatientView = () => {
   const [patientName, setPatientName] = useState("");
   const [globalId, setGlobalId] = useState("");
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [isPersistentAccess, setIsPersistentAccess] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState("");
 
   const [parameters, setParameters] = useState<LabParameter[]>([]);
@@ -108,6 +110,7 @@ const DoctorPatientView = () => {
   };
 
   const fetchAccessExpiry = async () => {
+    // Check time-limited access
     const { data } = await supabase
       .from("doctor_access")
       .select("expires_at")
@@ -119,6 +122,22 @@ const DoctorPatientView = () => {
       .maybeSingle();
     if (data) {
       setExpiresAt(data.expires_at);
+      return;
+    }
+
+    // Check persistent access (doctor_patients)
+    try {
+      const { data: persistent } = await supabase
+        .from("doctor_patients")
+        .select("id")
+        .eq("profile_id", profileId!)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (persistent) {
+        setIsPersistentAccess(true);
+      }
+    } catch {
+      // Table might not exist yet
     }
   };
 
@@ -218,7 +237,8 @@ const DoctorPatientView = () => {
     );
   }
 
-  const isExpired = timeRemaining === "Expired";
+  const isExpired = !isPersistentAccess && timeRemaining === "Expired";
+  const hasAccess = isPersistentAccess || (expiresAt && !isExpired);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -253,7 +273,12 @@ const DoctorPatientView = () => {
                   <p className="text-sm text-muted-foreground font-mono">{globalId}</p>
                 </div>
               </div>
-              {expiresAt && (
+              {isPersistentAccess ? (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
+                  <Heart className="h-4 w-4" />
+                  Care Team
+                </div>
+              ) : expiresAt ? (
                 <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium ${
                   isExpired
                     ? "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400"
@@ -262,7 +287,7 @@ const DoctorPatientView = () => {
                   {isExpired ? <AlertTriangle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
                   {isExpired ? "Access Expired" : timeRemaining}
                 </div>
-              )}
+              ) : null}
             </div>
           </CardContent>
         </Card>
