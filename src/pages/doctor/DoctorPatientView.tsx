@@ -236,7 +236,8 @@ const DoctorPatientView = () => {
     );
   }
 
-  const isExpired = timeRemaining === "Expired";
+  const isExpired = !isPersistentAccess && timeRemaining === "Expired";
+  const hasAccess = isPersistentAccess || (expiresAt && !isExpired);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
