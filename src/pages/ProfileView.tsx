@@ -71,6 +71,12 @@ const ProfileView = () => {
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const [pendingDocUrl, setPendingDocUrl] = useState<string | null>(null);
 
+  // Share with Doctor state
+  const [showDoctorDialog, setShowDoctorDialog] = useState(false);
+  const [doctorGlobalId, setDoctorGlobalId] = useState("");
+  const [accessType, setAccessType] = useState<"temporary" | "persistent">("temporary");
+  const [isGranting, setIsGranting] = useState(false);
+
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
