@@ -54,6 +54,7 @@ const DoctorPatientView = () => {
   const [patientName, setPatientName] = useState("");
   const [globalId, setGlobalId] = useState("");
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [isPersistentAccess, setIsPersistentAccess] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState("");
 
   const [parameters, setParameters] = useState<LabParameter[]>([]);
