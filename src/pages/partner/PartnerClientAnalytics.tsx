@@ -43,10 +43,13 @@ const PartnerClientAnalytics = () => {
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [insights, setInsights] = useState("");
+  const [latestDocType, setLatestDocType] = useState<string | null>(null);
+  const [latestDocDate, setLatestDocDate] = useState<string | null>(null);
 
   useEffect(() => {
     if (profileId) {
       fetchProfile();
+      fetchLatestDocument();
     }
   }, [profileId]);
 
@@ -60,6 +63,29 @@ const PartnerClientAnalytics = () => {
     if (data) {
       setClientName(data.name);
       setGlobalId(data.carebag_id || "N/A");
+    }
+  };
+
+  const fetchLatestDocument = async () => {
+    const { data } = await supabase
+      .from("documents")
+      .select("document_type, document_date")
+      .eq("profile_id", profileId!)
+      .order("document_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (data) {
+      setLatestDocType(data.document_type);
+      setLatestDocDate(
+        data.document_date
+          ? new Date(data.document_date).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })
+          : null
+      );
     }
   };
 
