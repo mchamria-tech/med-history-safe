@@ -152,7 +152,11 @@ const DoctorPatientView = () => {
         .select("id, document_name, document_date, document_type, document_url")
         .eq("profile_id", profileId!)
         .order("document_date", { ascending: false });
-      setDocuments(data || []);
+      const docs = data || [];
+      setDocuments(docs);
+      if (docs.length > 0 && !selectedDocId) {
+        setSelectedDocId(docs[0].id);
+      }
     } catch {
       // Might not have RLS access to all docs
     } finally {
