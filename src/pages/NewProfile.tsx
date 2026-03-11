@@ -244,36 +244,68 @@ const NewProfile = () => {
 
         if (updateError) throw updateError;
       } else {
-        // Generate Global ID for new profile with country
-        const { data: globalIdData } = await supabase.rpc('generate_global_id', {
-          role_type: 'user',
-          country_code: country,
-        });
-
-        // App-level uniqueness check (defense-in-depth)
-        let finalId = globalIdData;
-        if (finalId) {
-          const { count } = await supabase
+        // Check if a Self profile already exists (created by registration trigger)
+        // If so, update it instead of creating a new one
+        if (relation.trim().toLowerCase() === 'self') {
+          const { data: existingSelf } = await supabase
             .from('profiles')
-            .select('*', { count: 'exact', head: true })
-            .eq('carebag_id', finalId);
+            .select('id, carebag_id')
+            .eq('user_id', user.id)
+            .ilike('relation', 'self')
+            .limit(1)
+            .single();
 
-          if (count && count > 0) {
-            // Regenerate once on collision
-            const { data: retryId } = await supabase.rpc('generate_global_id', {
+          if (existingSelf) {
+            // Update the existing Self profile, preserving its Global ID
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ ...profileData, country })
+              .eq('id', existingSelf.id);
+
+            if (updateError) throw updateError;
+          } else {
+            // No existing Self profile — generate Global ID and insert
+            const { data: globalIdData } = await supabase.rpc('generate_global_id', {
               role_type: 'user',
               country_code: country,
             });
-            finalId = retryId;
+
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({ ...profileData, carebag_id: globalIdData, country });
+
+            if (insertError) throw insertError;
           }
+        } else {
+          // Family member profile — generate a new Global ID
+          const { data: globalIdData } = await supabase.rpc('generate_global_id', {
+            role_type: 'user',
+            country_code: country,
+          });
+
+          // App-level uniqueness check (defense-in-depth)
+          let finalId = globalIdData;
+          if (finalId) {
+            const { count } = await supabase
+              .from('profiles')
+              .select('*', { count: 'exact', head: true })
+              .eq('carebag_id', finalId);
+
+            if (count && count > 0) {
+              const { data: retryId } = await supabase.rpc('generate_global_id', {
+                role_type: 'user',
+                country_code: country,
+              });
+              finalId = retryId;
+            }
+          }
+
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({ ...profileData, carebag_id: finalId, country });
+
+          if (insertError) throw insertError;
         }
-
-        // Insert new profile with Global ID
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({ ...profileData, carebag_id: finalId, country });
-
-        if (insertError) throw insertError;
       }
 
       toast({

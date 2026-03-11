@@ -468,13 +468,15 @@ const Profiles_Main = () => {
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={(e) => handleDeleteClick(e, profile.id)}
-                            className="text-destructive rounded-lg"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
+                          {!isPrimary && (
+                            <DropdownMenuItem 
+                              onClick={(e) => handleDeleteClick(e, profile.id)}
+                              className="text-destructive rounded-lg"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
