@@ -26,6 +26,7 @@ import {
   FileText,
   AlertTriangle,
   Stethoscope,
+  Heart,
 } from "lucide-react";
 import carebagLogo from "@/assets/carebag-logo-redesign.png";
 
