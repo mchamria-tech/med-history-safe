@@ -427,6 +427,54 @@ const ProfileView = () => {
     }
   };
 
+  const handleGrantDoctorAccess = async () => {
+    if (!doctorGlobalId.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter the doctor's Global ID",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGranting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("grant-doctor-access", {
+        body: {
+          doctor_global_id: doctorGlobalId.trim(),
+          profile_id: profileId,
+          access_type: accessType,
+        },
+      });
+
+      if (error) {
+        const message = await getEdgeFunctionError(error);
+        throw new Error(message);
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Access Granted",
+        description: data.message,
+      });
+
+      setShowDoctorDialog(false);
+      setDoctorGlobalId("");
+      setAccessType("temporary");
+    } catch (err: any) {
+      toast({
+        title: "Failed",
+        description: err.message || "Could not grant doctor access",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGranting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
