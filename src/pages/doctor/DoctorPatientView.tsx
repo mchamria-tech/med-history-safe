@@ -27,7 +27,9 @@ import {
   AlertTriangle,
   Stethoscope,
   Heart,
+  Eye,
 } from "lucide-react";
+import { getSignedUrl } from "@/hooks/useSignedUrl";
 import carebagLogo from "@/assets/carebag-logo-redesign.png";
 
 interface LabParameter {
@@ -44,6 +46,7 @@ interface DocumentRow {
   document_name: string;
   document_date: string;
   document_type: string | null;
+  document_url: string;
 }
 
 const DoctorPatientView = () => {
@@ -68,6 +71,7 @@ const DoctorPatientView = () => {
 
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
+  const [openingDocId, setOpeningDocId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!checkingDoctor && isDoctor && doctor && profileId) {
@@ -110,7 +114,6 @@ const DoctorPatientView = () => {
   };
 
   const fetchAccessExpiry = async () => {
-    // Check time-limited access
     const { data } = await supabase
       .from("doctor_access")
       .select("expires_at")
@@ -125,7 +128,6 @@ const DoctorPatientView = () => {
       return;
     }
 
-    // Check persistent access (doctor_patients)
     try {
       const { data: persistent } = await supabase
         .from("doctor_patients")
@@ -143,18 +145,42 @@ const DoctorPatientView = () => {
 
   const fetchDocuments = async () => {
     try {
-      // Doctors can see documents via RLS policies (doctor_has_document_grant or doctor uploaded)
-      // But for time-limited access we fetch via the profile since the edge function handles auth
       const { data } = await supabase
         .from("documents")
-        .select("id, document_name, document_date, document_type")
+        .select("id, document_name, document_date, document_type, document_url")
         .eq("profile_id", profileId!)
         .order("document_date", { ascending: false });
       setDocuments(data || []);
     } catch {
-      // Might not have RLS access to all docs - that's ok
+      // Might not have RLS access to all docs
     } finally {
       setLoadingDocs(false);
+    }
+  };
+
+  const handleViewDocument = async (doc: DocumentRow) => {
+    setOpeningDocId(doc.id);
+    try {
+      const newWindow = window.open("", "_blank");
+      const { url, error } = await getSignedUrl("profile-documents", doc.document_url);
+      if (url && !error && newWindow) {
+        newWindow.location.href = url;
+      } else {
+        newWindow?.close();
+        toast({
+          title: "Error",
+          description: "Failed to open document",
+          variant: "destructive",
+        });
+      }
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to open document",
+        variant: "destructive",
+      });
+    } finally {
+      setOpeningDocId(null);
     }
   };
 
@@ -307,6 +333,71 @@ const DoctorPatientView = () => {
           </Card>
         ) : (
           <>
+            {/* Document List - Now shown first with View buttons */}
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-emerald-600" />
+                  Patient Documents
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingDocs ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : documents.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    No documents available for this patient.
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Document Name</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {documents.map((doc) => (
+                        <TableRow key={doc.id}>
+                          <TableCell className="font-medium">{doc.document_name}</TableCell>
+                          <TableCell className="text-muted-foreground">{doc.document_type || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {new Date(doc.document_date).toLocaleDateString("en-GB", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              disabled={openingDocId === doc.id}
+                              onClick={() => handleViewDocument(doc)}
+                            >
+                              {openingDocId === doc.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <>
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  View
+                                </>
+                              )}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
             {/* AI Analysis Card */}
             <Card className="shadow-soft">
               <CardContent className="pt-6">
@@ -314,7 +405,7 @@ const DoctorPatientView = () => {
                   <div>
                     <h3 className="font-medium text-foreground">AI Lab Report Analysis</h3>
                     <p className="text-sm text-muted-foreground">
-                      Analyze the patient's most recent lab report with AI to highlight out-of-range parameters
+                      Analyze the most recent lab report with AI to highlight out-of-range parameters
                     </p>
                   </div>
                   <Button onClick={handleAnalyze} disabled={isAnalyzing}>
@@ -326,7 +417,7 @@ const DoctorPatientView = () => {
                     ) : (
                       <>
                         <Activity className="h-4 w-4 mr-2" />
-                        Analyze Report
+                        Analyze
                       </>
                     )}
                   </Button>
@@ -424,52 +515,6 @@ const DoctorPatientView = () => {
                 )}
               </>
             )}
-
-            {/* Document List */}
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-emerald-600" />
-                  Patient Documents
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingDocs ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : documents.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    No documents available for this patient.
-                  </p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Document Name</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Date</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {documents.map((doc) => (
-                        <TableRow key={doc.id}>
-                          <TableCell className="font-medium">{doc.document_name}</TableCell>
-                          <TableCell className="text-muted-foreground">{doc.document_type || "—"}</TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {new Date(doc.document_date).toLocaleDateString("en-GB", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
           </>
         )}
       </main>

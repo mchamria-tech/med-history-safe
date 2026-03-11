@@ -25,7 +25,6 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify caller
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -40,7 +39,7 @@ serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string;
 
-    const { doctor_global_id, profile_id, access_type } = await req.json();
+    const { doctor_global_id, profile_id, access_type, document_ids } = await req.json();
 
     if (!doctor_global_id || !profile_id || !access_type) {
       return new Response(
@@ -100,8 +99,49 @@ serve(async (req) => {
       );
     }
 
+    // Create document access grants for selected documents
+    const selectedDocs: string[] = Array.isArray(document_ids) ? document_ids : [];
+    let grantsCreated = 0;
+
+    if (selectedDocs.length > 0) {
+      // Set expiry: 1 hour for temporary, 100 years for persistent
+      const grantExpiry = access_type === "temporary"
+        ? new Date(Date.now() + 60 * 60 * 1000).toISOString()
+        : new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString();
+
+      // Verify documents belong to this profile
+      const { data: validDocs } = await adminClient
+        .from("documents")
+        .select("id")
+        .eq("profile_id", profile_id)
+        .in("id", selectedDocs);
+
+      const validDocIds = (validDocs || []).map((d: any) => d.id);
+
+      if (validDocIds.length > 0) {
+        const grants = validDocIds.map((docId: string) => ({
+          document_id: docId,
+          granted_to_type: "doctor" as const,
+          granted_to_id: doctorRow.id,
+          granted_by_user_id: userId,
+          expires_at: grantExpiry,
+          is_revoked: false,
+        }));
+
+        const { error: grantsError } = await adminClient
+          .from("document_access_grants")
+          .insert(grants);
+
+        if (grantsError) {
+          console.error("Document grants error:", grantsError);
+          // Non-fatal: continue with profile access
+        } else {
+          grantsCreated = validDocIds.length;
+        }
+      }
+    }
+
     if (access_type === "temporary") {
-      // Insert into doctor_access with 1 hour expiry
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
       const { error: insertError } = await adminClient
@@ -125,13 +165,13 @@ serve(async (req) => {
           message: `Temporary access granted to Dr. ${doctorRow.name} for 1 hour`,
           doctor_name: doctorRow.name,
           expires_at: expiresAt,
+          documents_shared: grantsCreated,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     if (access_type === "persistent") {
-      // Only independent doctors (no partner_id) can be added to care team
       if (doctorRow.partner_id) {
         return new Response(
           JSON.stringify({
@@ -141,7 +181,6 @@ serve(async (req) => {
         );
       }
 
-      // Upsert into doctor_patients
       const { error: upsertError } = await adminClient
         .from("doctor_patients")
         .upsert(
@@ -164,6 +203,7 @@ serve(async (req) => {
           success: true,
           message: `Dr. ${doctorRow.name} has been added to this profile's care team`,
           doctor_name: doctorRow.name,
+          documents_shared: grantsCreated,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
