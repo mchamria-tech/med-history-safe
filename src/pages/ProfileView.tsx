@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Menu, MoreVertical, Plus, ArrowLeft, Edit, Trash2, Sparkles, Loader2, AlertCircle, Activity, Stethoscope, Clock, UserPlus } from "lucide-react";
+import { Menu, MoreVertical, Plus, ArrowLeft, Edit, Trash2, Sparkles, Loader2, AlertCircle, Activity, Stethoscope, Clock, UserPlus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -76,6 +77,7 @@ const ProfileView = () => {
   const [doctorGlobalId, setDoctorGlobalId] = useState("");
   const [accessType, setAccessType] = useState<"temporary" | "persistent">("temporary");
   const [isGranting, setIsGranting] = useState(false);
+  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
 
   useEffect(() => {
     const getUser = async () => {
@@ -177,24 +179,20 @@ const ProfileView = () => {
     try {
       setIsDeleting(true);
 
-      // Delete all documents from storage - using standardized path handling
+      // Delete all documents from storage
       for (const doc of documents) {
         if (doc.document_url) {
           let filePath = doc.document_url;
-          
-          // Handle both old URL format and new path format
           if (doc.document_url.includes('supabase.co')) {
             const urlParts = doc.document_url.split('/profile-documents/');
             filePath = urlParts[1] || doc.document_url;
           }
-          
           await supabase.storage
             .from('profile-documents')
             .remove([filePath]);
         }
       }
 
-      // Delete all document records
       const { error: docsError } = await supabase
         .from('documents')
         .delete()
@@ -202,22 +200,17 @@ const ProfileView = () => {
 
       if (docsError) throw docsError;
 
-      // Delete profile photo from storage if exists
       if (profile?.profile_photo_url) {
         let photoPath = profile.profile_photo_url;
-        
-        // Handle both old URL format and new path format
         if (profile.profile_photo_url.includes('supabase.co')) {
           const urlParts = profile.profile_photo_url.split('/profile-photos/');
           photoPath = urlParts[1] || profile.profile_photo_url;
         }
-        
         await supabase.storage
           .from('profile-photos')
           .remove([photoPath]);
       }
 
-      // Delete the profile
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
@@ -244,7 +237,6 @@ const ProfileView = () => {
     }
   };
 
-  // Helper function to convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -254,7 +246,6 @@ const ProfileView = () => {
     });
   };
 
-  // AI metadata extraction function
   const extractMetadataWithAI = async () => {
     if (!documentFile) {
       toast({
@@ -265,7 +256,6 @@ const ProfileView = () => {
       return;
     }
 
-    // Check if file is an image
     if (!documentFile.type.startsWith('image/')) {
       toast({
         title: "Unsupported File Type",
@@ -277,13 +267,9 @@ const ProfileView = () => {
 
     try {
       setIsExtracting(true);
-
-      // Convert file to base64
       const base64Image = await fileToBase64(documentFile);
 
       console.log('Calling extract-document-metadata function...');
-
-      // Call edge function
       const { data, error } = await supabase.functions.invoke('extract-document-metadata', {
         body: { image: base64Image }
       });
@@ -301,8 +287,6 @@ const ProfileView = () => {
       }
 
       const metadata = data.metadata;
-
-      // Pre-fill form fields with extracted data
       if (metadata.doctor_name) setDoctorName(metadata.doctor_name);
       if (metadata.document_date) {
         try {
@@ -322,12 +306,9 @@ const ProfileView = () => {
         title: "Success",
         description: "Metadata extracted successfully. Please review and edit if needed.",
       });
-
     } catch (error: any) {
       console.error('Error extracting metadata:', error);
-      
       let errorMessage = "Failed to extract metadata from document";
-      
       if (error.message?.includes("Rate limit")) {
         errorMessage = "Rate limit exceeded. Please try again in a moment.";
       } else if (error.message?.includes("credits")) {
@@ -335,7 +316,6 @@ const ProfileView = () => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-
       toast({
         title: "Extraction Failed",
         description: errorMessage,
@@ -367,8 +347,6 @@ const ProfileView = () => {
 
     try {
       setIsUploading(true);
-
-      // Upload file to storage
       const fileExt = documentFile.name.split('.').pop();
       const fileName = `${currentUser.id}/${profileId}/${Date.now()}.${fileExt}`;
       
@@ -378,14 +356,13 @@ const ProfileView = () => {
 
       if (uploadError) throw uploadError;
 
-      // Save document metadata to database with file path
       const { error: dbError } = await supabase
         .from('documents')
         .insert({
           profile_id: profileId,
           user_id: currentUser.id,
           document_name: documentName,
-          document_url: fileName, // Store the file path instead of public URL
+          document_url: fileName,
           document_date: format(documentDate, 'yyyy-MM-dd'),
           document_type: documentType || null,
           doctor_name: doctorName || null,
@@ -401,7 +378,6 @@ const ProfileView = () => {
         description: "Document uploaded successfully",
       });
 
-      // Refresh documents list
       fetchDocuments();
 
       setShowUploadDialog(false);
@@ -427,11 +403,34 @@ const ProfileView = () => {
     }
   };
 
+  const toggleDocSelection = (docId: string) => {
+    setSelectedDocIds((prev) =>
+      prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId]
+    );
+  };
+
+  const toggleAllDocs = () => {
+    if (selectedDocIds.length === documents.length) {
+      setSelectedDocIds([]);
+    } else {
+      setSelectedDocIds(documents.map((d) => d.id));
+    }
+  };
+
   const handleGrantDoctorAccess = async () => {
     if (!doctorGlobalId.trim()) {
       toast({
         title: "Error",
         description: "Please enter the doctor's Global ID",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (documents.length > 0 && selectedDocIds.length === 0) {
+      toast({
+        title: "No documents selected",
+        description: "Please select at least one document to share, or upload documents first.",
         variant: "destructive",
       });
       return;
@@ -444,6 +443,7 @@ const ProfileView = () => {
           doctor_global_id: doctorGlobalId.trim(),
           profile_id: profileId,
           access_type: accessType,
+          document_ids: selectedDocIds,
         },
       });
 
@@ -456,14 +456,16 @@ const ProfileView = () => {
         throw new Error(data.error);
       }
 
+      const sharedCount = selectedDocIds.length;
       toast({
         title: "Access Granted",
-        description: data.message,
+        description: `${data.message}. ${sharedCount} document${sharedCount !== 1 ? "s" : ""} shared.`,
       });
 
       setShowDoctorDialog(false);
       setDoctorGlobalId("");
       setAccessType("temporary");
+      setSelectedDocIds([]);
     } catch (err: any) {
       toast({
         title: "Failed",
@@ -494,11 +496,9 @@ const ProfileView = () => {
 
   const calculateDaysSinceLastDocument = () => {
     if (documents.length === 0) return 0;
-    
     const mostRecentDoc = documents.reduce((latest, current) => {
       return new Date(current.document_date) > new Date(latest.document_date) ? current : latest;
     });
-    
     const daysDiff = Math.floor((new Date().getTime() - new Date(mostRecentDoc.document_date).getTime()) / (1000 * 60 * 60 * 24));
     return daysDiff;
   };
@@ -704,12 +704,15 @@ const ProfileView = () => {
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
               <h3 className="text-base font-semibold text-foreground">Share with Doctor</h3>
-              <p className="text-xs text-muted-foreground">Grant a doctor access to this profile's records</p>
+              <p className="text-xs text-muted-foreground">Grant a doctor access to selected documents</p>
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowDoctorDialog(true)}
+              onClick={() => {
+                setSelectedDocIds(documents.map((d) => d.id));
+                setShowDoctorDialog(true);
+              }}
             >
               <Stethoscope className="h-4 w-4 mr-2" />
               Share
@@ -822,7 +825,7 @@ const ProfileView = () => {
           <DialogHeader>
             <DialogTitle>Upload Document</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 overflow-y-auto flex-1 pr-2">{/* Added overflow and flex */}
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             <div>
               <Label htmlFor="doc-file">Select File</Label>
               <Input
@@ -1063,14 +1066,14 @@ const ProfileView = () => {
 
       {/* Share with Doctor Dialog */}
       <Dialog open={showDoctorDialog} onOpenChange={setShowDoctorDialog}>
-        <DialogContent className="bg-background">
+        <DialogContent className="bg-background max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Stethoscope className="h-5 w-5 text-emerald-600" />
               Share with Doctor
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-1">
             <div>
               <Label htmlFor="doctor-global-id">Doctor's Global ID</Label>
               <Input
@@ -1118,6 +1121,50 @@ const ProfileView = () => {
                 </div>
               </RadioGroup>
             </div>
+
+            {/* Document Selection */}
+            {documents.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="block">Select Documents to Share</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={toggleAllDocs}
+                  >
+                    {selectedDocIds.length === documents.length ? "Deselect All" : "Select All"}
+                  </Button>
+                </div>
+                <div className="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-2">
+                  {documents.map((doc) => (
+                    <label
+                      key={doc.id}
+                      className={cn(
+                        "flex items-center gap-3 p-2.5 rounded-md border cursor-pointer transition-colors",
+                        selectedDocIds.includes(doc.id)
+                          ? "bg-primary/5 border-primary/30"
+                          : "bg-background hover:bg-muted"
+                      )}
+                    >
+                      <Checkbox
+                        checked={selectedDocIds.includes(doc.id)}
+                        onCheckedChange={() => toggleDocSelection(doc.id)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{doc.document_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.document_type || "Document"} • {format(new Date(doc.document_date), 'PP')}
+                        </p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {selectedDocIds.length} of {documents.length} document{documents.length !== 1 ? "s" : ""} selected
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -1126,6 +1173,7 @@ const ProfileView = () => {
                 setShowDoctorDialog(false);
                 setDoctorGlobalId("");
                 setAccessType("temporary");
+                setSelectedDocIds([]);
               }}
             >
               Cancel
