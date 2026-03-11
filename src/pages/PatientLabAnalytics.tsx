@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Activity, Loader2, Info, Lightbulb } from "lucide-react";
@@ -26,6 +27,13 @@ interface LabParameter {
   status: "normal" | "high" | "low";
 }
 
+interface DocumentOption {
+  id: string;
+  document_name: string;
+  document_date: string;
+  document_type: string | null;
+}
+
 const PatientLabAnalytics = () => {
   const { profileId } = useParams<{ profileId: string }>();
   const navigate = useNavigate();
@@ -41,9 +49,14 @@ const PatientLabAnalytics = () => {
   const [showAll, setShowAll] = useState(false);
   const [insights, setInsights] = useState("");
 
+  const [documents, setDocuments] = useState<DocumentOption[]>([]);
+  const [selectedDocId, setSelectedDocId] = useState<string>("");
+  const [loadingDocs, setLoadingDocs] = useState(true);
+
   useEffect(() => {
     if (profileId) {
       fetchProfile();
+      fetchDocuments();
     }
   }, [profileId]);
 
@@ -60,11 +73,46 @@ const PatientLabAnalytics = () => {
     }
   };
 
+  const fetchDocuments = async () => {
+    try {
+      const { data } = await supabase
+        .from("documents")
+        .select("id, document_name, document_date, document_type")
+        .eq("profile_id", profileId!)
+        .order("document_date", { ascending: false });
+
+      const docs = data || [];
+      setDocuments(docs);
+      if (docs.length > 0) {
+        setSelectedDocId(docs[0].id);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
+
+  const selectedDoc = documents.find((d) => d.id === selectedDocId);
+
+  const getSelectedDocLabel = () => {
+    if (!selectedDoc) return "No reports uploaded yet";
+    const type = selectedDoc.document_type || "Report";
+    const date = selectedDoc.document_date
+      ? new Date(selectedDoc.document_date).toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : "N/A";
+    return `${type} | Uploaded on ${date}`;
+  };
+
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke("analyze-lab-report-user", {
-        body: { profileId },
+        body: { profileId, documentId: selectedDocId || undefined },
       });
 
       if (error) throw error;
@@ -163,26 +211,42 @@ const PatientLabAnalytics = () => {
         {/* Analyze Button */}
         <Card className="border">
           <CardContent className="pt-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-foreground">Lab Report Analysis</h3>
-                <p className="text-sm text-muted-foreground">
-                  AI will extract parameters from your most recent report
-                </p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-foreground">Lab Report Analysis</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {getSelectedDocLabel()}
+                  </p>
+                </div>
+                <Button onClick={handleAnalyze} disabled={isAnalyzing || documents.length === 0} size="sm">
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Activity className="h-4 w-4 mr-2" />
+                      Analyze
+                    </>
+                  )}
+                </Button>
               </div>
-              <Button onClick={handleAnalyze} disabled={isAnalyzing} size="sm">
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Activity className="h-4 w-4 mr-2" />
-                    Analyze
-                  </>
-                )}
-              </Button>
+              {documents.length > 1 && (
+                <Select value={selectedDocId} onValueChange={setSelectedDocId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a document" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {documents.map((doc) => (
+                      <SelectItem key={doc.id} value={doc.id}>
+                        {doc.document_type || "Report"} — {doc.document_name} ({new Date(doc.document_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </CardContent>
         </Card>
