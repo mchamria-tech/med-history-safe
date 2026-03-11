@@ -272,7 +272,12 @@ const DoctorPatientView = () => {
                   <p className="text-sm text-muted-foreground font-mono">{globalId}</p>
                 </div>
               </div>
-              {expiresAt && (
+              {isPersistentAccess ? (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
+                  <Heart className="h-4 w-4" />
+                  Care Team
+                </div>
+              ) : expiresAt ? (
                 <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium ${
                   isExpired
                     ? "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400"
@@ -281,7 +286,7 @@ const DoctorPatientView = () => {
                   {isExpired ? <AlertTriangle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
                   {isExpired ? "Access Expired" : timeRemaining}
                 </div>
-              )}
+              ) : null}
             </div>
           </CardContent>
         </Card>
