@@ -191,7 +191,9 @@ const PartnerClientAnalytics = () => {
               <div>
                 <h3 className="font-medium text-foreground">Lab Report Analysis</h3>
                 <p className="text-sm text-muted-foreground">
-                  AI will extract parameters from the most recent uploaded report
+                  {latestDocType || latestDocDate
+                    ? `${latestDocType || "Report"} | Uploaded on ${latestDocDate || "N/A"}`
+                    : "No reports uploaded yet"}
                 </p>
               </div>
               <Button onClick={handleAnalyze} disabled={isAnalyzing}>
