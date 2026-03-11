@@ -1,73 +1,49 @@
-# Welcome to your Lovable project
+# CareBag
 
-## Project info
+A mobile-first health records platform for securely storing, organizing, and sharing family medical documents across patients, healthcare organizations, and doctors.
+
+## Features
+
+- **Family Health Profiles** — Create and manage multiple profiles per account with unique CareBag IDs
+- **Smart Document Management** — Upload, tag, and search medical documents with AI-powered metadata extraction
+- **Doctor Access Sharing** — Grant time-limited (1-hour) or persistent care team access to doctors using their Global ID
+- **B2B Partner Portal** — Healthcare organizations manage linked clients, upload documents, and track analytics
+- **Doctor Portal** — Medical professionals view patient records and AI-analyzed lab reports
+- **Super Admin Panel** — Platform management with user/partner oversight, analytics, and audit logs
+- **AI Lab Analysis** — Automated lab report analysis powered by Lovable AI
+
+## Tech Stack
+
+- **Frontend**: React, Vite, TypeScript, Tailwind CSS, shadcn/ui, Recharts
+- **Backend**: Lovable Cloud — Database, Auth, Edge Functions, Storage
+- **AI**: Lovable AI for document analysis and metadata extraction
+
+## Project Info
 
 **URL**: https://lovable.dev/projects/e8a26696-d922-4d82-a3ea-2cc9f64a26e6
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/e8a26696-d922-4d82-a3ea-2cc9f64a26e6) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Development
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# Navigate to the project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
+# Install dependencies
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Deployment
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Open [Lovable](https://lovable.dev/projects/e8a26696-d922-4d82-a3ea-2cc9f64a26e6) and click Share → Publish.
 
-**Use GitHub Codespaces**
+## Custom Domain
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Navigate to Project > Settings > Domains and click Connect Domain. A paid plan is required.
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/e8a26696-d922-4d82-a3ea-2cc9f64a26e6) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Read more: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
